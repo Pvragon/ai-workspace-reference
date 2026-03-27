@@ -1,0 +1,52 @@
+# summary: Team integrations registry. Lists bridges to external services — CLIs, MCPs, and remote execution interfaces.
+# Integrations Registry (pvragon team)
+# ------------------------------------------
+# This manifest catalogs available integrations with external services.
+#
+# Schema:
+#   integrations:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to INTEGRATION.md
+#       type: <string>           # "cli", "mcp", or "remote-execution"
+#       capabilities: [<string>, ...]  # What this integration enables
+#       dependencies: [<string>, ...]  # Required tools or packages
+#       version: <string>        # Semantic version
+#       status: <string>         # "active" (default, omitted) or "deprecated"
+#
+# Integration types:
+#   cli              — Local binary that makes API calls (gws, restish)
+#   mcp              — Server process exposing tools over MCP protocol
+#   remote-execution — Author and deploy your own code to external infrastructure
+#                      (Apps Script, n8n, GitHub Actions, Lambda)
+#
+# ------------------------------------------
+
+integrations:
+
+  - name: apps-script
+    description: "Google Apps Script remote execution via clasp CLI. Full DocumentApp, SpreadsheetApp, DriveApp, GmailApp, CalendarApp, SlidesApp, FormApp access — covers capabilities the REST APIs cannot reach."
+    path: integrations/apps-script/INTEGRATION.md
+    type: remote-execution
+    capabilities: [google-docs-advanced, google-sheets-advanced, google-slides-advanced, google-forms, google-drive, gmail, calendar, remote-execution]
+    dependencies: ["@google/clasp", gws-oauth-credentials]
+    tags: [google, apps-script, clasp, remote-execution, documents, sheets, slides, forms]
+    version: "1.0.0"
+
+  - name: gws-cli
+    description: "Google Workspace CLI (@googleworkspace/cli) — covers Drive, Docs, Sheets, Gmail, Calendar, Admin Reports. Replaces the Google Workspace MCP."
+    path: integrations/gws-cli/INTEGRATION.md
+    type: cli
+    capabilities: [google-drive, google-docs, google-sheets, gmail, google-calendar, admin-reports]
+    dependencies: ["@googleworkspace/cli", gws-oauth-credentials]
+    tags: [google, google-workspace, cli, drive, docs, sheets, gmail, calendar]
+    version: "1.0.0"
+
+  - name: clickup-cli
+    description: "ClickUp CLI integration via Restish — full v2 + v3 API coverage including task comments with @mentions and Chat messaging."
+    path: integrations/clickup-cli/INTEGRATION.md
+    type: cli
+    capabilities: [clickup, task-management, chat-messaging, mentions, api-integration]
+    dependencies: [restish]
+    tags: [clickup, cli, restish, openapi, chat, mentions, task-comments]
+    version: "1.0.0"

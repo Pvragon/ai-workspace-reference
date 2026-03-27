@@ -1,0 +1,9 @@
+# base-requirements.txt
+# Python packages required by team-lib execution scripts.
+# Installed into my-lib/.venv by setup_workspace.sh during onboarding.
+#
+# Used by:
+#   executions/list_shared_drives.py — Google Drive API access
+
+google-api-python-client>=2.100.0
+google-auth>=2.25.0

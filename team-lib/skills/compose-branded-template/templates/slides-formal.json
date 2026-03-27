@@ -1,0 +1,267 @@
+{
+    "$schema": "type-template-v2",
+    "$extends": "_base-slides",
+    "templateType": "slides-formal",
+    "templateVersion": "2.0.0",
+    "description": "Formal presentation slides — designed to be PRESENTED. Lower density, larger fonts, more visual impact. Speaker notes support. Conference room projection. Extends _base-slides with larger fonts, speaker notes, and presentation-specific slide types.",
+
+    "presentationSettings": {
+        "speakerNotes": {
+            "enabled": true,
+            "fontSize": 12,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" }
+        }
+    },
+
+    "slideTypes": {
+        "title": {
+            "logo": {
+                "marginTop": 50,
+                "scaleFactor": 2.0
+            },
+            "title": {
+                "fontSize": 44,
+                "marginTop": 50
+            },
+            "subtitle": {
+                "fontSize": 22,
+                "marginTop": 16
+            },
+            "presenter": {
+                "fontSize": 14,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.background.accent" },
+                "alignment": "center",
+                "marginTop": 30,
+                "marginTopUnit": "pt"
+            },
+            "accentBar": {
+                "width": 120,
+                "height": 4,
+                "marginTop": 20
+            }
+        },
+
+        "sectionDivider": {
+            "title": {
+                "fontSize": 38
+            },
+            "sectionNumber": {
+                "fontSize": 14,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.brand.accent" },
+                "bold": true,
+                "alignment": "center",
+                "marginBottom": 12,
+                "marginBottomUnit": "pt",
+                "format": "SECTION {n}"
+            },
+            "accentLine": {
+                "width": 80,
+                "height": 3,
+                "marginTop": 16
+            }
+        },
+
+        "content": {
+            "padding": { "top": 50, "bottom": 50, "left": 60, "right": 60, "unit": "pt" },
+            "heading": {
+                "fontSize": 28,
+                "marginBottom": 16
+            },
+            "body": {
+                "fontSize": 18,
+                "lineSpacing": 150
+            },
+            "bullets": {
+                "fontSize": 18,
+                "markerSize": 8,
+                "spacing": 12,
+                "indentPerLevel": 24,
+                "maxItems": 5,
+                "maxItemsNote": "Keep to 5 bullets max for readability when projected"
+            },
+            "logo": {
+                "opacity": 0.3,
+                "margin": 20
+            },
+            "accentStripe": {
+                "width": 5
+            }
+        },
+
+        "keyPoint": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 80, "bottom": 60, "left": 80, "right": 80, "unit": "pt" },
+            "message": {
+                "fontSize": 32,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "alignment": "center",
+                "lineSpacing": 140,
+                "lineSpacingUnit": "percentage"
+            },
+            "supporting": {
+                "fontSize": 16,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.subtle" },
+                "alignment": "center",
+                "marginTop": 20,
+                "marginTopUnit": "pt"
+            },
+            "accentIcon": {
+                "enabled": true,
+                "color": { "tokenRef": "color.brand.accent" },
+                "size": 48,
+                "sizeUnit": "pt",
+                "position": "above-message",
+                "marginBottom": 20,
+                "marginBottomUnit": "pt"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.3
+            }
+        },
+
+        "comparison": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 50, "bottom": 50, "left": 60, "right": 60, "unit": "pt" },
+            "heading": {
+                "fontSize": 28,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "marginBottom": 20,
+                "marginBottomUnit": "pt",
+                "alignment": "center"
+            },
+            "columnGap": 40,
+            "columnGapUnit": "pt",
+            "columnDivider": {
+                "enabled": true,
+                "color": { "tokenRef": "color.background.accent" },
+                "width": 2,
+                "widthUnit": "pt"
+            },
+            "leftColumn": {
+                "headerColor": { "tokenRef": "color.brand.primary" },
+                "headerFontSize": 20,
+                "headerFontSizeUnit": "pt",
+                "headerBold": true
+            },
+            "rightColumn": {
+                "headerColor": { "tokenRef": "color.brand.accent" },
+                "headerFontSize": 20,
+                "headerFontSizeUnit": "pt",
+                "headerBold": true
+            },
+            "body": {
+                "fontSize": 16,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.text.default" },
+                "lineSpacing": 140,
+                "lineSpacingUnit": "percentage"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.3
+            }
+        },
+
+        "agenda": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 50, "bottom": 50, "left": 80, "right": 80, "unit": "pt" },
+            "heading": {
+                "fontSize": 32,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "alignment": "left",
+                "marginBottom": 24,
+                "marginBottomUnit": "pt"
+            },
+            "items": {
+                "fontSize": 20,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.default" },
+                "numberColor": { "tokenRef": "color.brand.accent" },
+                "numberBold": true,
+                "numberFontSize": 22,
+                "numberFontSizeUnit": "pt",
+                "spacing": 16,
+                "spacingUnit": "pt",
+                "dividerColor": { "tokenRef": "color.background.accent" },
+                "dividerWidth": 1,
+                "dividerWidthUnit": "pt"
+            },
+            "activeHighlight": {
+                "enabled": true,
+                "backgroundColor": { "tokenRef": "color.background.accent" },
+                "borderColor": { "tokenRef": "color.brand.primary" },
+                "borderWidth": 2,
+                "borderWidthUnit": "pt",
+                "radius": 4,
+                "radiusUnit": "pt"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.3
+            }
+        },
+
+        "closing": {
+            "logo": {
+                "scaleFactor": 2.0
+            },
+            "heading": {
+                "fontSize": 36
+            },
+            "message": {
+                "fontSize": 18
+            },
+            "cta": {
+                "fontSize": 16,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.onPrimary" },
+                "bold": true,
+                "alignment": "center",
+                "marginTop": 30,
+                "marginTopUnit": "pt",
+                "background": { "tokenRef": "color.brand.accent" },
+                "padding": { "top": 10, "bottom": 10, "left": 24, "right": 24, "unit": "pt" },
+                "borderRadius": 20,
+                "borderRadiusUnit": "pt"
+            }
+        }
+    },
+
+    "slideFooter": {
+        "slideNumberFontSize": 10,
+        "companyNameFontSize": 10
+    },
+
+    "transitions": {
+        "default": "fade",
+        "duration": 300,
+        "durationUnit": "ms",
+        "sectionDivider": "slide-left",
+        "animationHints": {
+            "bullets": "appear-one-by-one",
+            "bulletDelay": 500,
+            "bulletDelayUnit": "ms"
+        }
+    }
+}

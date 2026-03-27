@@ -1,0 +1,24 @@
+{
+  "clickup-v2": {
+    "base": "https://api.clickup.com/api/v2",
+    "spec_files": ["https://developer.clickup.com/openapi/clickup-api-v2-reference.json"],
+    "profiles": {
+      "default": {
+        "headers": {
+          "Authorization": "YOUR_TOKEN_HERE"
+        }
+      }
+    }
+  },
+  "clickup-v3": {
+    "base": "https://api.clickup.com/api/v3",
+    "spec_files": ["https://developer.clickup.com/openapi/ClickUp_PUBLIC_API_V3.yaml"],
+    "profiles": {
+      "default": {
+        "headers": {
+          "Authorization": "YOUR_TOKEN_HERE"
+        }
+      }
+    }
+  }
+}

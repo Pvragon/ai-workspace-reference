@@ -1,0 +1,40 @@
+# summary: Team personas registry. Lists available agent personas with traits and use cases.
+# Personas Registry (pvragon team)
+# ------------------------------------------
+# This manifest catalogs available team agent personas.
+#
+# Schema:
+#   personas:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to persona file
+#       traits: [<string>, ...]  # Key personality traits
+#       use_cases: [<string>, ...]  # Recommended use cases
+#       version: <string>        # Semantic version
+#
+# Example:
+#   personas:
+#     - name: team-lead
+#       description: Team coordination and guidance persona
+#       path: personas/team-lead.md
+#       traits: [collaborative, strategic, supportive]
+#       use_cases: [planning, coordination, mentoring]
+#       version: "1.0.0"
+#
+# ------------------------------------------
+
+personas:
+  - name: brand-guard
+    description: Brand Voice Guardian and AI-Detector
+    path: personas/brand-guard.md
+    traits: [critical, quality-focused, brand-conscious]
+    use_cases: [content-review, quality-assurance, brand-consistency]
+    version: "1.0.0"
+
+  - name: linkedin-writer
+    description: LinkedIn Content Specialist
+    path: personas/linkedin-writer.md
+    traits: [professional, conversational, authentic]
+    use_cases: [social-media, content-creation, linkedin-posts]
+    version: "1.0.0"
+

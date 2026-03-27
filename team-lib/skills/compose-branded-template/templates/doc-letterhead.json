@@ -1,0 +1,140 @@
+{
+    "$schema": "type-template-v2",
+    "$extends": "_base-doc",
+    "templateType": "doc-letterhead",
+    "templateVersion": "2.0.0",
+    "description": "Letterhead for formal correspondence — minimal formatting, company info in header/footer, simpler heading hierarchy, no decorative rules or callouts. Extends _base-doc with overrides for margins, font size, letter-specific body styles, and company info placement.",
+
+    "documentSettings": {
+        "defaultFontSize": 11,
+        "defaultFontSizeNote": "Letterhead always uses 11pt regardless of brand token bodyFontSize",
+        "margins": {
+            "top": 108,
+            "topNote": "Wider top margin (1.5in) to accommodate letterhead header"
+        }
+    },
+
+    "headings": {
+        "h1": {
+            "fontSize": 16,
+            "color": { "tokenRef": "color.brand.primary" },
+            "spaceBefore": 12
+        },
+        "h2": {
+            "fontSize": 13,
+            "color": { "tokenRef": "color.brand.primary" },
+            "spaceBefore": 10
+        },
+        "h3": {
+            "fontSize": 11,
+            "color": { "tokenRef": "color.text.default" },
+            "spaceBefore": 8
+        },
+        "h4": null,
+        "h5": null,
+        "h6": null
+    },
+
+    "bodyText": {
+        "normal": {},
+        "greeting": {
+            "fontSize": 11,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "spaceBefore": 12,
+            "spaceAfter": 6,
+            "spaceUnit": "pt"
+        },
+        "closing": {
+            "fontSize": 11,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "spaceBefore": 12,
+            "spaceAfter": 24,
+            "spaceUnit": "pt",
+            "spaceAfterNote": "24pt gap for physical signature"
+        },
+        "senderName": {
+            "fontSize": 11,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "spaceUnit": "pt"
+        },
+        "senderTitle": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.subtle" },
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "spaceUnit": "pt"
+        }
+    },
+
+    "inlineStyles": {
+        "boldLabel": {
+            "bold": true,
+            "color": { "tokenRef": "color.text.default" },
+            "_note": "Letterhead suppresses accent colors on labels — uses dark text instead"
+        }
+    },
+
+    "tables": {
+        "alignment": "left"
+    },
+
+    "horizontalRule": null,
+    "callouts": null,
+
+    "headerFooter": {
+        "header": {
+            "logo": { "tokenRef": "logo.full" },
+            "logoAlignment": "right",
+            "text": { "tokenRef": "company.name" },
+            "textAlignment": "left",
+            "companyAddress": { "tokenRef": "company.address" },
+            "companyPhone": { "tokenRef": "company.phone" },
+            "companyEmail": { "tokenRef": "company.email" },
+            "companyWebsite": { "tokenRef": "company.website" },
+            "companyInfoAlignment": "left",
+            "companyInfoFontSize": 8,
+            "companyInfoFontSizeUnit": "pt",
+            "companyInfoColor": { "tokenRef": "color.text.subtle" },
+            "dividerLine": {
+                "enabled": true,
+                "color": { "tokenRef": "color.brand.primary" },
+                "width": 1,
+                "widthUnit": "pt"
+            }
+        },
+        "footer": {
+            "pageNumbers": false,
+            "companyTagline": { "tokenRef": "company.tagline" },
+            "taglineAlignment": "center",
+            "taglineFontSize": 7,
+            "taglineFontSizeUnit": "pt",
+            "taglineColor": { "tokenRef": "color.text.subtle" },
+            "dividerLine": {
+                "enabled": true,
+                "color": { "tokenRef": "color.border.default" },
+                "width": 0.5,
+                "widthUnit": "pt"
+            }
+        }
+    },
+
+    "renderOptions": {
+        "letterheadMode": true,
+        "subtitleDetection": false
+    },
+
+    "pageBreaks": {
+        "headingChainAwareness": false
+    }
+}
