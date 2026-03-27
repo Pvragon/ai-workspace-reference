@@ -1,0 +1,157 @@
+{
+    "$schema": "type-template-v2",
+    "$extends": "_base-slides",
+    "templateType": "slides-informational",
+    "templateVersion": "2.0.0",
+    "description": "Informational presentation slides — content-focused, higher information density, designed to be READ not presented. Emailed decks, internal reviews, reference material. Extends _base-slides with smaller fonts, denser layouts, and read-oriented slide types.",
+
+    "slideTypes": {
+        "sectionDivider": {
+            "subtitle": {
+                "fontSize": 14,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.subtle" },
+                "alignment": "center",
+                "marginTop": 8,
+                "marginTopUnit": "pt"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.iconOnDark" },
+                "position": "top-right",
+                "opacity": 0.4
+            }
+        },
+
+        "content": {
+            "body": {
+                "fontSize": 13
+            },
+            "bullets": {
+                "fontSize": 13,
+                "spacing": 6
+            }
+        },
+
+        "twoColumn": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 50, "bottom": 40, "left": 50, "right": 50, "unit": "pt" },
+            "heading": {
+                "fontSize": 22,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "marginBottom": 16,
+                "marginBottomUnit": "pt",
+                "spanColumns": true
+            },
+            "columnGap": 30,
+            "columnGapUnit": "pt",
+            "columnDivider": {
+                "enabled": true,
+                "color": { "tokenRef": "color.background.accent" },
+                "width": 1,
+                "widthUnit": "pt"
+            },
+            "body": {
+                "fontSize": 12,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.default" },
+                "lineSpacing": 130,
+                "lineSpacingUnit": "percentage"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.35
+            }
+        },
+
+        "table": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 50, "bottom": 40, "left": 40, "right": 40, "unit": "pt" },
+            "heading": {
+                "fontSize": 22,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "marginBottom": 12,
+                "marginBottomUnit": "pt"
+            },
+            "tableStyle": {
+                "headerBackground": { "tokenRef": "color.brand.primary" },
+                "headerFontColor": { "tokenRef": "color.text.onPrimary" },
+                "headerBold": true,
+                "headerFontSize": 11,
+                "headerFontSizeUnit": "pt",
+                "bodyFontSize": 11,
+                "bodyFontSizeUnit": "pt",
+                "bodyFontColor": { "tokenRef": "color.text.default" },
+                "alternateRowBackground": { "tokenRef": "color.background.subtle" },
+                "borders": {
+                    "color": { "tokenRef": "color.border.default" },
+                    "width": 1,
+                    "widthUnit": "pt"
+                },
+                "cellPadding": { "top": 6, "bottom": 6, "left": 8, "right": 8, "unit": "pt" }
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.35
+            }
+        },
+
+        "imageText": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 50, "bottom": 40, "left": 50, "right": 50, "unit": "pt" },
+            "imagePosition": "left",
+            "imageWidthPercent": 45,
+            "textWidthPercent": 50,
+            "gap": 24,
+            "gapUnit": "pt",
+            "heading": {
+                "fontSize": 20,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "marginBottom": 8,
+                "marginBottomUnit": "pt"
+            },
+            "body": {
+                "fontSize": 12,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.default" },
+                "lineSpacing": 140,
+                "lineSpacingUnit": "percentage"
+            },
+            "imageBorder": {
+                "enabled": true,
+                "color": { "tokenRef": "color.border.default" },
+                "width": 1,
+                "widthUnit": "pt",
+                "radius": 4,
+                "radiusUnit": "pt"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.35
+            }
+        }
+    },
+
+    "slideFooter": {
+        "dividerLine": {
+            "enabled": true,
+            "color": { "tokenRef": "color.border.default" },
+            "width": 0.5,
+            "widthUnit": "pt"
+        }
+    }
+}

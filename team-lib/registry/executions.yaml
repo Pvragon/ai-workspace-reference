@@ -1,0 +1,40 @@
+# summary: Team executions registry. Lists shared execution scripts with paths and capabilities.
+# Executions Registry (pvragon team)
+# ------------------------------------------
+# This manifest catalogs available team execution scripts.
+# Note: workspace.yaml also references executions with run() signatures for chaining.
+#
+# Schema:
+#   executions:
+#     <name>:
+#       path: <string>           # Relative path to script
+#       description: <string>    # Brief description
+#       tags: [<string>, ...]    # Searchable tags
+#       version: <string>        # Semantic version
+#
+# ------------------------------------------
+
+executions:
+  publish_github_release:
+    path: "executions/publish_github_release.py"
+    description: "Creates an annotated git tag and publishes a GitHub release with release notes."
+    tags: [release, github, git]
+    version: "1.0.0"
+
+  scaffold_project_docs:
+    path: "executions/scaffold_project_docs.py"
+    description: "Bootstraps the standard docs/ structure for a new project in projects/."
+    tags: [scaffolding, project-setup, docs]
+    version: "1.0.0"
+
+  list_shared_drives:
+    path: "executions/list_shared_drives.py"
+    description: "Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials from the Google Workspace MCP server. Used by the update-drive-index skill."
+    tags: [google-drive, listing, oauth]
+    version: "1.0.0"
+
+  setup_pane_colors:
+    path: "executions/setup_pane_colors.py"
+    description: "Installs the Claude Code tmux pane-color notification system. Pane background changes while Claude is working, reverts when waiting for input."
+    tags: [tmux, claude-code, hooks, notifications]
+    version: "1.0.0"

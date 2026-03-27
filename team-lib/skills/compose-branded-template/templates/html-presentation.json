@@ -1,0 +1,534 @@
+{
+    "$schema": "type-template-v2",
+    "templateType": "html-presentation",
+    "templateVersion": "2.0.0",
+    "description": "Self-contained HTML slideshow — dark glassmorphism theme with animated wave background, component library, keyboard navigation, and progress bar. Standalone template (no base — unique format).",
+
+    "htmlSettings": {
+        "selfContained": true,
+        "darkMode": true,
+        "viewport": {
+            "width": "device-width",
+            "initialScale": 1
+        },
+        "externalDependencies": {
+            "fonts": {
+                "provider": "google-fonts",
+                "family": { "tokenRef": "typography.font.primary" },
+                "weights": [300, 400, 600, 700, 900],
+                "fallback": { "tokenRef": "typography.font.fallback" }
+            },
+            "icons": {
+                "provider": "font-awesome",
+                "version": "6.4",
+                "cdnUrl": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+            }
+        }
+    },
+
+    "cssVariables": {
+        "accentPrimary": { "tokenRef": "color.brand.primary" },
+        "accentSecondary": { "tokenRef": "color.brand.accent" },
+        "textMain": { "tokenRef": "color.text.onDark" },
+        "textMuted": { "tokenRef": "color.background.accent" },
+        "textSubtle": { "tokenRef": "color.text.subtle" },
+        "bgBody": { "tokenRef": "color.text.default" },
+        "bgCard": { "tokenRef": "color.text.default" },
+        "white": { "tokenRef": "color.background.default" }
+    },
+
+    "background": {
+        "bodyColor": { "tokenRef": "color.text.default" },
+        "bodyColorAlpha": 1.0,
+        "nearBlack": "080e10",
+        "_nearBlackNote": "Fixed dark theme constant — not brand-derived, used as the deepest background layer behind wave canvas",
+        "waveCanvas": {
+            "enabled": true,
+            "fullViewport": true,
+            "layers": [
+                {
+                    "name": "deep-primary",
+                    "yPosition": 0.72,
+                    "amplitude": 30,
+                    "wavelength": 400,
+                    "speed": 0.4,
+                    "color": { "tokenRef": "color.brand.primary" },
+                    "alpha": 0.12
+                },
+                {
+                    "name": "mid-primary",
+                    "yPosition": 0.78,
+                    "amplitude": 22,
+                    "wavelength": 320,
+                    "speed": 0.6,
+                    "color": { "tokenRef": "color.brand.primary" },
+                    "alpha": 0.08
+                },
+                {
+                    "name": "accent-hint",
+                    "yPosition": 0.85,
+                    "amplitude": 18,
+                    "wavelength": 500,
+                    "speed": 0.35,
+                    "color": { "tokenRef": "color.brand.accent" },
+                    "alpha": 0.04
+                },
+                {
+                    "name": "foreground",
+                    "yPosition": 0.88,
+                    "amplitude": 15,
+                    "wavelength": 280,
+                    "speed": 0.8,
+                    "color": { "tokenRef": "color.brand.primary" },
+                    "alpha": 0.06
+                },
+                {
+                    "name": "top-sky",
+                    "yPosition": 0.18,
+                    "amplitude": 20,
+                    "wavelength": 500,
+                    "speed": 0.25,
+                    "color": { "tokenRef": "color.brand.primary" },
+                    "alpha": 0.08
+                }
+            ]
+        }
+    },
+
+    "slideCard": {
+        "widthPercent": 92,
+        "maxWidth": 1280,
+        "maxWidthUnit": "px",
+        "heightVh": 82,
+        "borderRadius": 24,
+        "borderRadiusUnit": "px",
+        "background": {
+            "type": "linear-gradient",
+            "angle": 160,
+            "stops": [
+                { "color": { "tokenRef": "color.text.default" }, "alpha": 0.97, "position": 0 },
+                { "color": { "tokenRef": "color.text.default" }, "alpha": 0.99, "position": 100 }
+            ]
+        },
+        "border": {
+            "color": { "tokenRef": "color.background.subtle" },
+            "alpha": 0.08,
+            "width": 1,
+            "widthUnit": "px"
+        },
+        "shadow": {
+            "outer": "0 25px 60px -12px rgba(0,0,0,0.7)",
+            "inset": "inset 0 1px 0 rgba(248,250,252,0.05)"
+        },
+        "backdropBlur": 24,
+        "backdropBlurUnit": "px",
+        "interiorGlows": [
+            {
+                "name": "primary-glow",
+                "pseudo": "::before",
+                "color": { "tokenRef": "color.brand.primary" },
+                "alpha": 0.35,
+                "position": "top-right",
+                "animation": "drift-a",
+                "duration": 14,
+                "durationUnit": "s"
+            },
+            {
+                "name": "accent-glow",
+                "pseudo": "::after",
+                "color": { "tokenRef": "color.brand.accent" },
+                "alpha": 0.07,
+                "position": "bottom-left",
+                "animation": "drift-b",
+                "duration": 18,
+                "durationUnit": "s"
+            },
+            {
+                "name": "secondary-primary-glow",
+                "class": "interior-glow",
+                "color": { "tokenRef": "color.brand.primary" },
+                "alpha": 0.2,
+                "position": "center",
+                "animation": "drift-c",
+                "duration": 20,
+                "durationUnit": "s"
+            }
+        ]
+    },
+
+    "typography": {
+        "h1Title": {
+            "fontSize": 3.2,
+            "fontSizeUnit": "rem",
+            "fontWeight": 900,
+            "color": { "tokenRef": "color.text.onDark" }
+        },
+        "h1TitleAccent": {
+            "fontSize": 3.2,
+            "fontSizeUnit": "rem",
+            "fontWeight": 900,
+            "color": { "tokenRef": "color.brand.accent" }
+        },
+        "h2SlideHeading": {
+            "fontSize": 2.4,
+            "fontSizeUnit": "rem",
+            "fontWeight": 700,
+            "color": { "tokenRef": "color.text.onDark" }
+        },
+        "h3Subheading": {
+            "fontSize": 1.3,
+            "fontSizeUnit": "rem",
+            "fontWeight": 600,
+            "color": { "tokenRef": "color.text.subtle" }
+        },
+        "body": {
+            "fontSize": 1.25,
+            "fontSizeUnit": "rem",
+            "fontWeight": 400,
+            "color": { "tokenRef": "color.background.accent" }
+        },
+        "subtitle": {
+            "fontSize": 1.4,
+            "fontSizeUnit": "rem",
+            "fontWeight": 300,
+            "color": { "tokenRef": "color.text.subtle" }
+        },
+        "highlight": {
+            "fontWeight": 700,
+            "color": { "tokenRef": "color.brand.accent" }
+        },
+        "highlightPrimary": {
+            "fontWeight": 700,
+            "color": { "tokenRef": "color.brand.primary" },
+            "backgroundPill": {
+                "enabled": true,
+                "color": { "tokenRef": "color.brand.primary" },
+                "alpha": 0.15,
+                "paddingH": 6,
+                "paddingV": 2,
+                "borderRadius": 4,
+                "unit": "px"
+            }
+        }
+    },
+
+    "logoPlacement": {
+        "titleSlide": {
+            "ref": { "tokenRef": "logo.fullOnDark" },
+            "heightPx": 36,
+            "position": "centered-above-h1",
+            "marginBottom": 20,
+            "marginBottomUnit": "px"
+        },
+        "closingSlide": {
+            "ref": { "tokenRef": "logo.fullOnDark" },
+            "heightPx": 36,
+            "position": "centered-above-h2",
+            "marginBottom": 20,
+            "marginBottomUnit": "px"
+        },
+        "contentSlides": {
+            "ref": { "tokenRef": "logo.iconOnDark" },
+            "heightPx": 46,
+            "position": "top-right-corner",
+            "opacity": 0.45,
+            "hideOnLogoSlides": true
+        }
+    },
+
+    "components": {
+        "bulletList": {
+            "selector": "ul.bullet-list",
+            "markerColor": { "tokenRef": "color.brand.accent" },
+            "markerStyle": "filled-circle",
+            "markerSize": 6,
+            "markerSizeUnit": "px",
+            "textAlign": "left",
+            "strongLeadPattern": true
+        },
+
+        "statCallout": {
+            "selector": "div.stat-callout",
+            "background": { "tokenRef": "color.brand.accent" },
+            "backgroundAlpha": 0.08,
+            "border": {
+                "color": { "tokenRef": "color.brand.accent" },
+                "alpha": 0.3,
+                "width": 1,
+                "widthUnit": "px"
+            },
+            "borderRadius": 12,
+            "borderRadiusUnit": "px",
+            "padding": 16,
+            "paddingUnit": "px",
+            "statNumber": {
+                "fontSize": 1.8,
+                "fontSizeUnit": "rem",
+                "fontWeight": 900,
+                "color": { "tokenRef": "color.brand.accent" }
+            }
+        },
+
+        "diagramRow": {
+            "selector": "div.diagram-container",
+            "layout": "horizontal-row",
+            "nodeWidth": 200,
+            "nodeWidthUnit": "px",
+            "maxNodesPerRow": 3,
+            "mobileLayout": "column",
+            "node": {
+                "background": { "tokenRef": "color.brand.primary" },
+                "backgroundAlpha": 0.1,
+                "border": {
+                    "color": { "tokenRef": "color.brand.primary" },
+                    "alpha": 0.2,
+                    "width": 1,
+                    "widthUnit": "px"
+                },
+                "borderRadius": 12,
+                "borderRadiusUnit": "px",
+                "padding": 16,
+                "paddingUnit": "px",
+                "variants": {
+                    "node-primary": { "iconColor": { "tokenRef": "color.brand.primary" }, "hoverGlow": { "tokenRef": "color.brand.primary" } },
+                    "node-accent": { "iconColor": { "tokenRef": "color.brand.accent" }, "hoverGlow": { "tokenRef": "color.brand.accent" } },
+                    "node-white": { "iconColor": { "tokenRef": "color.background.default" }, "hoverGlow": { "tokenRef": "color.background.default" } }
+                }
+            },
+            "arrow": {
+                "color": { "tokenRef": "color.brand.accent" },
+                "animated": true,
+                "character": "\u2192",
+                "fontSize": 1.5,
+                "fontSizeUnit": "rem"
+            }
+        },
+
+        "featureList": {
+            "selector": "div.memory-list",
+            "item": {
+                "selector": "div.memory-item",
+                "layout": "icon-left-text-right",
+                "iconColor": { "tokenRef": "color.brand.accent" },
+                "iconSize": 1.2,
+                "iconSizeUnit": "rem",
+                "textFont": { "tokenRef": "typography.font.primary" },
+                "strongName": true
+            }
+        },
+
+        "quoteBlock": {
+            "selector": "div.quote-block",
+            "borderLeft": {
+                "color": { "tokenRef": "color.brand.accent" },
+                "width": 3,
+                "widthUnit": "px"
+            },
+            "textStyle": "italic",
+            "textAlign": "left",
+            "maxWidth": 750,
+            "maxWidthUnit": "px",
+            "textColor": { "tokenRef": "color.background.accent" }
+        },
+
+        "equationVisual": {
+            "selector": "div.equation",
+            "layout": "horizontal-formula",
+            "partBackground": { "tokenRef": "color.brand.primary" },
+            "partBackgroundAlpha": 0.1,
+            "partBorder": { "tokenRef": "color.brand.primary" },
+            "partBorderAlpha": 0.2,
+            "operatorColor": { "tokenRef": "color.text.subtle" },
+            "operatorFontSize": 1.5,
+            "operatorFontSizeUnit": "rem",
+            "resultBackground": { "tokenRef": "color.brand.accent" },
+            "resultBackgroundAlpha": 0.1,
+            "resultBorder": { "tokenRef": "color.brand.accent" },
+            "resultBorderAlpha": 0.3,
+            "resultColor": { "tokenRef": "color.brand.accent" },
+            "borderRadius": 10,
+            "borderRadiusUnit": "px",
+            "padding": 14,
+            "paddingUnit": "px",
+            "mobileLayout": "wrap"
+        },
+
+        "gridCards": {
+            "selector": "div.workspace-grid",
+            "columns": 2,
+            "gap": 1.2,
+            "gapUnit": "rem",
+            "mobileColumns": 1,
+            "card": {
+                "selector": "div.workspace-card",
+                "borderRadius": 12,
+                "borderRadiusUnit": "px",
+                "padding": 16,
+                "paddingUnit": "px",
+                "background": { "tokenRef": "color.brand.primary" },
+                "backgroundAlpha": 0.08,
+                "border": {
+                    "color": { "tokenRef": "color.brand.primary" },
+                    "alpha": 0.15,
+                    "width": 1,
+                    "widthUnit": "px"
+                },
+                "variants": {
+                    "card-primary": { "accentColor": { "tokenRef": "color.brand.primary" } },
+                    "card-accent": { "accentColor": { "tokenRef": "color.brand.accent" } },
+                    "card-success": { "accentColor": { "tokenRef": "color.status.successDark", "fallback": "color.brand.primary" } },
+                    "card-subtle": { "accentColor": { "tokenRef": "color.text.subtle" } }
+                },
+                "iconSize": 1.5,
+                "iconSizeUnit": "rem",
+                "headingFontSize": 1.1,
+                "headingFontSizeUnit": "rem",
+                "bodyFontSize": 0.95,
+                "bodyFontSizeUnit": "rem"
+            }
+        },
+
+        "ctaButton": {
+            "selector": "a.cta-btn",
+            "background": {
+                "type": "gradient",
+                "from": { "tokenRef": "color.brand.accent" },
+                "to": { "tokenRef": "color.brand.accent" },
+                "toAlphaShift": -0.15,
+                "direction": "135deg"
+            },
+            "textColor": { "tokenRef": "color.background.default" },
+            "fontWeight": 700,
+            "fontSize": 1.1,
+            "fontSizeUnit": "rem",
+            "borderRadius": 30,
+            "borderRadiusUnit": "px",
+            "padding": { "top": 12, "bottom": 12, "left": 32, "right": 32, "unit": "px" },
+            "hoverScale": 1.05,
+            "hoverGlow": {
+                "color": { "tokenRef": "color.brand.accent" },
+                "alpha": 0.4,
+                "blur": 20,
+                "blurUnit": "px"
+            },
+            "container": "div.cta-container",
+            "subtext": {
+                "selector": "p.cta-subtext",
+                "fontSize": 0.9,
+                "fontSizeUnit": "rem",
+                "color": { "tokenRef": "color.text.subtle" }
+            }
+        },
+
+        "flowVisual": {
+            "selector": "div.flow-visual",
+            "layout": "vertical",
+            "boxBackground": { "tokenRef": "color.brand.primary" },
+            "boxBackgroundAlpha": 0.1,
+            "boxBorder": { "tokenRef": "color.brand.primary" },
+            "boxBorderAlpha": 0.2,
+            "boxBorderRadius": 10,
+            "boxBorderRadiusUnit": "px",
+            "boxPadding": 14,
+            "boxPaddingUnit": "px",
+            "arrowColor": { "tokenRef": "color.brand.accent" },
+            "arrowCharacter": "\u2193",
+            "arrowFontSize": 1.5,
+            "arrowFontSizeUnit": "rem"
+        }
+    },
+
+    "navigation": {
+        "keyboard": {
+            "enabled": true,
+            "nextKeys": ["ArrowRight", " "],
+            "prevKeys": ["ArrowLeft"]
+        },
+        "buttons": {
+            "enabled": true,
+            "position": "bottom-of-card",
+            "style": "pill",
+            "backLabel": "Back",
+            "nextLabel": "Next",
+            "finalLabel": "Done",
+            "finalIcon": "fa-check",
+            "buttonBackground": { "tokenRef": "color.brand.primary" },
+            "buttonBackgroundAlpha": 0.15,
+            "buttonBorder": { "tokenRef": "color.brand.primary" },
+            "buttonBorderAlpha": 0.2,
+            "buttonColor": { "tokenRef": "color.text.onDark" },
+            "buttonHoverBackground": { "tokenRef": "color.brand.primary" },
+            "buttonHoverBackgroundAlpha": 0.3,
+            "borderRadius": 20,
+            "borderRadiusUnit": "px",
+            "padding": { "top": 8, "bottom": 8, "left": 20, "right": 20, "unit": "px" }
+        },
+        "progressBar": {
+            "enabled": true,
+            "position": "bottom-of-card",
+            "height": 4,
+            "heightUnit": "px",
+            "gradient": {
+                "from": { "tokenRef": "color.brand.primary" },
+                "to": { "tokenRef": "color.brand.accent" }
+            }
+        },
+        "slideCounter": {
+            "enabled": true,
+            "position": "top-left",
+            "format": "{current} / {total}",
+            "fontSize": 0.85,
+            "fontSizeUnit": "rem",
+            "color": { "tokenRef": "color.text.subtle" },
+            "opacity": 0.6
+        }
+    },
+
+    "animations": {
+        "driftA": {
+            "name": "drift-a",
+            "duration": 14,
+            "durationUnit": "s",
+            "timing": "ease-in-out",
+            "iterationCount": "infinite",
+            "alternateDirection": true
+        },
+        "driftB": {
+            "name": "drift-b",
+            "duration": 18,
+            "durationUnit": "s",
+            "timing": "ease-in-out",
+            "iterationCount": "infinite",
+            "alternateDirection": true
+        },
+        "driftC": {
+            "name": "drift-c",
+            "duration": 20,
+            "durationUnit": "s",
+            "timing": "ease-in-out",
+            "iterationCount": "infinite",
+            "alternateDirection": true
+        },
+        "slideTransition": {
+            "type": "fade",
+            "duration": 400,
+            "durationUnit": "ms",
+            "timing": "ease"
+        }
+    },
+
+    "embeddedAssets": {
+        "logoDataUri": {
+            "placeholder": "__LOGO_DATA_URI__",
+            "sourceRef": { "tokenRef": "logo.fullOnDark" },
+            "encoding": "base64",
+            "mimeType": "image/png"
+        },
+        "faviconDataUri": {
+            "placeholder": "__FAVICON_DATA_URI__",
+            "sourceRef": { "tokenRef": "logo.iconOnDark" },
+            "encoding": "base64",
+            "mimeType": "image/png"
+        }
+    }
+}

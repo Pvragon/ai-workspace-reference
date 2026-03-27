@@ -1,0 +1,142 @@
+{
+    "$schema": "type-template-v2",
+    "$extends": "_base-doc",
+    "templateType": "doc-report-cover",
+    "templateVersion": "2.0.0",
+    "description": "Branded report with a dedicated cover page — large centered title, subtitle, logo, date, author info. Content starts on page 2. Extends _base-doc with coverPage, titleBlock, and TOC.",
+
+    "coverPage": {
+        "enabled": true,
+        "pageBreakAfter": true,
+        "layout": "centered",
+        "logo": {
+            "ref": { "tokenRef": "logo.full" },
+            "alignment": "center",
+            "marginTop": 120,
+            "marginTopUnit": "pt",
+            "scaleFactor": 2.0
+        },
+        "title": {
+            "fontSize": 32,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.primary" },
+            "bold": true,
+            "alignment": "center",
+            "marginTop": 60,
+            "marginTopUnit": "pt"
+        },
+        "subtitle": {
+            "fontSize": 18,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.accent" },
+            "bold": false,
+            "alignment": "center",
+            "marginTop": 12,
+            "marginTopUnit": "pt"
+        },
+        "accentBar": {
+            "enabled": true,
+            "color": { "tokenRef": "color.brand.accent" },
+            "width": 80,
+            "height": 3,
+            "widthUnit": "pt",
+            "heightUnit": "pt",
+            "alignment": "center",
+            "marginTop": 24,
+            "marginTopUnit": "pt"
+        },
+        "date": {
+            "fontSize": 12,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.subtle" },
+            "italic": true,
+            "alignment": "center",
+            "marginTop": 30,
+            "marginTopUnit": "pt"
+        },
+        "author": {
+            "fontSize": 11,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "alignment": "center",
+            "marginTop": 8,
+            "marginTopUnit": "pt",
+            "labelColor": { "tokenRef": "color.brand.accent" },
+            "labelBold": true
+        },
+        "companyInfo": {
+            "name": { "tokenRef": "company.name" },
+            "website": { "tokenRef": "company.website" },
+            "fontSize": 9,
+            "fontSizeUnit": "pt",
+            "color": { "tokenRef": "color.text.subtle" },
+            "alignment": "center",
+            "position": "bottom",
+            "marginBottom": 60,
+            "marginBottomUnit": "pt"
+        }
+    },
+
+    "titleBlock": {
+        "title": {
+            "namedStyle": "HEADING_1",
+            "fontSize": 26,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.primary" },
+            "bold": true,
+            "spaceBefore": 0,
+            "spaceAfter": 6,
+            "spaceUnit": "pt",
+            "keepWithNext": false
+        },
+        "subtitle": {
+            "namedStyle": "SUBTITLE",
+            "fontSize": 14,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.accent" },
+            "bold": true,
+            "spaceBefore": 0,
+            "spaceAfter": 6,
+            "spaceUnit": "pt"
+        },
+        "metadataLabel": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.accent" },
+            "bold": true
+        },
+        "metadataValue": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "bold": false
+        }
+    },
+
+    "headerFooter": {
+        "header": {
+            "showOnFirstPage": false,
+            "showOnCoverPage": false
+        },
+        "footer": {
+            "showOnCoverPage": false,
+            "startNumbering": 1
+        }
+    },
+
+    "renderOptions": {
+        "subtitleDetection": true
+    },
+
+    "tocSupport": {
+        "enabled": true
+    }
+}

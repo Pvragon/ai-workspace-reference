@@ -1,0 +1,670 @@
+# summary: Team skills registry. Lists available shared skills with paths, capabilities, and dependencies.
+# Skills Registry (pvragon team)
+# ------------------------------------------
+# This manifest catalogs available team agent skills.
+#
+# Schema:
+#   skills:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to skill definition
+#       capabilities: [<string>, ...]  # What this skill enables
+#       dependencies: [<string>, ...]  # Required skills or tools
+#       version: <string>        # Semantic version
+#       source: <string>         # "internal" (default, omitted) or "external"
+#       provider: <string>       # For external skills: origin repo/author
+#       status: <string>         # "active" (default, omitted) or "deprecated"
+#
+# Search hierarchy (Operating Principle #1):
+#   1. Internal skills (source: internal / no source field)
+#   2. External skills (source: external)
+#   When multiple skills match a query, prefer internal over external.
+#
+# ------------------------------------------
+
+skills:
+
+  # ============================================================
+  # INTERNAL SKILLS (preferred in search hierarchy)
+  # ============================================================
+
+  - name: create-directive
+    description: Guidelines for creating effective workflow directives that orchestrate without redundancy
+    path: skills/create-directive/SKILL.md
+    capabilities: [directive-design, workflow-orchestration, best-practices]
+    dependencies: []
+    tags: [directive, documentation, workflow, templates, best-practices]
+    version: "1.1.0"
+
+  - name: generate-release-notes
+    description: Automate team release notes by analyzing git history and changelogs.
+    path: skills/_workspace-developer/generate-release-notes/SKILL.md
+    capabilities: [git-analysis, changelog-generation, smart-history]
+    dependencies: [git, python3]
+    tags: [release, changelog, git, documentation, automation]
+    version: "1.0.0"
+
+  - name: markdown-to-branded-doc
+    description: Convert markdown files to branded documents — .docx files or Google Docs via gws CLI
+    path: skills/markdown-to-branded-doc/SKILL.md
+    capabilities: [markdown-conversion, docx-generation, gdoc-generation, branding, document-formatting]
+    dependencies: [node, npm, marked, docx, gws, poppler-utils]
+    tags: [docx, gdoc, conversion, branding, export, formatting, google-docs, gws-cli]
+    version: "4.0.0"
+
+  - name: compose-branded-template
+    description: "Composes brand tokens with document type templates to produce fully resolved branded templates. Parses brand-guidelines.md into W3C-aligned brand-tokens.json, merges base+override templates, resolves all tokenRef dot-paths. Optionally creates Google Doc starter templates via clasp."
+    path: skills/compose-branded-template/SKILL.md
+    capabilities: [brand-composition, design-tokens, template-generation, document-types, starter-templates]
+    dependencies: [node, "@google/clasp"]
+    tags: [brand, tokens, templates, composition, w3c, documents, slides, presentations, clasp, apps-script]
+    version: "2.1.0"
+
+  - name: create-brand-guidelines
+    description: "Create or update a brand-guidelines.md file for any brand. Ingests source materials, extracts tokens, validates coverage, walks user through gap-filling. Generates brand-tokens.json via parse-brand-guidelines.js."
+    path: skills/create-brand-guidelines/SKILL.md
+    capabilities: [branding, design-tokens, brand-guidelines, content-pipeline, brand-onboarding]
+    dependencies: [node]
+    tags: [brand, tokens, guidelines, onboarding, w3c, content-pipeline]
+    version: "1.2.0"
+
+  - name: skill-autoresearch
+    description: "Meta-skill that stress-tests and improves other skills through an automated loop: executor agents follow the skill procedure, score confusion quantitatively, fix issues, repeat until convergence. Based on Karpathy's autoresearch pattern."
+    path: skills/skill-autoresearch/SKILL.md
+    capabilities: [skill-testing, quality-improvement, autoresearch, self-improvement]
+    dependencies: []
+    tags: [meta-skill, quality, testing, autoresearch, improvement-loop]
+    version: "1.0.0"
+
+  - name: scaffold-project-docs
+    description: Bootstrap the standard docs/ structure for a new project in projects/
+    path: skills/scaffold-project-docs/SKILL.md
+    capabilities: [project-scaffolding, docs-structure, template-generation]
+    dependencies: [python3]
+    tags: [scaffolding, project-setup, docs, templates]
+    version: "1.0.0"
+
+  - name: send-pulse
+    description: "Send an on-demand manual pulse to the ClickUp Pulse channel. Standardized format: JH Manual Pulse HH:MM PM: <concise summary>. Can also register thread-to-task mappings for automated activity posting."
+    path: skills/send-pulse/SKILL.md
+    capabilities: [messaging, clickup, pulse, task-registration]
+    dependencies: []
+    tags: [pulse, clickup, activity-tracking, manual-update]
+    version: "2.1.0"
+
+  - name: check-for-workspace-updates
+    description: "Compares local workspace files (AGENTS.md, etc.) against team-lib canonical templates and guides upgrades."
+    path: skills/check-for-workspace-updates/SKILL.md
+    capabilities: [workspace-maintenance, template-comparison, upgrade-guidance]
+    dependencies: []
+    tags: [workspace, updates, templates, maintenance]
+    version: "1.0.0"
+
+  - name: update-drive-index
+    description: "Refreshes the Google Drive index by enumerating all Shared Drives and root-level contents via the Google Drive API."
+    path: skills/update-drive-index/SKILL.md
+    capabilities: [google-drive, index-refresh, api-enumeration]
+    dependencies: [google-drive-mcp]
+    tags: [google-drive, index, automation]
+    version: "1.1.0"
+
+  # clickup-cli moved to integrations/ (2026-03-20)
+
+  - name: session-debrief
+    description: "End-of-session procedure: captures learnings to memory topic files, verifies registry consistency, updates current-state.md, and syncs improvements to team-lib."
+    path: skills/session-debrief/SKILL.md
+    capabilities: [memory-management, registry-maintenance, state-tracking, team-sync]
+    dependencies: []
+    tags: [session, debrief, memory, maintenance]
+    version: "1.1.0"
+
+  # ============================================================
+  # EXTERNAL SKILLS (lower priority in search hierarchy)
+  # ============================================================
+  # These are third-party skills from submodules in skills/_external/.
+  # When an internal skill and external skill both match a query,
+  # ALWAYS prefer the internal skill.
+
+  # --- Provider: Anthropic (skills/_external/anthropics/) ---
+
+  - name: anthropic-brand-guidelines
+    description: "Applies Anthropic's official brand colors (dark #141413, orange #d97757) and typography (Poppins/Lora) to artifacts. NOT for creating brand guidelines — use create-brand-guidelines for that."
+    path: skills/_external/anthropics/skills/brand-guidelines/SKILL.md
+    capabilities: [branding, visual-identity, anthropic-brand]
+    dependencies: [python-pptx]
+    tags: [brand, anthropic, styling, pptx]
+    source: external
+    provider: anthropic
+
+  - name: canvas-design
+    description: "Design and create visual canvas-based artifacts with brand styling."
+    path: skills/_external/anthropics/skills/canvas-design/SKILL.md
+    capabilities: [design, canvas, visual-artifacts]
+    dependencies: []
+    tags: [design, canvas, visual]
+    source: external
+    provider: anthropic
+
+  - name: algorithmic-art
+    description: "Generate algorithmic art using JavaScript templates."
+    path: skills/_external/anthropics/skills/algorithmic-art/SKILL.md
+    capabilities: [generative-art, javascript, visualization]
+    dependencies: [node]
+    tags: [art, generative, javascript, visualization]
+    source: external
+    provider: anthropic
+
+  - name: doc-coauthoring
+    description: "Collaborative document coauthoring with AI assistance."
+    path: skills/_external/anthropics/skills/doc-coauthoring/SKILL.md
+    capabilities: [document-editing, collaboration, writing]
+    dependencies: []
+    tags: [documents, writing, collaboration]
+    source: external
+    provider: anthropic
+
+  - name: anthropic-docx
+    description: "Generate .docx files using Anthropic's approach."
+    path: skills/_external/anthropics/skills/docx/SKILL.md
+    capabilities: [docx-generation, document-formatting]
+    dependencies: [python-docx]
+    tags: [docx, documents, export]
+    source: external
+    provider: anthropic
+
+  - name: mcp-builder
+    description: "Build MCP (Model Context Protocol) servers and tools."
+    path: skills/_external/anthropics/skills/mcp-builder/SKILL.md
+    capabilities: [mcp, server-building, tool-creation]
+    dependencies: [node]
+    tags: [mcp, development, tools, servers]
+    source: external
+    provider: anthropic
+
+  - name: internal-comms
+    description: "Draft internal communications (memos, announcements, updates)."
+    path: skills/_external/anthropics/skills/internal-comms/SKILL.md
+    capabilities: [writing, internal-communications, memos]
+    dependencies: []
+    tags: [communications, writing, memos]
+    source: external
+    provider: anthropic
+
+  - name: frontend-design
+    description: "Design and build frontend interfaces with modern web technologies."
+    path: skills/_external/anthropics/skills/frontend-design/SKILL.md
+    capabilities: [frontend, web-design, ui]
+    dependencies: [node]
+    tags: [frontend, design, web, ui]
+    source: external
+    provider: anthropic
+
+  - name: anthropic-pdf
+    description: "Generate PDF documents."
+    path: skills/_external/anthropics/skills/pdf/SKILL.md
+    capabilities: [pdf-generation, document-formatting]
+    dependencies: []
+    tags: [pdf, documents, export]
+    source: external
+    provider: anthropic
+
+  - name: anthropic-pptx
+    description: "Generate PowerPoint presentations."
+    path: skills/_external/anthropics/skills/pptx/SKILL.md
+    capabilities: [pptx-generation, presentations, slides]
+    dependencies: [python-pptx]
+    tags: [pptx, slides, presentations, export]
+    source: external
+    provider: anthropic
+
+  - name: web-artifacts-builder
+    description: "Build standalone web artifacts (HTML/CSS/JS)."
+    path: skills/_external/anthropics/skills/web-artifacts-builder/SKILL.md
+    capabilities: [web-development, html, artifacts]
+    dependencies: [node]
+    tags: [web, html, artifacts, frontend]
+    source: external
+    provider: anthropic
+
+  - name: webapp-testing
+    description: "Playwright-based testing toolkit for local web applications."
+    path: skills/_external/anthropics/skills/webapp-testing/SKILL.md
+    capabilities: [testing, playwright, browser-automation, screenshots]
+    dependencies: [playwright, python3]
+    tags: [testing, playwright, browser, automation, screenshots]
+    source: external
+    provider: anthropic
+
+  - name: skill-creator
+    description: "Create new skills with proper structure and documentation."
+    path: skills/_external/anthropics/skills/skill-creator/SKILL.md
+    capabilities: [skill-creation, scaffolding, templates]
+    dependencies: []
+    tags: [skills, scaffolding, meta]
+    source: external
+    provider: anthropic
+
+  - name: theme-factory
+    description: "Create and apply visual themes to artifacts."
+    path: skills/_external/anthropics/skills/theme-factory/SKILL.md
+    capabilities: [theming, visual-design, styling]
+    dependencies: []
+    tags: [themes, design, styling]
+    source: external
+    provider: anthropic
+
+  - name: slack-gif-creator
+    description: "Create animated GIFs for Slack messages."
+    path: skills/_external/anthropics/skills/slack-gif-creator/SKILL.md
+    capabilities: [gif-creation, slack, animation]
+    dependencies: []
+    tags: [slack, gif, animation, social]
+    source: external
+    provider: anthropic
+
+  - name: anthropic-xlsx
+    description: "Generate Excel spreadsheets."
+    path: skills/_external/anthropics/skills/xlsx/SKILL.md
+    capabilities: [xlsx-generation, spreadsheets, data-export]
+    dependencies: []
+    tags: [xlsx, excel, spreadsheets, export]
+    source: external
+    provider: anthropic
+
+  # --- Provider: Rezvani (skills/_external/rezvani-claude-skills/) ---
+  # Role-based persona skills for specialized domains.
+
+  # C-Level
+  - name: cto-advisor
+    description: "CTO advisory persona for technology strategy and architecture decisions."
+    path: skills/_external/rezvani-claude-skills/c-level-advisor/cto-advisor/SKILL.md
+    capabilities: [technology-strategy, architecture, advisory]
+    dependencies: []
+    tags: [advisory, cto, strategy, architecture]
+    source: external
+    provider: rezvani
+
+  - name: ceo-advisor
+    description: "CEO advisory persona for business strategy and executive decisions."
+    path: skills/_external/rezvani-claude-skills/c-level-advisor/ceo-advisor/SKILL.md
+    capabilities: [business-strategy, executive-advisory]
+    dependencies: []
+    tags: [advisory, ceo, strategy, business]
+    source: external
+    provider: rezvani
+
+  # Engineering
+  - name: code-reviewer
+    description: "Comprehensive code review for TypeScript, JavaScript, Python, Swift, Kotlin, Go."
+    path: skills/_external/rezvani-claude-skills/engineering-team/code-reviewer/SKILL.md
+    capabilities: [code-review, quality-analysis, pr-review]
+    dependencies: []
+    tags: [code-review, quality, engineering]
+    source: external
+    provider: rezvani
+
+  - name: senior-architect
+    description: "Senior software architect persona for system design and architecture."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-architect/SKILL.md
+    capabilities: [architecture, system-design, technical-leadership]
+    dependencies: []
+    tags: [architecture, design, engineering]
+    source: external
+    provider: rezvani
+
+  - name: senior-backend
+    description: "Senior backend engineer persona."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-backend/SKILL.md
+    capabilities: [backend-development, api-design, databases]
+    dependencies: []
+    tags: [backend, engineering, apis]
+    source: external
+    provider: rezvani
+
+  - name: senior-frontend
+    description: "Senior frontend engineer persona."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-frontend/SKILL.md
+    capabilities: [frontend-development, ui, react, web]
+    dependencies: []
+    tags: [frontend, engineering, ui, web]
+    source: external
+    provider: rezvani
+
+  - name: senior-fullstack
+    description: "Senior fullstack engineer persona."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-fullstack/SKILL.md
+    capabilities: [fullstack-development, web-applications]
+    dependencies: []
+    tags: [fullstack, engineering, web]
+    source: external
+    provider: rezvani
+
+  - name: senior-devops
+    description: "Senior DevOps engineer persona for CI/CD, infrastructure, and cloud."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-devops/SKILL.md
+    capabilities: [devops, ci-cd, infrastructure, cloud]
+    dependencies: []
+    tags: [devops, infrastructure, cloud, ci-cd]
+    source: external
+    provider: rezvani
+
+  - name: senior-security
+    description: "Senior security engineer persona."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-security/SKILL.md
+    capabilities: [security, vulnerability-assessment, secure-design]
+    dependencies: []
+    tags: [security, engineering, appsec]
+    source: external
+    provider: rezvani
+
+  - name: senior-secops
+    description: "Senior SecOps engineer persona for security operations."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-secops/SKILL.md
+    capabilities: [secops, incident-response, monitoring]
+    dependencies: []
+    tags: [secops, security, operations]
+    source: external
+    provider: rezvani
+
+  - name: senior-data-engineer
+    description: "Senior data engineer persona for pipelines and data infrastructure."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-data-engineer/SKILL.md
+    capabilities: [data-engineering, pipelines, etl, data-infrastructure]
+    dependencies: []
+    tags: [data, engineering, pipelines, etl]
+    source: external
+    provider: rezvani
+
+  - name: senior-data-scientist
+    description: "Senior data scientist persona for ML, statistics, and analysis."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-data-scientist/SKILL.md
+    capabilities: [data-science, machine-learning, statistics, analysis]
+    dependencies: []
+    tags: [data-science, ml, statistics, analysis]
+    source: external
+    provider: rezvani
+
+  - name: senior-ml-engineer
+    description: "Senior ML engineer persona for model development and deployment."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-ml-engineer/SKILL.md
+    capabilities: [ml-engineering, model-deployment, mlops]
+    dependencies: []
+    tags: [ml, engineering, models, mlops]
+    source: external
+    provider: rezvani
+
+  - name: senior-computer-vision
+    description: "Senior computer vision engineer persona."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-computer-vision/SKILL.md
+    capabilities: [computer-vision, image-processing, deep-learning]
+    dependencies: []
+    tags: [computer-vision, cv, deep-learning]
+    source: external
+    provider: rezvani
+
+  - name: senior-qa
+    description: "Senior QA engineer persona for test strategy and automation."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-qa/SKILL.md
+    capabilities: [qa, testing, test-automation, quality-assurance]
+    dependencies: []
+    tags: [qa, testing, automation, quality]
+    source: external
+    provider: rezvani
+
+  - name: senior-prompt-engineer
+    description: "Senior prompt engineer persona for LLM optimization."
+    path: skills/_external/rezvani-claude-skills/engineering-team/senior-prompt-engineer/SKILL.md
+    capabilities: [prompt-engineering, llm-optimization]
+    dependencies: []
+    tags: [prompts, llm, engineering, optimization]
+    source: external
+    provider: rezvani
+
+  - name: ms365-tenant-manager
+    description: "Microsoft 365 tenant management and administration."
+    path: skills/_external/rezvani-claude-skills/engineering-team/ms365-tenant-manager/SKILL.md
+    capabilities: [ms365, tenant-management, administration]
+    dependencies: []
+    tags: [microsoft, ms365, admin, tenant]
+    source: external
+    provider: rezvani
+
+  - name: aws-solution-architect
+    description: "AWS solution architect persona for cloud architecture."
+    path: skills/_external/rezvani-claude-skills/engineering-team/aws-solution-architect/SKILL.md
+    capabilities: [aws, cloud-architecture, solution-design]
+    dependencies: []
+    tags: [aws, cloud, architecture]
+    source: external
+    provider: rezvani
+
+  - name: tdd-guide
+    description: "Test-driven development guide and methodology."
+    path: skills/_external/rezvani-claude-skills/engineering-team/tdd-guide/SKILL.md
+    capabilities: [tdd, testing-methodology, test-first]
+    dependencies: []
+    tags: [tdd, testing, methodology]
+    source: external
+    provider: rezvani
+
+  - name: tech-stack-evaluator
+    description: "Technology stack evaluation and comparison."
+    path: skills/_external/rezvani-claude-skills/engineering-team/tech-stack-evaluator/SKILL.md
+    capabilities: [tech-evaluation, stack-comparison, decision-support]
+    dependencies: []
+    tags: [tech-stack, evaluation, comparison]
+    source: external
+    provider: rezvani
+
+  # Marketing
+  - name: marketing-strategy-pmm
+    description: "Product marketing manager persona for go-to-market strategy."
+    path: skills/_external/rezvani-claude-skills/marketing-skill/marketing-strategy-pmm/SKILL.md
+    capabilities: [marketing-strategy, gtm, product-marketing]
+    dependencies: []
+    tags: [marketing, strategy, pmm, gtm]
+    source: external
+    provider: rezvani
+
+  - name: marketing-demand-acquisition
+    description: "Demand generation and customer acquisition strategy."
+    path: skills/_external/rezvani-claude-skills/marketing-skill/marketing-demand-acquisition/SKILL.md
+    capabilities: [demand-gen, acquisition, growth]
+    dependencies: []
+    tags: [marketing, demand-gen, acquisition, growth]
+    source: external
+    provider: rezvani
+
+  - name: content-creator
+    description: "Content creation and copywriting persona."
+    path: skills/_external/rezvani-claude-skills/marketing-skill/content-creator/SKILL.md
+    capabilities: [content-creation, copywriting, messaging]
+    dependencies: []
+    tags: [content, copywriting, marketing]
+    source: external
+    provider: rezvani
+
+  - name: social-media-analyzer
+    description: "Social media analytics and strategy."
+    path: skills/_external/rezvani-claude-skills/marketing-skill/social-media-analyzer/SKILL.md
+    capabilities: [social-media, analytics, strategy]
+    dependencies: []
+    tags: [social-media, analytics, marketing]
+    source: external
+    provider: rezvani
+
+  - name: app-store-optimization
+    description: "App store optimization (ASO) for mobile apps."
+    path: skills/_external/rezvani-claude-skills/marketing-skill/app-store-optimization/SKILL.md
+    capabilities: [aso, app-store, mobile-marketing]
+    dependencies: []
+    tags: [aso, app-store, mobile, marketing]
+    source: external
+    provider: rezvani
+
+  # Product
+  - name: product-manager-toolkit
+    description: "Product management toolkit for roadmapping, prioritization, and specs."
+    path: skills/_external/rezvani-claude-skills/product-team/product-manager-toolkit/SKILL.md
+    capabilities: [product-management, roadmapping, prioritization]
+    dependencies: []
+    tags: [product, management, roadmap, specs]
+    source: external
+    provider: rezvani
+
+  - name: product-strategist
+    description: "Product strategy and market positioning."
+    path: skills/_external/rezvani-claude-skills/product-team/product-strategist/SKILL.md
+    capabilities: [product-strategy, market-positioning]
+    dependencies: []
+    tags: [product, strategy, market]
+    source: external
+    provider: rezvani
+
+  - name: agile-product-owner
+    description: "Agile product owner persona for backlog management and sprint planning."
+    path: skills/_external/rezvani-claude-skills/product-team/agile-product-owner/SKILL.md
+    capabilities: [agile, product-ownership, backlog, sprint-planning]
+    dependencies: []
+    tags: [agile, product-owner, backlog, sprints]
+    source: external
+    provider: rezvani
+
+  - name: ui-design-system
+    description: "UI design system creation and management."
+    path: skills/_external/rezvani-claude-skills/product-team/ui-design-system/SKILL.md
+    capabilities: [design-system, ui-components, style-guide]
+    dependencies: []
+    tags: [design-system, ui, components]
+    source: external
+    provider: rezvani
+
+  - name: ux-researcher-designer
+    description: "UX research and design persona."
+    path: skills/_external/rezvani-claude-skills/product-team/ux-researcher-designer/SKILL.md
+    capabilities: [ux-research, user-testing, design]
+    dependencies: []
+    tags: [ux, research, design, user-testing]
+    source: external
+    provider: rezvani
+
+  # Quality / Regulatory Affairs
+  - name: quality-manager-qms-iso13485
+    description: "ISO 13485 quality management system manager."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/quality-manager-qms-iso13485/SKILL.md
+    capabilities: [qms, iso13485, quality-management]
+    dependencies: []
+    tags: [quality, iso13485, qms, regulatory]
+    source: external
+    provider: rezvani
+
+  - name: quality-manager-qmr
+    description: "Quality management representative."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/quality-manager-qmr/SKILL.md
+    capabilities: [qms, quality-representative]
+    dependencies: []
+    tags: [quality, qmr, regulatory]
+    source: external
+    provider: rezvani
+
+  - name: quality-documentation-manager
+    description: "Quality documentation and controlled document management."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/quality-documentation-manager/SKILL.md
+    capabilities: [documentation, controlled-documents, quality]
+    dependencies: []
+    tags: [quality, documentation, controlled-docs]
+    source: external
+    provider: rezvani
+
+  - name: qms-audit-expert
+    description: "QMS audit expert for internal and external audits."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/qms-audit-expert/SKILL.md
+    capabilities: [auditing, qms, compliance]
+    dependencies: []
+    tags: [audit, qms, compliance]
+    source: external
+    provider: rezvani
+
+  - name: capa-officer
+    description: "CAPA (Corrective and Preventive Action) management."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/capa-officer/SKILL.md
+    capabilities: [capa, corrective-action, quality]
+    dependencies: []
+    tags: [capa, quality, corrective-action]
+    source: external
+    provider: rezvani
+
+  - name: risk-management-specialist
+    description: "Risk management for product development and compliance."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/risk-management-specialist/SKILL.md
+    capabilities: [risk-management, risk-assessment, compliance]
+    dependencies: []
+    tags: [risk, management, compliance]
+    source: external
+    provider: rezvani
+
+  - name: fda-consultant-specialist
+    description: "FDA regulatory affairs consultant."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/fda-consultant-specialist/SKILL.md
+    capabilities: [fda, regulatory-affairs, compliance]
+    dependencies: []
+    tags: [fda, regulatory, compliance]
+    source: external
+    provider: rezvani
+
+  - name: regulatory-affairs-head
+    description: "Head of regulatory affairs for medical devices and healthcare."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/regulatory-affairs-head/SKILL.md
+    capabilities: [regulatory-affairs, medical-devices, compliance]
+    dependencies: []
+    tags: [regulatory, medical-devices, compliance]
+    source: external
+    provider: rezvani
+
+  - name: mdr-745-specialist
+    description: "EU MDR 2017/745 medical device regulation specialist."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/mdr-745-specialist/SKILL.md
+    capabilities: [mdr, eu-regulation, medical-devices]
+    dependencies: []
+    tags: [mdr, eu, medical-devices, regulatory]
+    source: external
+    provider: rezvani
+
+  - name: information-security-manager-iso27001
+    description: "ISO 27001 information security management."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/information-security-manager-iso27001/SKILL.md
+    capabilities: [iso27001, infosec, isms]
+    dependencies: []
+    tags: [security, iso27001, isms, infosec]
+    source: external
+    provider: rezvani
+
+  - name: isms-audit-expert
+    description: "ISMS audit expert for ISO 27001 compliance."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/isms-audit-expert/SKILL.md
+    capabilities: [isms-audit, iso27001, compliance]
+    dependencies: []
+    tags: [audit, isms, iso27001, compliance]
+    source: external
+    provider: rezvani
+
+  - name: gdpr-dsgvo-expert
+    description: "GDPR/DSGVO data protection and privacy expert."
+    path: skills/_external/rezvani-claude-skills/ra-qm-team/gdpr-dsgvo-expert/SKILL.md
+    capabilities: [gdpr, data-protection, privacy]
+    dependencies: []
+    tags: [gdpr, privacy, data-protection, compliance]
+    source: external
+    provider: rezvani
+
+  # --- Provider: Blader (skills/_external/blader-humanizer/) ---
+
+  - name: humanizer
+    description: Detect and rewrite AI writing patterns in deliverables. 24-pattern checklist based on Wikipedia AI Cleanup.
+    path: skills/_external/blader-humanizer/SKILL.md
+    capabilities: [ai-detection, writing-quality, humanization, content-review]
+    dependencies: []
+    tags: [writing, quality-gate, deliverables, content]
+    source: external
+    provider: blader
+    version: "2.1.1"

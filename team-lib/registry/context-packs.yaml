@@ -1,0 +1,27 @@
+# summary: Context packs registry. Currently empty — placeholder for future context bundles.
+# Context Packs Registry (pvragon team)
+# ------------------------------------------
+# This manifest catalogs available team context packages.
+#
+# Schema:
+#   packs:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to context
+#       type: global|indexed     # Context type
+#       tags: [<string>, ...]    # Searchable tags
+#       version: <string>        # Semantic version
+#
+# Example:
+#   packs:
+#     - name: team-standards
+#       description: Team coding standards and conventions
+#       path: context/global/team-standards.md
+#       type: global
+#       tags: [team, standards, conventions]
+#       version: "1.0.0"
+#
+# ------------------------------------------
+
+packs: []
+

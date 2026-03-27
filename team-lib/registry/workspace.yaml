@@ -1,0 +1,132 @@
+# workspace.yaml — Machine-readable contract for the Pvragon AI Workspace
+#
+# Goal: Give agents/harnesses a deterministic understanding of the environment.
+# This is not a full spec; it is a stable "facts + rules" file.
+
+workspace:
+  name: "Pvragon AI Workspace"
+  root: "~/ai-workspace"
+  governance_directive: "team-lib/directives/team-library-governance.md"
+
+scopes:
+  personal:
+    path: "personal"
+    description: "Private human workspace (notes/scratch/preferences)."
+    write_policy: "allowed"
+
+  shared_library:
+    path: "team-lib"
+    description: "Shared canonical library (team repo; source of truth)."
+    canonical: true
+    write_policy: "restricted"   # allowed via PR / agreed changes
+
+  private_library:
+    path: "my-lib"
+    description: "Personal overlay library (private repo; staging layer)."
+    canonical: false
+    write_policy: "allowed"
+
+  workbench:
+    path: "projects"
+    description: "All project repos (private and team)."
+    write_policy: "allowed"
+
+  admin:
+    path: "team-lib/_admin"
+    description: "Bootstrap/update/validate scripts."
+    write_policy: "restricted"
+
+repos:
+  # Repo boundary directories (expected to be git repos)
+  pvragon_library_repo:
+    path: "team-lib"
+    type: "git"
+    root_readme: "README.md"
+
+  private_library_repo:
+    path: "my-lib"
+    type: "git"
+    root_readme: "README.md"
+
+patterns:
+  library_repo:
+    required_dirs:
+      - "directives"
+      - "context/global"
+      - "context/indexed"
+      - "personas"
+      - "skills"
+      - "executions"
+      - "harnesses"
+      - "registry"
+      - "logs"
+    index_file: "index.md"
+
+  project_repo:
+    required_dirs:
+      - "src"
+      - "docs/specs"
+      - "docs/context"
+      - "docs/directives"
+    index_file: "index.md"
+
+registry:
+  merge:
+    enabled: true
+    order:
+      - "team-lib/registry"   # shared first
+      - "my-lib/registry"   # personal second
+    precedence: "personal_overrides_shared"
+    collision_behavior: "log_shadowing"
+
+agent_rules:
+  deterministic_discovery:
+    prefer_registry: true
+    avoid_heuristic_scans: true
+    read_index_md_first: true
+
+  writing:
+    never_write_under:
+      - ".antigravity/"                          # Protects root-level session data
+      - "my-lib/runtime/.cache"      # Protects library-level cache
+    prefer_write_under:
+      - ".antigravity/runs"                      # Root-level session outputs
+      - "my-lib/runtime/intermediates"
+      - "my-lib/runtime/deliverables"
+
+memory:
+  always_on:
+    - "personal/preferences/personal.md"
+    - "my-lib/context/global"
+    - "team-lib/context/global"
+
+  indexed_on_demand:
+    - "my-lib/context/indexed"
+    - "team-lib/context/indexed"
+
+  project_context:
+    path_glob: "projects/*/docs/context"
+
+  specs:
+    path_glob: "projects/*/docs/specs"
+
+executions:
+  # Execution scripts are dual-purpose: CLI-runnable and Python-importable.
+  # See: team-lib/context/indexed/execution-standard.md
+  scaffold_project_docs:
+    path: "executions/scaffold_project_docs.py"
+    description: "Bootstrap the standard docs/ structure for a new project in projects/."
+    tags: [scaffolding, project-setup, docs]
+    importable: true
+    run_signature: "run(target: str, name: str = None, force: bool = False) -> dict"
+    example_input: { target: "~/ai-workspace/projects/my-new-app", name: "My New App" }
+    example_output: { status: "ok", files_created: 12, docs_dir: "/path/to/docs" }
+
+  publish_github_release:
+    path: "executions/publish_github_release.py"
+    description: "Create an annotated git tag and publish a GitHub release with release notes."
+    tags: [release, github, git]
+    importable: true
+    run_signature: "run(version: str, notes_file: str, title: str = None, dry_run: bool = False) -> dict"
+    example_input: { version: "v1.3.2", notes_file: "logs/release-notes/260218-v1.3.2.md" }
+    example_output: { status: "ok", tag_created: true, release_url: "https://github.com/..." }

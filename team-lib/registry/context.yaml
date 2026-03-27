@@ -1,0 +1,55 @@
+# summary: Team indexed context registry. Lists on-demand context files in team-lib/context/indexed/.
+# Context Registry
+# ------------------------------------------
+# This manifest catalogs on-demand context files.
+#
+# Schema:
+#   context:
+#     <name>:
+#       path: <string>           # Relative path to context file
+#       description: <string>    # Brief description
+#       tags: [<string>, ...]    # Searchable tags
+#
+# ------------------------------------------
+
+context:
+  workspace-reference:
+    path: "context/indexed/workspace-reference.md"
+    description: "Canonical architectural reference for the AI Workspace: 4-layer hierarchy, directory conventions, functional stack, agent identity system, registry strategy, governance, and project docs structure."
+    tags: [workspace, architecture, conventions, reference, agent-identity]
+
+  project-docs-standard:
+    path: "context/indexed/project-docs-standard.md"
+    description: "Standard structure for project docs/ directories: trust boundaries, mutability rules, naming conventions, and scaffolding instructions."
+    tags: [projects, documentation, specs, conventions, structure]
+
+  editor-setup-guide:
+    path: "context/indexed/editor-setup-guide.md"
+    description: "Editor and IDE setup guidance: Obsidian vault configuration, VS Code multi-root workspace setup, and recommended roots."
+    tags: [editor, vscode, obsidian, setup, configuration]
+
+  execution-standard:
+    path: "context/indexed/execution-standard.md"
+    description: "Defines the dual-purpose execution script pattern: CLI + importable run() function, comment-block frontmatter requirement, return contract, and chaining rules."
+    tags: [executions, standard, python, scripting]
+
+  nodejs-workspace-setup:
+    path: "context/indexed/nodejs-workspace-setup.md"
+    description: "Node.js global npm setup: NODE_PATH configuration for global require() support, when to use global vs local install."
+    tags: [nodejs, npm, setup, configuration]
+
+  progressive-disclosure-convention:
+    path: "context/indexed/progressive-disclosure-convention.md"
+    description: "Defines the progressive disclosure convention for agent-consumable files: summary frontmatter field requirements, index aggregation pattern, and summary writing guidelines."
+    tags: [conventions, frontmatter, summary, progressive-disclosure]
+
+  nick-saraev-doe-framework:
+    path: "context/indexed/nick-saraev-doe-framework.md"
+    description: "Nick Saraev's DOE (Directive-Orchestration-Execution) framework for reliable AI agent systems: 3-layer architecture, self-annealing, error compounding math, and implementation patterns."
+    tags: [doe, framework, theory, architecture]
+
+subdirectories:
+  templates:
+    path: "context/indexed/templates/"
+    description: "Reference templates for AGENTS.md / CLAUDE.md files across the workspace"
+    tags: [templates, agents, configuration]

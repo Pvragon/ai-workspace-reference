@@ -1,0 +1,320 @@
+{
+    "$schema": "base-template-v2",
+    "baseType": "document",
+    "baseVersion": "2.0.0",
+    "description": "Universal document formatting rules — shared across all doc-* template types. Override files extend this base and only specify differences.",
+
+    "documentSettings": {
+        "pageMode": "PAGED",
+        "pageSize": {
+            "width": 612,
+            "height": 792,
+            "unit": "pt"
+        },
+        "margins": {
+            "top": 72,
+            "bottom": 72,
+            "left": 72,
+            "right": 72,
+            "unit": "pt"
+        },
+        "lineSpacing": 115,
+        "lineSpacingUnit": "percentage",
+        "defaultFontSize": 11,
+        "defaultFontSizeUnit": "pt",
+        "defaultFont": { "tokenRef": "typography.font.primary" },
+        "fallbackFont": { "tokenRef": "typography.font.fallback" },
+        "defaultTextColor": { "tokenRef": "color.text.default" },
+        "backgroundColor": { "tokenRef": "color.background.default" }
+    },
+
+    "headings": {
+        "h1": {
+            "namedStyle": "HEADING_1",
+            "fontSize": 18,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.heading.h1" },
+            "bold": true,
+            "spaceBefore": 18,
+            "spaceAfter": 6,
+            "spaceUnit": "pt",
+            "keepWithNext": false
+        },
+        "h2": {
+            "namedStyle": "HEADING_2",
+            "fontSize": 14,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.heading.h2" },
+            "bold": true,
+            "spaceBefore": 14,
+            "spaceAfter": 4,
+            "spaceUnit": "pt",
+            "keepWithNext": true
+        },
+        "h3": {
+            "namedStyle": "HEADING_3",
+            "fontSize": 12,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.heading.h3" },
+            "bold": true,
+            "spaceBefore": 12,
+            "spaceAfter": 3,
+            "spaceUnit": "pt",
+            "keepWithNext": true
+        },
+        "h4": {
+            "namedStyle": "HEADING_4",
+            "fontSize": 11,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.heading.h4" },
+            "bold": true,
+            "spaceBefore": 10,
+            "spaceAfter": 2,
+            "spaceUnit": "pt",
+            "keepWithNext": true
+        },
+        "h5": {
+            "namedStyle": "HEADING_5",
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.heading.h5" },
+            "bold": true,
+            "spaceBefore": 8,
+            "spaceAfter": 2,
+            "spaceUnit": "pt",
+            "keepWithNext": true
+        },
+        "h6": {
+            "namedStyle": "HEADING_6",
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.heading.h6" },
+            "bold": true,
+            "italic": true,
+            "spaceBefore": 6,
+            "spaceAfter": 2,
+            "spaceUnit": "pt",
+            "keepWithNext": true
+        }
+    },
+
+    "bodyText": {
+        "normal": {
+            "fontSize": 11,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "spaceBefore": 6,
+            "spaceAfter": 0,
+            "spaceUnit": "pt",
+            "lineSpacing": 115
+        }
+    },
+
+    "inlineStyles": {
+        "bold": {
+            "bold": true
+        },
+        "boldLabel": {
+            "bold": true,
+            "color": { "tokenRef": "color.brand.accent" }
+        },
+        "italic": {
+            "italic": true
+        },
+        "code": {
+            "font": { "tokenRef": "typography.font.monospace" },
+            "fontSize": 9,
+            "fontSizeUnit": "pt"
+        },
+        "link": {
+            "color": { "tokenRef": "color.link.default" },
+            "underline": true
+        }
+    },
+
+    "lists": {
+        "bulletStyle": "native",
+        "spacing": {
+            "level0": {
+                "spaceBefore": 6,
+                "spaceAfter": 0,
+                "spaceUnit": "pt"
+            },
+            "level1": {
+                "spaceBefore": 3,
+                "spaceAfter": 0,
+                "spaceUnit": "pt"
+            },
+            "level2": {
+                "spaceBefore": 1,
+                "spaceAfter": 0,
+                "spaceUnit": "pt"
+            }
+        },
+        "lastItemSpaceAfter": 6,
+        "lastItemSpaceUnit": "pt",
+        "indentPerLevel": 18,
+        "indentUnit": "pt"
+    },
+
+    "tables": {
+        "headerRow": {
+            "background": { "tokenRef": "color.brand.primary" },
+            "fontColor": { "tokenRef": "color.text.onPrimary" },
+            "bold": true,
+            "fontSize": 10,
+            "fontSizeUnit": "pt"
+        },
+        "bodyRow": {
+            "background": { "tokenRef": "color.background.default" },
+            "fontColor": { "tokenRef": "color.text.default" },
+            "fontSize": 10,
+            "fontSizeUnit": "pt"
+        },
+        "alternateRowBackground": { "tokenRef": "color.background.subtle" },
+        "borders": {
+            "color": { "tokenRef": "color.border.default" },
+            "width": 1,
+            "widthUnit": "pt",
+            "style": "solid"
+        },
+        "cellPadding": {
+            "top": 4,
+            "bottom": 4,
+            "left": 6,
+            "right": 6,
+            "unit": "pt"
+        },
+        "spaceAfterTable": 10,
+        "spaceAfterTableUnit": "pt",
+        "alignment": "center",
+        "columnWidthMode": "content-fitted",
+        "wordBreakMinWidth": 50,
+        "wordBreakMinWidthUnit": "pt",
+        "denseTable": {
+            "threshold": 7,
+            "fontSize": 8,
+            "fontSizeUnit": "pt",
+            "cellPadding": {
+                "top": 2,
+                "bottom": 2,
+                "left": 4,
+                "right": 4,
+                "unit": "pt"
+            }
+        },
+        "boldCellParsing": true,
+        "overflow": {
+            "autoTranspose": true,
+            "overflowFallback": "flag"
+        },
+        "preventRowBreak": true
+    },
+
+    "callouts": {
+        "standard": {
+            "background": { "tokenRef": "color.background.accent" },
+            "borderColor": { "tokenRef": "color.brand.primary" },
+            "labelColor": { "tokenRef": "color.brand.primary" },
+            "borderWidth": 3,
+            "borderWidthUnit": "pt",
+            "borderSide": "left",
+            "padding": 10,
+            "paddingUnit": "pt"
+        },
+        "success": {
+            "background": { "tokenRef": "color.status.successLight", "fallback": "color.background.accent" },
+            "borderColor": { "tokenRef": "color.status.successDark", "fallback": "color.brand.primary" },
+            "labelColor": { "tokenRef": "color.status.successDark", "fallback": "color.brand.primary" },
+            "borderWidth": 3,
+            "borderWidthUnit": "pt",
+            "borderSide": "left",
+            "padding": 10,
+            "paddingUnit": "pt"
+        },
+        "warning": {
+            "background": { "tokenRef": "color.status.warningLight", "fallback": "color.background.accent" },
+            "borderColor": { "tokenRef": "color.status.warningDark", "fallback": "color.brand.accent" },
+            "labelColor": { "tokenRef": "color.status.warningDark", "fallback": "color.brand.accent" },
+            "borderWidth": 3,
+            "borderWidthUnit": "pt",
+            "borderSide": "left",
+            "padding": 10,
+            "paddingUnit": "pt"
+        }
+    },
+
+    "horizontalRule": {
+        "character": "\u2014",
+        "repeatCount": 32,
+        "fontSize": 8,
+        "fontSizeUnit": "pt",
+        "color": { "tokenRef": "color.text.subtle" }
+    },
+
+    "renderOptions": {
+        "subtitleDetection": false,
+        "_subtitleNote": "When true, paragraphs between the title and first section heading are treated as subtitle/metadata. Only report-type docs should enable this."
+    },
+
+    "pageBreaks": {
+        "orphanDetection": true,
+        "orphanThreshold": 0.33,
+        "headingChainAwareness": true,
+        "avoidBreakAfterHeading": true,
+        "minLinesAfterHeading": 2
+    },
+
+    "headerFooter": {
+        "header": {
+            "logo": { "tokenRef": "logo.full" },
+            "logoAlignment": "right",
+            "text": { "tokenRef": "company.name" },
+            "textAlignment": "left",
+            "showOnFirstPage": true,
+            "showOnSubsequentPages": true,
+            "subsequentLogo": { "tokenRef": "logo.icon" }
+        },
+        "footer": {
+            "pageNumbers": true,
+            "pageNumberAlignment": "right",
+            "pageNumberColor": { "tokenRef": "color.text.subtle" },
+            "pageNumberFontSize": 8,
+            "pageNumberFontSizeUnit": "pt",
+            "text": null,
+            "textAlignment": "left"
+        }
+    },
+
+    "tocSupport": {
+        "enabled": false,
+        "maxLevel": 3,
+        "title": "Table of Contents",
+        "titleStyle": "h2",
+        "indentPerLevel": 18,
+        "indentUnit": "pt",
+        "dotLeaders": true
+    },
+
+    "themeColors": {
+        "dark1": { "tokenRef": "color.text.default" },
+        "dark2": { "tokenRef": "color.brand.primary" },
+        "light1": { "tokenRef": "color.background.default" },
+        "light2": { "tokenRef": "color.background.subtle" },
+        "accent1": { "tokenRef": "color.brand.primary" },
+        "accent2": { "tokenRef": "color.brand.accent" },
+        "accent3": { "tokenRef": "color.text.subtle" },
+        "accent4": { "tokenRef": "color.status.successDark", "fallback": "color.brand.primary" },
+        "accent5": { "tokenRef": "color.background.accent" },
+        "accent6": { "tokenRef": "color.status.warningDark", "fallback": "color.brand.accent" },
+        "hyperlink": { "tokenRef": "color.link.default" },
+        "followedHyperlink": { "tokenRef": "color.link.visited", "fallback": "color.text.subtle" }
+    }
+}

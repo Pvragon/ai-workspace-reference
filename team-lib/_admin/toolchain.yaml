@@ -1,0 +1,55 @@
+version: "1.0"
+
+cli_tools:
+  gh:
+    description: "GitHub CLI"
+    install_type: apt
+    install_command: "apt-get install -y gh"
+    check_command: "gh --version"
+    required: true
+    post_install_notes: "Run 'gh auth login' to authenticate."
+
+  gws:
+    description: "Google Workspace CLI (Drive, Docs, Sheets, Gmail, Calendar)"
+    install_type: npm
+    install_command: "npm install -g @googleworkspace/cli"
+    check_command: "gws --version"
+    required: true
+    post_install_notes: |
+      Run 'gws auth login' to authenticate.
+      WSL users: browser auth may not auto-launch. Copy the URL manually.
+
+mcp_servers:
+  clickup:
+    description: "ClickUp project management"
+    required: true
+    config:
+      claude:
+        type: stdio
+        command: npx
+        args: ["-y", "mcp-remote", "https://mcp.clickup.com/mcp"]
+        env: {}
+      gemini:
+        command: npx
+        args: ["-y", "mcp-remote", "https://mcp.clickup.com/mcp"]
+    post_install_notes: "Requires ClickUp OAuth — will prompt in browser on first use."
+
+  baserow:
+    description: "Baserow database (Pvragon instance)"
+    required: true
+    env_vars_required: ["BASEROW_MCP_TOKEN"]
+    config:
+      claude:
+        type: stdio
+        command: bash
+        args: ["-c", "source ~/ai-workspace/personal/secrets/.env && npx mcp-remote https://br.pvragon.com/mcp/$BASEROW_MCP_TOKEN/sse"]
+        env: {}
+    post_install_notes: "Ensure BASEROW_MCP_TOKEN is set in personal/secrets/.env"
+
+  excalidraw:
+    description: "Excalidraw diagramming"
+    required: false
+    config:
+      claude:
+        type: http
+        url: "https://mcp.excalidraw.com"
