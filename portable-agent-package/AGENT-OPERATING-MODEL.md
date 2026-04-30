@@ -1,9 +1,9 @@
 ---
 template: portable-agent-package
-version: 0.1.0
-summary: "Platform-independent operating model for building reliable, long-running AI agents. Synthesizes DOE architecture, layered memory, Ralph-loop harnesses, multi-agent coordination, progressive disclosure, and anti-context-rot discipline into principles and recipes any agent on any runtime can absorb and reconstruct."
+version: 0.2.0
+summary: "Platform-independent operating model for building reliable, long-running AI agents. Synthesizes DOE architecture, file-first output discipline, layered memory, quantized iteration, multi-agent coordination, progressive disclosure, and self-annealing into principles and recipes any agent on any runtime can absorb and reconstruct."
 created: 2026-04-27
-last_updated: 2026-04-27
+last_updated: 2026-04-29
 maintainer: pvragon
 audience: "AI agent receiving this as bootstrap context, OR engineer reviewing an agent's intended operating model"
 runtime_neutral: true
@@ -26,7 +26,7 @@ runtime_neutral: true
 ## Table of Contents
 
 1. [The Core Problem](#1-the-core-problem)
-2. [Five Load-Bearing Principles](#2-five-load-bearing-principles)
+2. [Six Core Principles, in Order of Impact](#2-six-core-principles-in-order-of-impact)
 3. [Architectural Skeleton](#3-architectural-skeleton)
 4. [Topic Index — Read These In Order](#4-topic-index--read-these-in-order)
 5. [Bootstrap Recipe — Rebuild From Scratch](#5-bootstrap-recipe--rebuild-from-scratch)
@@ -54,9 +54,9 @@ Every principle below is a structural defense against one or more of these failu
 
 ---
 
-## 2. Five Load-Bearing Principles
+## 2. Six Core Principles, in Order of Impact
 
-If you only remember five things, remember these. Everything else in the package operationalizes them.
+If you only remember six things, remember these — ordered by how much they shape outcomes when applied vs. skipped. Everything else in the package operationalizes one of them.
 
 ### 2.1 Push deterministic work into code, never into the LLM
 
@@ -66,7 +66,15 @@ The agent's job is to **route** — read a directive, choose tools in the right 
 
 > **How:** Directive → Orchestration → Execution (DOE) — see [§3.1](#31-three-layer-doe-architecture) and [`references/01-directives-orchestration-execution.md`](references/01-directives-orchestration-execution.md).
 
-### 2.2 Memory is layered, not flat
+### 2.2 File-first output — every meaningful action produces a file
+
+Conversation context is volatile; the filesystem is durable. Every decision, plan, intermediate result, scratch artifact, and finished deliverable lives in a known location with structured naming. The filesystem is the canonical state of the agent — chat is just the working surface.
+
+> **Why:** session memory dies on compaction; vendor switches lose conversation history; team handoffs need persistent artifacts. Without file-first discipline, layered memory and progressive disclosure (the next two principles) have nothing to layer or disclose.
+
+> **How:** structured directories with conventions for `runtime/.tmp/`, `runtime/deliverables/`, `directives/`, `executions/`, plus standardized YAML frontmatter on every agent-consumable file — see [`references/07-anti-context-rot.md`](references/07-anti-context-rot.md).
+
+### 2.3 Memory is layered, not flat
 
 Agent context is divided across four lifetimes — long-term (versioned), mid-term (cross-session), near-term (within-initiative), and session (volatile). Each tier has different storage, retrieval, and maintenance. Confusing them is how agents lose their state.
 
@@ -74,23 +82,25 @@ Agent context is divided across four lifetimes — long-term (versioned), mid-te
 
 > **How:** four-tier hierarchy + index-with-pointers — see [§3.2](#32-layered-memory) and [`references/02-layered-memory.md`](references/02-layered-memory.md).
 
-### 2.3 Surface area is on-demand, not always-on
+### 2.4 Long-running work uses quantized iteration, not single shots
 
-You do not load every reference doc into context "just in case." Each agent-consumable file has a one-line `summary` in YAML frontmatter. Index files aggregate summaries into a discovery table. Agents scan the index, decide relevance, and load only what they need.
+For multi-hour or multi-day autonomous work, each iteration of the loop is **bounded in scope** (one small unit of work) and **bounded in context** (clear and reload between iterations). Each step persists its status to a durable file; the next iteration starts with a fresh context, reads from that file, and proceeds. This is the finding from the MAKER study and Anthropic's harness papers, generalized: bound the unit, persist the state, reset the context, repeat.
 
-> **Why:** context windows are finite and expensive; large always-on contexts displace recent work; relevance ranking via humans-pre-selected tags beats LLM-search-every-time.
+A common implementation is the 3-agent pattern: **planner** generates a machine-checkable feature list; **generator** implements one feature at a time; **evaluator** independently verifies each feature with concrete signals. The genealogy traces back to Geoffrey Huntley's "Ralph" loop.
+
+> **Why:** "claimed done, actually broken" is the dominant failure of unsupervised agents, and the underlying cause is compounding error in long contexts. Bounding scope per iteration prevents drift; persisting state between iterations survives compaction; resetting context each iteration prevents rot.
+
+> **How:** quantized iteration + 3-agent harness — see [`references/03-harness-design.md`](references/03-harness-design.md).
+
+### 2.5 Surface area is on-demand, not always-on
+
+You do not load every reference doc into context "just in case." Each agent-consumable file carries standardized YAML frontmatter — including a one-line `summary`. The agent maintains registry index files that aggregate those summaries. When the agent needs something, it scans the registry first, then loads only the relevant file.
+
+> **Why:** context windows are finite and expensive; large always-on contexts displace recent work; pre-summarized agent-curated indexes beat LLM-search-every-time.
 
 > **How:** progressive disclosure — see [`references/04-progressive-disclosure.md`](references/04-progressive-disclosure.md).
 
-### 2.4 Long-running work uses a Ralph loop, not a single shot
-
-For multi-hour or multi-day autonomous work, the runtime is a structured loop: **planner** generates a machine-checkable feature list; **generator** implements one feature at a time; **evaluator** independently verifies each feature with concrete signals (browser screenshots, tests, scripted checks); the loop exits when all features pass.
-
-> **Why:** "claimed done, actually broken" is the dominant failure of unsupervised agents. Skeptical, browser-driven verification by a separate agent is the only reliable signal. Markdown checkboxes are model-judged and unreliable.
-
-> **How:** Ralph loop architecture + 3-agent pattern from Anthropic's harness papers — see [`references/03-harness-design.md`](references/03-harness-design.md).
-
-### 2.5 Treat errors as instruction-set updates (self-annealing)
+### 2.6 Treat errors as instruction-set updates (self-annealing)
 
 When something breaks: fix it, then update the directive/skill so the next agent does not repeat the failure. Errors are the system's primary learning channel. A pristine directive that has never been corrected is a directive that has never been used.
 
