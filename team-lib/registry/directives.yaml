@@ -14,38 +14,4 @@
 #
 # Example:
 #   directives:
-#     - name: team-code-review
-#       description: Team code review guidelines
-#       path: directives/team-code-review.md
-#       scope: global
-#       priority: medium
-#       version: "1.0.0"
-#
-# ------------------------------------------
-
-directives:
-  team-library-governance:
-    path: "directives/team-library-governance.md"
-    description: "Governance rules for contributing to team-lib. Required reading before graduation."
-    scope: global
-    priority: high
-    tags: [governance, quality, naming-conventions, graduation]
-    version: "1.0.0"
-
-  workspace-validation:
-    path: "directives/workspace-validation.md"
-    description: "Standard system health check to verify OS integrity."
-    required_context:
-      - "global"
-    allowed_tools:
-      - "bash"
-      - "read_file"
-      - "write_file"
-
-  workspace-release-process:
-    path: "directives/workspace-release-process.md"
-    description: "Complete process for releasing workspace changes: validation, git commits, CHANGELOG updates, and release notes."
-    scope: global
-    priority: high
-    tags: [release, versioning, changelog, github]
-    version: "1.3.0"
+#   

@@ -14,17 +14,7 @@
 #
 # Example:
 #   personas:
-#     - name: team-lead
-#       description: Team coordination and guidance persona
-#       path: personas/team-lead.md
-#       traits: [collaborative, strategic, supportive]
-#       use_cases: [planning, coordination, mentoring]
-#       version: "1.0.0"
-#
-# ------------------------------------------
-
-personas:
-  - name: brand-guard
+#     - name: brand-guard
     description: Brand Voice Guardian and AI-Detector
     path: personas/brand-guard.md
     traits: [critical, quality-focused, brand-conscious]

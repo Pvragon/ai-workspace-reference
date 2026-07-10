@@ -80,6 +80,22 @@ Then create your agent from the example (see [Getting Started, Phase 5](team-lib
 cp -r ~/ai-workspace-reference/agents/example-agent ~/ai-workspace/agents/<agent-name>
 ```
 
+## Harness Compatibility (honest status)
+
+The **architecture** is vendor-agnostic by design — directives, executions, context, memory, and identity are plain files any agent can read. The **adapter layer** is where vendor coupling lives, and today it is Claude-Code-first:
+
+| Piece | Status |
+|-------|--------|
+| `AGENTS.md` instruction files | ✅ Agnostic — Codex reads `AGENTS.md` natively; `CLAUDE.md`/`GEMINI.md` are mirrors |
+| Directives + executions (DOE layers 1 & 3) | ✅ Agnostic — Markdown + Python |
+| Agent identity & memory files | ✅ Agnostic in format — plain Markdown |
+| Memory auto-loading | ⚠️ `agents/*/adapters/` ships only `claude/link.sh` (symlinks into `~/.claude/`). Other harnesses need their own adapter, or load memory via an `AGENTS.md` pointer |
+| Skills (`SKILL.md` + slash commands) | ⚠️ Auto-invocation is a Claude Code feature. Other harnesses can follow SKILL.md files as ordinary SOPs |
+| `session-debrief` pre/postflight scripts | ⚠️ Read Claude Code session transcripts (`~/.claude/projects/*.jsonl`) — Claude-only today |
+| MCP toolchain provisioning | ⚠️ `configure_toolchain.sh` writes Claude Code + Gemini CLI configs; no Codex config yet |
+
+Adapters for other harnesses are welcome as PRs — the `adapters/` directory exists precisely so vendor glue stays isolated from identity and memory.
+
 ## What's Included vs. What's Not
 
 This is a **reference implementation**, not a production deployment. It includes:

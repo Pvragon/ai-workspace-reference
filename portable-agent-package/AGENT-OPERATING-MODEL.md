@@ -347,7 +347,7 @@ The principles in this package are not original. They are distilled from public 
 | Confidence-scoring (rate 0-100, only report ≥80) | Anthropic Claude Code [`code-reviewer`](https://github.com/anthropics/claude-code) plugin. |
 | Code-as-orchestration (dual-purpose run() pattern) | Anthropic, [Code Execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp); [Advanced Tool Use](https://www.anthropic.com/engineering/advanced-tool-use). |
 | Progressive disclosure (summary frontmatter, index aggregation) | Internal — `team-lib/context/indexed/progressive-disclosure-convention.md`. |
-| Council-converge (multi-reviewer + chair, anchored 1-5 rubric, min-score) | Internal — `my-lib/skills/echo1-council-converge/`; rubric design echoes IRR (inter-rater reliability) literature. |
+| Council-converge (multi-reviewer + chair, anchored 1-5 rubric, min-score) | Internal Pvragon implementation (not included in this repo); rubric design echoes IRR (inter-rater reliability) literature. |
 | Bounded blast radius / upstream-drift logging | Internal — same skill, lessons from spec-review pipeline. |
 | Vendor-independent agent identity | Internal — `agents/<name>/` pattern; conceptual sibling of [Anthropic's Memory Tool](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/memory-tool). |
 | Memory tier hierarchy | Internal; conceptual ancestor in OS memory hierarchy (registers → cache → RAM → disk). |
