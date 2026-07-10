@@ -14,14 +14,4 @@
 #
 # Example:
 #   packs:
-#     - name: team-standards
-#       description: Team coding standards and conventions
-#       path: context/global/team-standards.md
-#       type: global
-#       tags: [team, standards, conventions]
-#       version: "1.0.0"
-#
-# ------------------------------------------
-
-packs: []
-
+#   

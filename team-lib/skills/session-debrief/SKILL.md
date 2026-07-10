@@ -19,7 +19,7 @@ Run this skill at the end of a work session to capture learnings and maintain wo
 Run the preflight script to collect all session data in one pass:
 
 ```bash
-bash ~/ai-workspace/my-lib/skills/session-debrief/preflight.sh
+bash ~/ai-workspace/team-lib/skills/session-debrief/preflight.sh
 ```
 
 This outputs a JSON report with:
@@ -138,7 +138,7 @@ Before invoking postflight, build two explicit space-separated lists of repo-rel
 Run the postflight script with the composed pulse message and the file lists from Phase 2h:
 
 ```bash
-bash ~/ai-workspace/my-lib/skills/session-debrief/postflight.sh \
+bash ~/ai-workspace/team-lib/skills/session-debrief/postflight.sh \
   --session-name "<session-name>" \
   --session-marker "<value from preflight's session_info.session_marker>" \
   --mylib-files "backlog/foo.md skills/bar/SKILL.md" \
