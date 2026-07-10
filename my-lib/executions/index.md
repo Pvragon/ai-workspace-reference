@@ -6,7 +6,7 @@ Store deterministic, dual-purpose Python scripts for personal automation. Each s
 ## What Belongs Here
 - Personal automation scripts with a `run()` entry point
 - Tools not yet ready for team-lib graduation
-- Scripts that follow the [execution-standard](../context/indexed/execution-standard.md) (when available via team-lib)
+- Scripts that follow the [execution-standard](../../team-lib/context/indexed/execution-standard.md) (when available via team-lib)
 
 ## What Does NOT Belong Here
 - Skill definitions (use `skills/`)
