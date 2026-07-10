@@ -67,7 +67,11 @@ if [[ ! -d "$TEAM_LIB_DIR/.git" ]]; then
             # your team's library repo.
             echo "    Detected reference layout — extracting team-lib/ subtree..."
             mv "$CLONE_TMP/repo/team-lib" "$TEAM_LIB_DIR"
-            (cd "$TEAM_LIB_DIR" && git init -q && git add -A && git commit -qm "Bootstrap team-lib from $TEAM_REPO_URL")
+            # -c identity overrides: a fresh machine has no git user.name/email
+            # configured yet, and a bare `git commit` would die with exit 128
+            (cd "$TEAM_LIB_DIR" && git init -q && git add -A && \
+                git -c user.name="Workspace Setup" -c user.email="setup@ai-workspace.local" \
+                    commit -qm "Bootstrap team-lib from $TEAM_REPO_URL")
         else
             # Team-lib-rooted repo: use the clone directly
             mv "$CLONE_TMP/repo" "$TEAM_LIB_DIR"

@@ -61,9 +61,11 @@ Before we can use our automation tools, we need a Linux kernel. We use **WSL 2**
 
 You are now in Linux, but you don't have the tools yet.
 
-1.  **Install Git**:
+1.  **Install Git and set your identity**:
     ```bash
     sudo apt-get update && sudo apt-get install -y git
+    git config --global user.name "Your Name"
+    git config --global user.email "you@example.com"
     ```
 2.  **Clone the reference repo** (keep it — it's useful reference material afterward):
     ```bash
