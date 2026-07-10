@@ -91,6 +91,7 @@ check_tool "node" "node --version"
 check_tool "npm" "npm --version"
 check_tool "rg" "rg --version | head -n 1"
 check_tool "sqlite3" "sqlite3 --version"
+check_tool "gh" "gh --version | head -n 1"
 
 echo ""
 
