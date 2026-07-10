@@ -47,7 +47,7 @@ run_cmd "apt-get update"
 
 echo "--> Installing core utilities..."
 # curl, wget, unzip, jq, tree, build-essential, software-properties-common, ripgrep, sqlite3
-run_cmd "apt-get install -y curl wget unzip jq tree build-essential software-properties-common ripgrep sqlite3"
+run_cmd "apt-get install -y curl wget unzip jq tree build-essential software-properties-common ripgrep sqlite3 gh"
 
 echo "--> Installing Runtime Dependencies..."
 
