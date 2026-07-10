@@ -7,8 +7,6 @@ created: 2026-03-25
 last_updated: 2026-03-26
 maintainer: pvragon
 related:
-  - executions/pulse_activity_poster.py  # cron: posts to task activity threads
-  - executions/pulse_aw_summary.py       # cron: AW summaries to Pulse channel
   - runtime/.tmp/pulse-thread-registry.jsonl  # thread→task mapping (ephemeral)
 ---
 
