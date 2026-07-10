@@ -26,8 +26,8 @@ export HOME="$TEST_DIR"
 export WORKSPACE_ROOT="$HOME/ai-workspace"
 
 # 3. Create Dummy Team Repo (Local Mock)
-# Path selected to satisfy validate.sh remote check (Pvragon/pvragon-ai-library)
-DUMMY_TEAM_REPO="$TEST_DIR/mock_github/Pvragon/pvragon-ai-library"
+# Any remote satisfies the generic validate.sh check; name kept arbitrary
+DUMMY_TEAM_REPO="$TEST_DIR/mock_github/example-org/example-team-lib"
 mkdir -p "$DUMMY_TEAM_REPO"
 git init -q "$DUMMY_TEAM_REPO"
 
@@ -121,8 +121,8 @@ git -C "$DUMMY_TEAM_REPO" -c user.name="Test" -c user.email="test@test.com" comm
 echo "🛠️  Dummy Team Repo: $DUMMY_TEAM_REPO"
 
 # 4. Create Dummy My-Lib Repo (Local Mock)
-# Path selected to satisfy validate.sh remote check (jkhereford/private-ai-library)
-DUMMY_MY_REPO="$TEST_DIR/mock_github/jkhereford/private-ai-library"
+# Any remote satisfies the generic validate.sh check; name kept arbitrary
+DUMMY_MY_REPO="$TEST_DIR/mock_github/example-user/private-ai-library"
 mkdir -p "$DUMMY_MY_REPO"
 git init -q "$DUMMY_MY_REPO"
 

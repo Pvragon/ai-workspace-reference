@@ -15,8 +15,8 @@ members (case-insensitive), and posts a structured comment with real ClickUp
 mention tags that trigger notifications.
 
 Usage:
-    python3 clickup_mention_comment.py --task TASK_ID --message "Hey @Roman Naidenko check this out"
-    python3 clickup_mention_comment.py --task TASK_ID --message "@Dana Hetté @Victor Cheung ready for review"
+    python3 clickup_mention_comment.py --task TASK_ID --message "Hey @Jane Smith check this out"
+    python3 clickup_mention_comment.py --task TASK_ID --message "@Sam Lee @Alex Kim ready for review"
 
 Requires:
     - restish CLI configured with clickup-v2 API (see ~/.config/restish/apis.json)
@@ -32,7 +32,7 @@ import subprocess
 import requests
 from dotenv import load_dotenv
 
-WORKSPACE_ID = "9011906822"
+WORKSPACE_ID = "YOUR_WORKSPACE_ID"
 
 def get_token():
     token = os.environ.get("CLICKUP_API_TOKEN")
@@ -63,7 +63,7 @@ def resolve_mentions(message, members):
 
     Returns (comment_array, resolved_names).
     Matching is case-insensitive. Tries longest match first to handle
-    multi-word names like "@Dana Hetté" before "@Dana".
+    multi-word names like "@Sam Lee" before "@Dana".
     """
     # Sort members by username length descending so longer names match first
     sorted_members = sorted(members, key=lambda m: len(m["username"]), reverse=True)

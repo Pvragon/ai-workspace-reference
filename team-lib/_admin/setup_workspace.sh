@@ -32,8 +32,11 @@ ensure_file() {
 
 echo "=== Pvragon AI Workspace Setup ==="
 
-# Default Team Library URL (can be overridden via environment)
-TEAM_REPO_URL="${TEAM_REPO_URL:-https://github.com/Pvragon/pvragon-ai-library.git}"
+# Default Team Library URL (can be overridden via environment).
+# For a NEW workspace bootstrapped from the public reference, this repo IS
+# your starting team-lib — fork it, then point TEAM_REPO_URL at your fork
+# (or later at your own team's private library repo).
+TEAM_REPO_URL="${TEAM_REPO_URL:-https://github.com/Pvragon/ai-workspace-reference.git}"
 
 # ============================================================================
 # TEAM LIBRARY SETUP (Must happen first)
@@ -55,9 +58,24 @@ if [[ ! -d "$TEAM_LIB_DIR/.git" ]]; then
     fi
 
     echo "    Cloning team-lib from $TEAM_REPO_URL..."
-    if git clone "$TEAM_REPO_URL" "$TEAM_LIB_DIR"; then
-        echo "    ✅ team-lib cloned successfully."
+    CLONE_TMP="$(mktemp -d)"
+    if git clone "$TEAM_REPO_URL" "$CLONE_TMP/repo"; then
+        if [[ -d "$CLONE_TMP/repo/team-lib/_admin" ]]; then
+            # Reference-layout repo (wraps the whole workspace, team-lib is a
+            # subdirectory): extract the team-lib subtree and start it as a
+            # fresh local repo. Add your own remote later when you create
+            # your team's library repo.
+            echo "    Detected reference layout — extracting team-lib/ subtree..."
+            mv "$CLONE_TMP/repo/team-lib" "$TEAM_LIB_DIR"
+            (cd "$TEAM_LIB_DIR" && git init -q && git add -A && git commit -qm "Bootstrap team-lib from $TEAM_REPO_URL")
+        else
+            # Team-lib-rooted repo: use the clone directly
+            mv "$CLONE_TMP/repo" "$TEAM_LIB_DIR"
+        fi
+        rm -rf "$CLONE_TMP"
+        echo "    ✅ team-lib set up successfully."
     else
+        rm -rf "$CLONE_TMP"
         echo "    ❌ Failed to clone team-lib. Check your network connection and URL."
         echo "    URL: $TEAM_REPO_URL"
         exit 1
@@ -131,6 +149,10 @@ ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/logs"
 
 # Layer 3: Workbench
 ensure_dir "${WORKSPACE_ROOT}/projects"
+
+# Cross-cutting: agent identity & memory (see agents/example-agent in the
+# reference repo for the pattern — copy it to start your own agent)
+ensure_dir "${WORKSPACE_ROOT}/agents"
 
 # Admin scripts
 ensure_dir "${WORKSPACE_ROOT}/team-lib/_admin"
@@ -364,7 +386,7 @@ This repository is the **Layer 1 (Shared)** foundation of the Pvragon AI Workspa
 
 ## 🚀 Quick Start
 
-### [**→ Start Here: Getting Started Guide**](_admin/GETTING_STARTED.md)
+### [**→ Start Here: Getting Started Guide**](GETTING_STARTED.md)
 *Follow this guide to set up your environment from zero to fully functional.*
 
 ### [**→ Operating Manual: Workspace Reference**](context/indexed/workspace-reference.md)
@@ -478,7 +500,7 @@ roots:
     role: shared-sop
     description: "Shared team library - SOPs, directives, templates"
     is_git_repo: true
-    github_repo: Pvragon/pvragon-ai-library
+    github_repo: null  # set to your team-library repo when you create one
     is_gitignored: false
     key_subdirs:
       registry: registry/
@@ -495,7 +517,7 @@ roots:
     role: user-directives
     description: "Personal overlay library - user directives & scripts"
     is_git_repo: true
-    github_repo: jkhereford/private-ai-library
+    github_repo: null  # set to your private my-lib repo when you create one
     is_gitignored: false
     key_subdirs:
       archive: archive/

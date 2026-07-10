@@ -1,9 +1,9 @@
 ---
 template: onboarding-guide
-version: 1.0.0
-summary: "Step-by-step onboarding guide from blank Windows machine to fully configured agentic workspace. Covers WSL setup, IDE connection, bootstrap scripts, and workflow basics."
+version: 2.0.0
+summary: "Step-by-step onboarding guide from blank Windows machine to fully configured agentic workspace. Covers WSL setup, IDE connection, bootstrap scripts, agent creation, and workflow basics. v2.0.0: rewritten for the public ai-workspace-reference repo — single bootstrap path, reference-layout-aware setup, new agent-creation phase."
 created: 2026-01-15
-last_updated: 2026-02-18
+last_updated: 2026-07-09
 maintainer: pvragon
 ---
 
@@ -13,6 +13,9 @@ Welcome to the **Pvragon AI Workspace**. This guide will take you from a blank W
 
 > [!NOTE]
 > **macOS users:** See [GETTING_STARTED_MAC.md](./GETTING_STARTED_MAC.md) for Mac-specific instructions.
+
+> [!IMPORTANT]
+> **Using the public reference repo?** If you got here via [`Pvragon/ai-workspace-reference`](https://github.com/Pvragon/ai-workspace-reference), that repo **is your starting team library**. The setup script below knows how to bootstrap from it directly — no access to any private Pvragon repo is needed.
 
 ## Phase 1: The Foundation (Windows)
 
@@ -31,10 +34,9 @@ Before we can use our automation tools, we need a Linux kernel. We use **WSL 2**
 5.  Create your **UNIX Username** and **Password** when prompted.
     *   *Tip: Keep it simple. This does not need to match your Windows login.*
 
-### 2. Install Google Antigravity
-1.  Download and install **Google Antigravity**.
-    *   *Note: If you prefer to use VS Code, Cursor, or another editor, you are welcome to do so. However, these instructions assume you are using Antigravity.*
-2.  Open Antigravity.
+### 2. Install an Editor
+1.  Install **VS Code** (or Google Antigravity, Cursor, or another VS Code-family editor — the instructions below work the same way).
+2.  Open your editor.
 3.  Install the **WSL Extension** (if not already installed).
     *   Go to Extensions (sidebar block icon) -> Search "WSL" -> Install.
 
@@ -44,7 +46,7 @@ Before we can use our automation tools, we need a Linux kernel. We use **WSL 2**
 
 **CRITICAL RULE:** We do not work in the Windows filesystem (`C:\Users\...`). We work inside the Linux filesystem (`/home/yourname/...`).
 
-1.  Open Antigravity.
+1.  Open your editor.
 2.  Press `F1` (or `Ctrl+Shift+P`) to open the Command Palette.
 3.  Type and select: **`WSL: Connect to WSL`**.
 4.  A new window will open. Look at the bottom left corner: it should say **WSL: Ubuntu**.
@@ -55,67 +57,31 @@ Before we can use our automation tools, we need a Linux kernel. We use **WSL 2**
 
 ---
 
-## Phase 3: Bootstrap (Choose Your Path)
+## Phase 3: Bootstrap
 
-You are now in Linux, but you don't have our tools yet. Choose the path that matches your role.
-
-### Option A: Standard User (I just want to use the tools)
-*Best for: Users who will not be modifying the core Team Library code.*
+You are now in Linux, but you don't have the tools yet.
 
 1.  **Install Git**:
     ```bash
     sudo apt-get update && sudo apt-get install -y git
     ```
-2.  **Fetch the Setup Scripts**:
-    Clone explicitly to a temporary folder to get the installer.
+2.  **Clone the reference repo** (keep it — it's useful reference material afterward):
     ```bash
     cd ~
-    git clone https://github.com/Pvragon/pvragon-ai-library.git temp-setup
+    git clone https://github.com/Pvragon/ai-workspace-reference.git
     ```
-3.  **Run System Setup (Admin)**:
+3.  **Run System Setup (Admin)** — installs system-level dependencies (Node.js, Python, jq, etc.):
     ```bash
-    sudo ./temp-setup/_admin/setup_system.sh
+    sudo ~/ai-workspace-reference/team-lib/_admin/setup_system.sh
     ```
-4.  **Run Workspace Setup (User)**:
+4.  **Run Workspace Setup (User)** — scaffolds `~/ai-workspace`, extracts the team library, sets up your `my-lib`, Python venv, and toolchain:
     ```bash
-    ./temp-setup/_admin/setup_workspace.sh && rm -rf ~/temp-setup
+    ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh
     ```
-    *Follow the prompts. When asked about `my-lib`, choose "Create new" or "Clone existing" as appropriate.*
+    *Follow the prompts. When asked about `my-lib`, choose "Create new" (option 2) unless you already have a private library repo to clone.*
 
----
-
-### Option B: Contributor (I want to improve the Team Library)
-*Best for: Developers who plan to submit Pull Requests to `team-lib`.*
-
-1.  **Fork the Repository**:
-    *   Go to [Pvragon/pvragon-ai-library](https://github.com/Pvragon/pvragon-ai-library).
-    *   Click **Fork** (top right) -> Select your username -> Create Fork.
-
-2.  **Install Git**:
-    ```bash
-    sudo apt-get update && sudo apt-get install -y git
-    ```
-
-3.  **Clone YOUR Fork**:
-    We clone *your* writeable copy directly to the final destination.
-    ```bash
-    mkdir -p ~/ai-workspace
-    # REPLACE <YOUR-USERNAME> BELOW:
-    git clone https://github.com/<YOUR-USERNAME>/pvragon-ai-library.git ~/ai-workspace/team-lib
-    ```
-
-4.  **Run Setup from Place**:
-    ```bash
-    ~/ai-workspace/team-lib/_admin/setup_workspace.sh
-    ```
-    *(The script will detect it's already cloned and skip the download step)*
-
-5.  **Configure Upstream**:
-    Link your repo back to the original so you can get updates.
-    ```bash
-    cd ~/ai-workspace/team-lib
-    git remote add upstream https://github.com/Pvragon/pvragon-ai-library.git
-    ```
+> [!NOTE]
+> **Working with a team?** If your team maintains its own team-library repo, point the setup at it instead: `TEAM_REPO_URL=https://github.com/<your-org>/<your-team-lib>.git ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh`
 
 ---
 
@@ -126,77 +92,86 @@ You are now in Linux, but you don't have our tools yet. Choose the path that mat
 
 2.  **Open your Workspace (RECOMMENDED):**
     *   **This is the default way to load the workspace.**
-    *   In Antigravity: **File -> Open Workspace from File...**
+    *   In your editor: **File -> Open Workspace from File...**
     *   Select: `\\wsl$\Ubuntu\home\<username>\ai-workspace\pvragon-workspace.code-workspace`
 
+---
 
-## Phase 5: Workflow Basics
+## Phase 5: Create Your Agent
+
+Your workspace has a home for a persistent agent identity — name, memory, and preferences that survive across every session and every AI vendor.
+
+1.  **Copy the example agent** (pick your agent's name — you can also let the agent choose its own):
+    ```bash
+    cp -r ~/ai-workspace-reference/agents/example-agent ~/ai-workspace/agents/<agent-name>
+    ```
+2.  **Personalize `identity.md`**: open `~/ai-workspace/agents/<agent-name>/identity.md` and fill in the name and defaults.
+3.  **Link the memory adapter** (connects the agent's memory into Claude Code's per-project memory system):
+    ```bash
+    cd ~/ai-workspace/agents/<agent-name>/adapters/claude && ./link.sh
+    ```
+4.  **Point your instructions at the identity**: add a line like `READ ~/ai-workspace/agents/<agent-name>/identity.md` to the top of `~/.claude/CLAUDE.md` (create the file if needed).
+5.  **Version it**: `cd ~/ai-workspace/agents/<agent-name> && git init && git add -A && git commit -m "Agent genesis"` — the agent's memory is worth backing up from day one.
+
+The example memory files in `memory/` show the format: one fact per file, YAML frontmatter with a `metadata.type` of `user` / `feedback` / `project` / `reference`, and a one-line entry in `MEMORY.md` (the index the agent loads at every cold start).
+
+---
+
+## Phase 6: Workflow Basics
 
 Understanding where to work is critical to keeping the workspace clean and effective.
 
 ### How to Think About This Workspace (Mental Model)
 
-The `/ai-workspace` has four sub-directories, each with a specific role:
+The `/ai-workspace` has four layer directories plus the cross-cutting `agents/`:
 
 1.  **/personal** — **The Sandbox.**
-    *   This is not linked to any repo and it's your place to do whatever you want.
-    *   It's entirely local and can link to an obsidian vault or do other "second brain" tasks.
+    *   This is not linked to any shared repo and it's your place to do whatever you want.
+    *   It's entirely local (optionally your own private repo, with `secrets/` gitignored) and can serve as an Obsidian vault or other "second brain."
 
 2.  **/my-lib** — **Your Laboratory.**
     *   This is where you work on DOE automations of your own. You use this workspace to make skills, directives, harnesses, executions, etc.
     *   **This is where you will work the majority of the time.**
-    *   This directory is attached to your **personal repo** (e.g., `private-ai-library`).
+    *   Attach it to your own **private repo** when ready (e.g., `<you>/private-ai-library`).
     *   **Rule:** This is where you should push your code while you're working on it.
 
 3.  **/team-lib** — **The Showroom.**
-    *   This is an exact replica of `my-lib`, BUT it's designed to be shared by the team.
-    *   It contains 'approved' skills and automations that we've developed as a team over time and released for others on the team to use.
-    *   This is the folder that is attached to the **`pvragon-ai-library`** repo.
+    *   Same shape as `my-lib`, BUT it's designed to be shared.
+    *   It contains 'approved' skills and automations, released for everyone using the library.
+    *   Bootstrapped from this reference repo; attach it to **your own team's repo** when you create one.
 
 4.  **/projects** — **The Factory.**
     *   This is where agentic development on apps happens.
-    *   It has some different rules that apply to building apps agentically.
+    *   It has some different rules that apply to building apps agentically (see `context/indexed/project-docs-standard.md`).
+
+5.  **/agents** — **The Identity Layer (cross-cutting).**
+    *   One folder per agent: `identity.md`, `memory/`, vendor `adapters/`.
+    *   Git-backed so identity and memory survive machine changes and vendor switches.
 
 ### The "Graduation" Workflow
 
-How does code get from your lab (`my-lib`) to the team (`team-lib`)?
+How does code get from your lab (`my-lib`) to the shared library (`team-lib`)?
 
 1.  **Develop in `my-lib`**: Work out all the kinks, test your automations, and iterate privately.
 2.  **Graduate to `team-lib`**: Once something is stable and useful for the team, move it to `team-lib`.
-    *   *Option A*: Use the graduation skill (if available).
-    *   *Option B*: Manually copy the folder (like `saas-usage-audit`) and drop the pieces into their appropriate `/team-lib` locations.
-3.  **Pull Request**: Create a Pull Request against the `team-lib` repo (`pvragon-ai-library`) for review.
+    *   *Option A*: Use the [`graduate-to-team-library`](../my-lib/directives/graduate-to-team-library.md) directive.
+    *   *Option B*: Manually copy the folder and drop the pieces into their appropriate `/team-lib` locations (and register them in `registry/`).
+3.  **Pull Request**: If your team-lib is a shared repo, open a Pull Request for review.
 
 ---
 
-## 🤝 How to Contribute (For Option B Users)
+## 🤝 Contributing Back
 
-Because you are working on a **Fork**, you cannot break the main team updates. Here is the workflow:
+Found a fix or improvement that belongs in the reference itself? PRs to [`Pvragon/ai-workspace-reference`](https://github.com/Pvragon/ai-workspace-reference) are welcome:
 
-### 1. Update your code
-Before starting work, make sure you have the latest team updates.
-*   **GitHub UI**: Go to your fork on GitHub. Click **"Sync fork"**.
-*   **Terminal**: `git pull upstream main`
-
-### 2. Make your changes
-Create a branch, write code, commit, and push to *your* fork.
-```bash
-git checkout -b feature/my-cool-feature
-# ... work ...
-git push origin feature/my-cool-feature
-```
-
-### 3. Open a Pull Request
-*   Go to your fork on GitHub.
-*   Click **"Compare & pull request"**.
-*   Base: `Pvragon/pvragon-ai-library` provided by `main`.
-*   Head: `<Your-Username>/pvragon-ai-library` provided by `feature/my-cool-feature`.
-
+1.  Fork the repo on GitHub, clone your fork, create a branch.
+2.  Make your change (keep it generic — no personal paths, names, or credentials).
+3.  Push to your fork and open a Pull Request.
 
 ### 🎉 Congratulations!
 You are now ready.
 - **Global Context** is in `team-lib`.
-- **Your Work** goes in `projects`.
-- **Your Private Config** is in `my-lib`.
+- **Your Work** goes in `my-lib` (automations) and `projects` (apps).
+- **Your Agent** lives in `agents/<agent-name>`.
 
 **Next Step:** Open `team-lib/context/indexed/workspace-reference.md` to read the Operating Manual.

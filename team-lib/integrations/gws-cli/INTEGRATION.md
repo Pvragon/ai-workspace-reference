@@ -28,7 +28,7 @@ Use `gws` to interact with Google Workspace APIs directly from the terminal. Cov
 
 1. **Node.js** (v18+) via nvm
 2. **Install gws:** `npm install -g @googleworkspace/cli`
-3. **OAuth client credentials** at `~/.config/gws/client_secret.json` (Desktop OAuth client from GCP project `pvragon-ai-workspace`)
+3. **OAuth client credentials** at `~/.config/gws/client_secret.json` (Desktop OAuth client from GCP project `your-gcp-project`)
 4. **Authenticate:** `gws auth login` (opens browser for OAuth consent)
 
 ## Common Commands

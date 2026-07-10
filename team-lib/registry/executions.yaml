@@ -29,7 +29,7 @@ executions:
 
   list_shared_drives:
     path: "executions/list_shared_drives.py"
-    description: "Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials from the Google Workspace MCP server. Used by the update-drive-index skill."
+    description: "Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials from the Google Workspace MCP server."
     tags: [google-drive, listing, oauth]
     version: "1.0.0"
 

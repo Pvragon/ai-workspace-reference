@@ -56,10 +56,10 @@ Then edit `~/.config/restish/apis.json` and replace `YOUR_TOKEN_HERE` with your 
 
 ```bash
 # List workspace members
-restish clickup-v2/team/9011906822 -f 'team.members[].user.{id, username, email}'
+restish clickup-v2/team/YOUR_WORKSPACE_ID -f 'team.members[].user.{id, username, email}'
 
 # List chat channels
-restish clickup-v3/workspaces/9011906822/chat/channels
+restish clickup-v3/workspaces/YOUR_WORKSPACE_ID/chat/channels
 ```
 
 ## Common Operations
@@ -73,23 +73,23 @@ echo '{"comment_text": "Deployed to staging"}' | restish post clickup-v2/task/TA
 # Comment with @mention (use clickup_mention_comment.py wrapper)
 python3 team-lib/skills/clickup-cli/clickup_mention_comment.py \
   --task TASK_ID \
-  --message "Hey @Roman Naidenko can you review this?"
+  --message "Hey @Jane Smith can you review this?"
 
 # Multiple @mentions
 python3 team-lib/skills/clickup-cli/clickup_mention_comment.py \
   --task TASK_ID \
-  --message "@Dana Hetté @Victor Cheung ready for QA"
+  --message "@Sam Lee @Alex Kim ready for QA"
 ```
 
 ### Chat Messages (v3)
 
 ```bash
 # Send a message to a channel
-restish post clickup-v3/workspaces/9011906822/chat/channels/CHANNEL_ID/messages \
+restish post clickup-v3/workspaces/YOUR_WORKSPACE_ID/chat/channels/CHANNEL_ID/messages \
   type: message, content: "Hello from the CLI"
 
 # List channels (find channel IDs)
-restish clickup-v3/workspaces/9011906822/chat/channels -f 'data[].{id, name, type}'
+restish clickup-v3/workspaces/YOUR_WORKSPACE_ID/chat/channels -f 'data[].{id, name, type}'
 ```
 
 ### Tasks
@@ -109,7 +109,7 @@ echo '{"status": "in progress"}' | restish put clickup-v2/task/TASK_ID
 
 ```bash
 # List all workspace members
-restish clickup-v2/team/9011906822 -f 'team.members[].user.{id, username, email}'
+restish clickup-v2/team/YOUR_WORKSPACE_ID -f 'team.members[].user.{id, username, email}'
 ```
 
 ## Known Limitations
@@ -117,16 +117,12 @@ restish clickup-v2/team/9011906822 -f 'team.members[].user.{id, username, email}
 - **Chat @mentions are not possible** — the ClickUp v3 Chat API does not support structured mention tags. This is a ClickUp API limitation, not a tooling gap.
 - **Task comment @mentions require the wrapper script** — Restish alone can post the structured JSON, but you'd need to manually construct the `comment` array with user IDs. The wrapper resolves `@Name` automatically.
 
-## Key Channel IDs (Pvragon workspace)
+## Key Channel IDs (record yours here)
 
 | Channel | ID |
 |---|---|
-| agentastic | `8cjdj86-12431` |
-| Pvragon | `7-9011906822-8` |
-| My-Project | `6-XXXXXXXXXXXX-X` |
-| Another-Project | `6-XXXXXXXXXXXX-X` |
-| HQ | `8cjdj86-5091` |
-| new-product-dev | `8cjdj86-9091` |
-| Pulse | `5-90117802942-8` |
+| general | `X-XXXXXXXXXXXX-X` |
+| my-project | `X-XXXXXXXXXXXX-X` |
+| pulse | `X-XXXXXXXXXXXX-X` |
 
-Use `restish clickup-v3/workspaces/9011906822/chat/channels` for the full list.
+Use `restish clickup-v3/workspaces/YOUR_WORKSPACE_ID/chat/channels` for the full list.

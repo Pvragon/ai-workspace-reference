@@ -29,7 +29,7 @@ roots:
     role: shared-sop
     description: "Shared team library - SOPs, directives, templates"
     is_git_repo: true
-    github_repo: Pvragon/pvragon-ai-library
+    github_repo: null  # set to your team-library repo when you create one
     is_gitignored: false
     key_subdirs:
       registry: registry/

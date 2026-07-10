@@ -100,23 +100,15 @@ skills:
     tags: [workspace, updates, templates, maintenance]
     version: "1.0.0"
 
-  - name: update-drive-index
-    description: "Refreshes the Google Drive index by enumerating all Shared Drives and root-level contents via the Google Drive API."
-    path: skills/update-drive-index/SKILL.md
-    capabilities: [google-drive, index-refresh, api-enumeration]
-    dependencies: [google-drive-mcp]
-    tags: [google-drive, index, automation]
-    version: "1.1.0"
-
   # clickup-cli moved to integrations/ (2026-03-20)
 
   - name: session-debrief
-    description: "End-of-session procedure: captures learnings to memory topic files, verifies registry consistency, updates current-state.md, and syncs improvements to team-lib."
+    description: "End-of-session procedure: preflight.sh emits a deterministic JSON report (git changes, registry issues, stale flags), the agent captures learnings to memory topic files and updates current-state.md (structured snapshot, ~5KB cap), postflight.sh handles commits with explicit file lists."
     path: skills/session-debrief/SKILL.md
     capabilities: [memory-management, registry-maintenance, state-tracking, team-sync]
-    dependencies: []
-    tags: [session, debrief, memory, maintenance]
-    version: "1.1.0"
+    dependencies: [bash, jq, git]
+    tags: [session, debrief, memory, maintenance, preflight, postflight]
+    version: "2.4.0"
 
   # ============================================================
   # EXTERNAL SKILLS (lower priority in search hierarchy)

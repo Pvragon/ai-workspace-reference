@@ -35,16 +35,16 @@ mcp_servers:
     post_install_notes: "Requires ClickUp OAuth — will prompt in browser on first use."
 
   baserow:
-    description: "Baserow database (Pvragon instance)"
-    required: true
+    description: "Baserow database (optional — point at your own instance)"
+    required: false
     env_vars_required: ["BASEROW_MCP_TOKEN"]
     config:
       claude:
         type: stdio
         command: bash
-        args: ["-c", "source ~/ai-workspace/personal/secrets/.env && npx mcp-remote https://br.pvragon.com/mcp/$BASEROW_MCP_TOKEN/sse"]
+        args: ["-c", "source ~/ai-workspace/personal/secrets/.env && npx mcp-remote https://baserow.example.com/mcp/$BASEROW_MCP_TOKEN/sse"]
         env: {}
-    post_install_notes: "Ensure BASEROW_MCP_TOKEN is set in personal/secrets/.env"
+    post_install_notes: "Optional. Replace baserow.example.com with your own Baserow host and set BASEROW_MCP_TOKEN in personal/secrets/.env"
 
   excalidraw:
     description: "Excalidraw diagramming"

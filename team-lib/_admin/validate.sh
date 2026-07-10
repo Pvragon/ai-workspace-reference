@@ -10,10 +10,12 @@ FAILURES=0
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 log_pass() { echo -e "${GREEN}✅ PASS:${NC} $1"; }
 log_fail() { echo -e "${RED}❌ FAIL:${NC} $1"; ((FAILURES++)); }
+log_warn() { echo -e "${YELLOW}⚠️  WARN:${NC} $1"; }
 log_info() { echo "ℹ️  $1"; }
 
 check_dir() {
@@ -45,7 +47,7 @@ check_mcp_server() {
 
 check_git_repo() {
     local dir="$1"
-    local expected_remote="$2"
+    local expected_remote="${2:-}"   # optional: substring the remote should contain
     local path="$WORKSPACE_ROOT/$dir"
 
     if [[ ! -e "$path/.git" ]]; then
@@ -55,6 +57,16 @@ check_git_repo() {
 
     # Check remote origin
     local actual_remote=$(git -C "$path" remote get-url origin 2>/dev/null || echo "none")
+
+    if [[ -z "$expected_remote" ]]; then
+        # Generic check: any remote is fine (your fork, your own repo, etc.)
+        if [[ "$actual_remote" != "none" ]]; then
+            log_pass "$dir is a git repository (remote: $actual_remote)"
+        else
+            log_warn "$dir has no git remote configured — add one for backup"
+        fi
+        return
+    fi
 
     # Normalize URLs for comparison (remove .git suffix, handle ssh vs https)
     # Simple check: does it contain the repo name?
@@ -81,7 +93,7 @@ echo "----------------------------------------"
 # 2. Layer 1: Team Lib
 echo "Checking Layer 1: Team Lib..."
 check_dir "team-lib"
-check_git_repo "team-lib" "Pvragon/pvragon-ai-library"
+check_git_repo "team-lib"   # any remote is valid — your fork of ai-workspace-reference or your own team repo
 
 # Subdirectories
 check_dir "team-lib/_admin"
@@ -112,7 +124,7 @@ echo "----------------------------------------"
 # 3. Layer 2: My Lib
 echo "Checking Layer 2: My Lib..."
 check_dir "my-lib"
-check_git_repo "my-lib" "jkhereford/private-ai-library"
+check_git_repo "my-lib"   # any remote is valid — your own private repo
 
 # Subdirectories
 check_dir "my-lib/archive"
@@ -146,7 +158,12 @@ check_cli_tool "gh" "gh --version"
 check_cli_tool "gws" "gws --version"
 check_cli_tool "restish" "restish --version"
 if [[ -f "$HOME/.claude.json" ]]; then
-    check_mcp_server "baserow"
+    # Baserow is optional (see toolchain.yaml) — informational only
+    if jq -e '.mcpServers."baserow"' "$HOME/.claude.json" &>/dev/null; then
+        log_pass "MCP server: baserow (optional)"
+    else
+        log_info "Optional MCP server not configured: baserow"
+    fi
 else
     log_info "~/.claude.json not found — skipping MCP validation"
 fi

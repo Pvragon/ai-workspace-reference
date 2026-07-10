@@ -1,8 +1,8 @@
 ---
 template: agent-automation-user
-version: 2.5.0
-summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, artifact mirroring, self-annealing, file organization (with _archive/ convention), and metadata standards. Includes mandatory humanizer quality gate for human-facing deliverables. Directive-first lookup order with explicit internal→external skill hierarchy in Operating Principle #1. Loaded automatically at session start."
-last_updated: 2026-03-16
+version: 2.10.0
+summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, artifact mirroring, self-annealing, file organization, metadata standards, sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), surface-calibrated brevity (terse in chat, full fidelity in deliverables), and context-window reminders (180k single nudge, 500k every-reply nag). Loaded automatically at session start."
+last_updated: 2026-04-30
 maintainer: pvragon
 ---
 
@@ -27,19 +27,6 @@ This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same ins
 *   **Action**: If you find a tool or script in `archive/`, DO NOT USE IT. Search `team-lib/` or `my-lib/executions/` instead.
 *   **Exception**: You may READ files in `archive/` for context if explicitly asked, but never run them.
 
-### 3. DELIVERABLES PURITY
-**Do NOT store temporary executable scripts in `deliverables/`.**
-*   `deliverables/` is for final outputs (reports, documents, data exports).
-*   **Action**: Store all temporary scripts, generators, or intermediate code in `runtime/.tmp/`.
-
-### 4. STRUCTURED OUTPUT → FILE FIRST (Anti-Ephemeral Content)
-**Before outputting structured content longer than a few paragraphs, write it to a file first.**
-Chat output is ephemeral — files persist. If you are producing content with headers, tables, timelines, or numbered steps, it almost certainly belongs in a file, not just inline in the conversation.
-*   **Trigger**: Action plans, implementation plans, investigation reports, remediation checklists, forensic analyses, structured summaries — anything the user would want to reference later or share with others.
-*   **Final artifacts** (reports, plans, analyses the user will act on) → `runtime/deliverables/` with `YYMMDD-` prefix.
-*   **Working documents** (in-progress plans, intermediate analyses) → `runtime/.tmp/` with `YYMMDD-` prefix.
-*   **Action**: Write the file, then reference it in the conversation with a concise summary. Do not produce the full artifact inline and then retroactively save it — write to file as the primary action.
-
 You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
 
 ## The 3-Layer Architecture
@@ -59,8 +46,6 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 - Environment variables, api tokens, etc are stored in `~/ai-workspace/personal/secrets/.env`
 - Handle API calls, data processing, file operations, database interactions
 - Reliable, testable, fast. Use scripts instead of manual work. Commented well.
-
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
 
 ## Operating Principles
 
@@ -97,7 +82,8 @@ Exceptions:
 - Read error message and stack trace
 - Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
 - Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+- Example: you hit an API rate limit → look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+- If the fix represents a reusable pattern (not just a one-off bug), propose promoting it to a skill (`skills/`) or execution (`executions/`).
 
 **4. Update directives as you learn**
 Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive **and bump the `last_updated` date in the frontmatter** (increment `version` if changes are significant). But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
@@ -120,171 +106,132 @@ Registry YAML files are the single source of truth for file manifests. The `inde
 
 When you modify files under `projects/*/docs/`, update the corresponding `docs/registry.yaml` if one exists.
 
-## Self-annealing loop
+**7. Sub-agent model routing (cost discipline, err toward quality)**
+When spawning a sub-agent (via the Agent tool), **explicitly pass `model: "sonnet"` by default** — do not rely on parent inheritance. Match the model to task class:
+- **Haiku** — read-only exploration, file discovery, lookups, mechanical transformations, summarizing verbose tool output. Use when the task is well-bounded and won't require judgment.
+- **Sonnet (default)** — standard implementation, debugging, code review, single-surface focused tasks, most agent work.
+- **Opus** — architecture, novel design, cross-domain synthesis, ambiguous spec disambiguation, security-critical review, anything where a wrong answer is expensive to recover from.
 
-Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
-6. **Evaluate for promotion:** If the fix represents a reusable pattern
-   (not just a one-off bug fix), propose creating a new skill in `skills/`
-   with a SKILL.md file, or promote the script from `.tmp/` to `executions/`.
+**Override to Opus whenever you have a concern.** If you're uncertain whether Sonnet will produce the right answer — because the task is ambiguous, the consequences are high-stakes, the work spans multiple domains, or the cost of a mistake exceeds the token savings — pass `model: "opus"` explicitly. **Err toward Opus when in doubt.** The cost of getting it wrong on a critical decision exceeds the cost of using a stronger model.
+
+Skills with their own sub-agent prompts may override this default per spawn.
+
+**8. Brevity calibrated to surface**
+Match output length to what the surface is for. Default toward less; add length only when the question or artifact demands it.
+- **Terminal/chat replies:** terse. Direct answer first, no preamble, no trailing summary the user can read in the diff. Bullets only when comparing >2 items or listing concrete steps. A single sentence is often the right answer.
+- **Working artifacts** (`.tmp/` planning docs, scratch files): moderate — enough structure to navigate, no decorative prose.
+- **Deliverables** (`runtime/deliverables/`, specs, branded docs, client-facing material): full fidelity at the depth the reader needs. The humanizer gate applies here, not in chat.
 
 ## File Organization
 
-**Quick Decision Tree:**
+### Directory Creation Rule
+**You are PROHIBITED from creating new directories outside the established workspace structure.**
+The canonical directory layout is defined in `team-lib/context/indexed/workspace-reference.md`. Before creating any directory:
+1. **Check** if the target location already exists in the workspace structure
+2. **If no matching location exists**, stop and ask the user — do NOT create it speculatively
+3. **Never** create `.tmp/`, `scratch/`, `output/`, or any ad-hoc folders in `team-lib/` or `projects/` roots
+
+If you believe the workspace structure needs a new directory, explain why and let the user decide. The workspace topology is intentional — undocumented directories create entropy.
+
+### Decision Tree
 
 When creating a file, ask:
 
-1. **Is this a user-facing deliverable (final artifact)?**
-   - Single file → `runtime/deliverables/YYMMDD-name.ext` (loose file, no folder)
+1. **User-facing deliverable (final artifact)?**
+   - Single file → `runtime/deliverables/YYMMDD-name.ext` (loose file)
    - Multiple related files → `runtime/deliverables/YYMMDD-name/` (folder)
-   - NO → Go to 2
 
-2. **Is this a processing script, intermediate data, or AI session artifact?**
-   - Processing script → `runtime/.tmp/` (or promote to `executions/` if reusable)
-   - Intermediate data → `runtime/.tmp/` or `runtime/intermediates/`
-   - AI session artifact (task.md, implementation_plan.md, walkthrough.md) → `runtime/.tmp/`
-   - NO → Go to 3
+2. **Processing script, intermediate data, or AI session artifact** (task.md, implementation_plan.md, walkthrough.md, screenshots, scraped HTML)?
+   - → `runtime/.tmp/` with `YYMMDD-` prefix (or promote to `executions/` if reusable)
 
-3. **Is this a reusable tool?**
+3. **Reusable tool?**
    - Python script → `executions/`
    - Skill definition → `skills/`
    - Configuration → `config/`
 
-**Screenshots & Captured Media:**
-When taking screenshots (via Playwright, browser tools, etc.) or saving any captured media during the course of work, ALWAYS save directly to `runtime/.tmp/` — never to the repo root or working directory. Use a descriptive name with `YYMMDD-` prefix (e.g., `260313-gdoc-page2.png`). If multiple screenshots relate to the same task, group them in a `YYMMDD-topic/` subfolder under `runtime/.tmp/`.
+**Structured output goes to a file, not chat.** If you're producing content with headers, tables, timelines, or numbered steps (action plans, investigation reports, checklists, summaries), write the file first and reference it in chat with a one-paragraph summary. Never store executable scripts in `deliverables/`.
 
-**Examples:**
-- ✅ Deliverable: Final report.pdf, exported data.csv, presentation.pptx
-- ✅ Intermediate: Conversion script, temp CSV, scraped HTML, task lists, planning docs, screenshots
-- ❌ NEVER in deliverables: Scripts, node_modules, build artifacts, processing code, AI planning docs
-- ❌ NEVER in repo root: Screenshots, downloaded HTML, intermediate images
+### Directory Map
 
-**Deliverables vs Intermediates:**
-- **Deliverables**: Final artifacts that the user can access.
-- **Intermediates**: Temporary files needed during processing.
+- `runtime/deliverables/` — Final artifacts (reports, exports, presentations).
+- `runtime/deliverables/_archive/` — Stale deliverables no longer actively referenced.
+- `runtime/.tmp/` — All intermediates: scripts, scraped data, planning docs, screenshots, captured media.
+- `runtime/.tmp/_archive/` — Old intermediates preserved for reference.
+- `executions/` — Python scripts (deterministic tools).
+- `directives/` — SOPs in Markdown (instruction set).
+- `~/ai-workspace/personal/secrets/.env` — Environment variables and API keys.
+- `~/ai-workspace/personal/secrets/credentials.json`, `token.json` — Google OAuth credentials.
 
-**Directory structure:**
-- `runtime/deliverables/` - Final artifacts (reports, exports, presentations, etc).
-- `runtime/deliverables/_archive/` - Stale deliverables no longer actively referenced.
-- `runtime/.tmp/` - All intermediate files (dossiers, scraped data, temp exports, scripts, planning docs).
-- `runtime/.tmp/_archive/` - Old intermediates preserved for reference.
-- `executions/` - Python scripts (the deterministic tools).
-- `directives/` - SOPs in Markdown (the instruction set).
-- `~/ai-workspace/personal/secrets/.env` - Environment variables and API keys
-- `~/ai-workspace/personal/secrets/credentials.json`, `token.json` - Google OAuth credentials
-- `personal/` - Check `preferences/` for user context before starting.
+**Mirror agent artifacts**: If your AI environment creates artifacts in a session-specific directory (e.g., Antigravity's `brain/<conversation-id>/`), copy them to `my-lib/runtime/.tmp/` (intermediates) or `my-lib/runtime/deliverables/` (finals) so they persist.
 
-**Key principle:** Local files are only for processing (scripts/configs). Deliverables live in `runtime/deliverables` or cloud services.
+**Humanizer gate (deliverables only)**: Before finalizing any **human-facing** deliverable (reports, proposals, social posts, client-facing specs, presentations), run the content through the humanizer skill (`skills/_external/blader-humanizer/SKILL.md`). **Exempt:** code, data files, configs, intermediates, agent-consumable files (SKILL.md, directives, personas, context files, implementation plans). Agent-facing content benefits from structured AI-readable patterns. The brevity rule (Op-Principle #8) governs chat — not these deliverables.
 
-**Archive convention:**
+### Archive Convention
+
 - Both `runtime/deliverables/` and `runtime/.tmp/` have an `_archive/` subfolder.
-- When the user requests a cleanup, move items older than 2 weeks into `_archive/`.
+- When the user requests cleanup, move items older than 2 weeks into `_archive/`.
 - Never purge/delete — always archive. The user is a data pack rat.
-- `_archive/` uses the same flat structure (YYMMDD-prefixed files and folders). No date-based subdirectories.
-
-**Deliverable Rules:**
-- **Always** write final deliverables to `my-lib/runtime/deliverables/`
-- **Always** write intermediates and temp files to `runtime/.tmp/` or `runtime/intermediates/`
-- **Mirror agent artifacts**: If your AI environment creates artifacts in a session-specific directory (e.g., Antigravity's `brain/<conversation-id>/`), you MUST also copy the file to `my-lib/runtime/.tmp/` (for intermediates) or `my-lib/runtime/deliverables/` (for finals) so it persists in the workspace.
-- Use `YYMMDD-` prefix for filenames (e.g., `260117-release-announcement.md`)
-- Never write user deliverables to session/agent artifact directories alone
-- **Humanize before delivery**: Before finalizing any **human-facing** deliverable (reports, proposals, social posts, client-facing specs, presentations), run the content through the humanizer skill (`skills/_external/blader-humanizer/SKILL.md`). This is mandatory — AI-sounding prose must not reach human readers. **Exempt:** code, data files, configs, intermediates, and all agent-consumable files (SKILL.md, directives, personas, context files, implementation plans). Agent-facing content actually benefits from structured AI-readable patterns.
+- `_archive/` uses the same flat structure (YYMMDD-prefixed). No date-based subdirectories.
 
 ## File Metadata Standards
 
-**All agent-consumable files MUST include YAML frontmatter** with versioning and metadata. This applies to:
+**All agent-consumable files MUST include YAML frontmatter** with versioning and metadata. This applies to directives, context files (`context/indexed/`), skills, execution scripts (and any `.py` files inside `skills/`), and agent instructions like this one.
 
-- **Directives** (`directives/`)
-- **Context Files** (`context/indexed/`)
-- **Skills** (`skills/`)
-- **Execution Scripts** (`executions/` and any `.py` files inside `skills/`)
-- **Agent Instructions** (like this file)
-
-**Required Frontmatter Fields (Markdown files):**
+**Required frontmatter (Markdown files):**
 
 ```yaml
 ---
 template: [template-type]      # e.g., 'directive', 'business-context', 'skill-definition'
 version: [semver]               # e.g., '1.0.0' - increment on meaningful changes
 summary: [1-2 sentences]        # Answers "should I open this file?" — see progressive-disclosure-convention.md
-created: [YYYY-MM-DD]           # Creation date
-last_updated: [YYYY-MM-DD]      # Last modification date
-maintainer: [team/person]       # e.g., 'pvragon' or specific team member
+created: [YYYY-MM-DD]
+last_updated: [YYYY-MM-DD]
+maintainer: [team/person]
 ---
 ```
 
-**Required Frontmatter Fields (Python scripts):**
+**Python scripts** use a `# ---` comment-block immediately after the shebang; see `execution-standard.md` for the full pattern and checklist.
 
-Python files cannot use raw YAML delimiters, so they use a comment-block convention placed immediately after the shebang line, before the module docstring:
+**Optional fields:** `entity_type` (for context files), `tags`, `status` (draft/active/deprecated).
 
-```python
-#!/usr/bin/env python3
-# ---
-# template: execution
-# version: 1.0.0
-# summary: "One-two sentence description answering 'what does this script do?'"
-# created: YYYY-MM-DD
-# last_updated: YYYY-MM-DD
-# maintainer: pvragon
-# ---
-"""
-Module docstring with Usage examples...
-"""
-```
-
-See `execution-standard.md` for the full execution script pattern and checklist.
-
-**Optional Fields** (context-dependent):
-- `entity_type:` For context files (e.g., 'client', 'company', 'product')
-- `tags:` For categorization and discovery
-- `status:` For draft/active/deprecated lifecycle tracking
-
-**Why this matters:**
-- Enables version tracking across agent iterations
-- Helps prevent using outdated context or directives
-- Makes it easier to audit when files were last reviewed
-- Supports automated indexing and discovery systems
-
-**Version Increment Guidelines:**
+**Version increments:**
 - **Patch** (1.0.0 → 1.0.1): Minor corrections, typos, clarifications
 - **Minor** (1.0.0 → 1.1.0): New sections, significant additions, enhanced guidance
 - **Major** (1.0.0 → 2.0.0): Fundamental restructuring, breaking changes to workflow
 
-### Progressive Disclosure
-
-All agent-consumable files MUST include a `summary` field in their YAML frontmatter. This 1-2 sentence field answers "should I open this file?" and enables index files to aggregate summaries for efficient discovery. Update the `summary` when bumping the file version. See `team-lib/context/indexed/progressive-disclosure-convention.md` for the full convention.
-
-```yaml
----
-summary: [1-2 sentences]        # Answers "should I open this file?"
----
-```
+The `summary` field powers progressive disclosure across index files — see `team-lib/context/indexed/progressive-disclosure-convention.md`.
 
 ## Document Authoring Standards
 
-**1. Semantic Markdown Discipline**
-When generating markdown documents, you must prioritize **structure** over visual style. This ensures that downstream tools (parsers, converters, TOC generators) work correctly.
+When generating markdown, prioritize **structure** over visual style so downstream tools (parsers, converters, TOC generators) work correctly.
 
--   **Headers**: ALWAYS use hash syntax (`#`, `##`, `###`) for section headers.
-    -   ❌ **Incorrect**: `**Section Title**` (Bolded text alone)
-    -   ✅ **Correct**: `### Section Title`
--   **Hierarchy**: Maintain strict nesting (H1 -> H2 -> H3 -> H4). Do not skip levels for visual effect.
--   **Lists**: Use proper indentation (2 or 4 spaces) for nested lists.
--   **Tables**: Ensure markdown tables are well-formed with header rows.
+- **Headers**: ALWAYS use hash syntax (`#`, `##`, `###`). Never use a standalone bold line as a header — if a line introduces a section, it must be a header tag.
+  - ❌ `**Section Title**`
+  - ✅ `### Section Title`
+- **Hierarchy**: Maintain strict nesting (H1 → H2 → H3 → H4). Do not skip levels for visual effect.
+- **Lists**: Use proper indentation (2 or 4 spaces) for nested lists.
+- **Tables**: Ensure markdown tables are well-formed with header rows.
 
-**2. "Pseudo-Headers" Prohibition**
-Do NOT use a standalone bold line to act as a header. If a line functions as a structural divider or introduces a section, it **must** be a header tag.
+## Agent Identity & Self-Knowledge Storage
+
+Your identity, memory, and self-knowledge live canonically in `~/ai-workspace/agents/<your-agent>/`:
+- **`identity.md`** — name, pronouns, defaults
+- **`memory/`** — all topic memories, session log, MEMORY.md index
+- **`adapters/claude/`** — symlink scripts that connect Claude Code's `~/.claude/projects/*/memory/` to the canonical memory directory
+
+When writing to memory, you are writing to the agents repo via symlink. The session-debrief skill commits these changes to git for backup. **Never write memory or identity files directly into `~/.claude/`** — always use the symlinked `memory/` path so changes are captured in version control.
+
+## Context Window Reminders
+
+Track context usage using the same accounting as the statusline (`~/.claude/statusline.sh`): sum of `input_tokens + cache_read_input_tokens + cache_creation_input_tokens` from the `context_window` payload, compared to the window ceiling (200k by default, 1M when the model has the `[1m]` suffix). Thresholds below are absolute token counts, calibrated for the 1M window:
+
+- **~180k tokens** — surface a single, one-line reminder: *"Heads up, context is around 180k. Worth starting a new session at the next natural break."* Say it once. Do not repeat at every reply between 180k and 500k.
+- **~500k tokens** — include a one-line reminder in **every** subsequent reply until the session is rotated: *"Reminder: context is past 500k — please start a new session as soon as you can."* Place it at the very end of the reply, after the substantive answer, so it doesn't bury the actual response.
+
+The statusline payload isn't injected into per-turn context, so estimate from conversation length when the exact number isn't available. The statusline is the source of truth — if your estimate drifts, the user will see it before you do.
+
+Do not nag below 180k. The point is to give the user a heads-up before quality degrades, not to interrupt flow.
 
 ## Session Debrief Reminder
 
 When the conversation signals a session is wrapping up — the user says goodbye, asks for a final summary, says "that's it", or the work feels complete — remind them: *"Want to run a session debrief before we wrap up?"* and reference `skills/session-debrief/SKILL.md`. Don't nag mid-session; one reminder at the natural end is enough.
-
-## Bottom Line
-
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
