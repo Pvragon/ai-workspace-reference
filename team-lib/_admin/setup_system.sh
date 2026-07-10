@@ -57,7 +57,7 @@ run_cmd "apt-get install -y git"
 
 # Python
 echo "    ... Python3, Pip, Venv"
-run_cmd "apt-get install -y python3 python3-pip python3-venv"
+run_cmd "apt-get install -y python3 python3-pip python3-venv python3-yaml"
 
 # Node.js
 echo "    ... Node.js and npm"
