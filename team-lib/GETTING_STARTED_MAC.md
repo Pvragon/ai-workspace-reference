@@ -43,17 +43,18 @@ After installation, follow the on-screen instructions to add Homebrew to your PA
 
 You're already in a native Unix environment.
 
-1.  **Clone the reference repo** (keep it — it's useful reference material afterward):
+1.  **Set your git identity, then clone the reference repo** (keep it — it's useful reference material afterward):
     ```bash
+    git config --global user.name "Your Name"
+    git config --global user.email "you@example.com"
     cd ~
     git clone https://github.com/Pvragon/ai-workspace-reference.git
     ```
 
-2.  **Run System Setup (Admin)**:
+2.  **Install system dependencies via Homebrew** (`setup_system.sh` is Debian/Ubuntu-only — on macOS install the equivalents directly):
     ```bash
-    sudo ~/ai-workspace-reference/team-lib/_admin/setup_system.sh
+    brew install git python@3.12 node jq ripgrep sqlite tree wget
     ```
-    *Note: The script auto-detects macOS and uses `brew` instead of `apt-get`.*
 
 3.  **Run Workspace Setup (User)** — scaffolds `~/ai-workspace`, extracts the team library, sets up your `my-lib`, Python venv, and toolchain:
     ```bash
