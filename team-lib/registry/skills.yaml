@@ -44,6 +44,14 @@ skills:
     tags: [release, changelog, git, documentation, automation]
     version: "1.0.0"
 
+  - name: check-workspace-consistency
+    description: Rigorously validate all files referencing workspace structure are in sync — three-pass protocol over templates, docs, and registries.
+    path: skills/_workspace-developer/check-workspace-consistency/SKILL.md
+    capabilities: [consistency-validation, structure-audit, release-gating]
+    dependencies: []
+    tags: [workspace, validation, consistency, release]
+    version: "1.1.0"
+
   - name: markdown-to-branded-doc
     description: Convert markdown files to branded documents — .docx files or Google Docs via gws CLI
     path: skills/markdown-to-branded-doc/SKILL.md

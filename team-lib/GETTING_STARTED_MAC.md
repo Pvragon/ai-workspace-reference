@@ -32,11 +32,10 @@ Homebrew is the standard package manager for macOS.
 
 After installation, follow the on-screen instructions to add Homebrew to your PATH.
 
-### 3. Install Google Antigravity
+### 3. Install an Editor
 
-1.  Download and install **Google Antigravity**.
-    *   *Note: If you prefer to use VS Code, Cursor, or another editor, you are welcome to do so. However, these instructions assume you are using Antigravity.*
-2.  Open Antigravity.
+1.  Install **VS Code** (or Google Antigravity, Cursor, or another VS Code-family editor — the instructions below work the same way).
+2.  Open your editor.
 
 ---
 
@@ -74,7 +73,7 @@ You're already in a native Unix environment.
 
 2.  **Open your Workspace (RECOMMENDED):**
     *   **This is the default way to load the workspace.**
-    *   In Antigravity: **File → Open Workspace from File...**
+    *   In your editor: **File → Open Workspace from File...**
     *   Navigate to: `~/ai-workspace/pvragon-workspace.code-workspace`
 
 ---

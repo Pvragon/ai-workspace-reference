@@ -17,8 +17,8 @@ This repository is the **team-lib** layer of the Pvragon AI Workspace. It provid
 ### [**Operating Manual: Workspace Reference**](context/indexed/workspace-reference.md)
 *The definitive guide to the workspace topology, layers, and usage rules.*
 
-### [**Interactive Intro: The AI Workspace**](https://drive.google.com/file/d/1wceFWI0EWhPJFle735EHwlxbwc_CxiOb/view)
-*A visual walkthrough of the workspace architecture — download and open in any browser.*
+### [**Interactive Intro: The AI Workspace**](https://prez.prgn.ai/pvragon/ai-workspace-onboarding.html)
+*A visual walkthrough of the workspace architecture — opens in any browser.*
 
 ---
 
