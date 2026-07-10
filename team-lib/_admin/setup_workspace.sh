@@ -288,7 +288,9 @@ echo "=== Team Toolchain Setup ==="
 
 TOOLCHAIN_SCRIPT="${WORKSPACE_ROOT}/team-lib/_admin/configure_toolchain.sh"
 if [[ -f "$TOOLCHAIN_SCRIPT" ]]; then
-    bash "$TOOLCHAIN_SCRIPT"
+    # Never let toolchain provisioning abort the rest of setup — it can be
+    # re-run standalone at any time.
+    bash "$TOOLCHAIN_SCRIPT" || echo "    ⚠️  Toolchain provisioning incomplete — re-run later: bash $TOOLCHAIN_SCRIPT"
 else
     echo "    ⚠️  Toolchain script not found. Skipping."
 fi

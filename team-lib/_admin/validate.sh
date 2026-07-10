@@ -28,11 +28,13 @@ check_dir() {
 }
 
 check_cli_tool() {
-    local name="$1" cmd="$2"
+    local name="$1" cmd="$2" hint="${3:-}"
     if eval "$cmd" &>/dev/null; then
         log_pass "CLI tool: $name"
     else
-        log_fail "CLI tool missing: $name"
+        # Warn, don't fail: CLI tools are provisionable after setup
+        # (configure_toolchain.sh) and some are integration-specific.
+        log_warn "CLI tool not installed: $name${hint:+ — $hint}"
     fi
 }
 
@@ -154,9 +156,9 @@ echo "----------------------------------------"
 
 # 5. Toolchain
 echo "Checking Toolchain..."
-check_cli_tool "gh" "gh --version"
-check_cli_tool "gws" "gws --version"
-check_cli_tool "restish" "restish --version"
+check_cli_tool "gh" "gh --version" "install: sudo apt-get install -y gh"
+check_cli_tool "gws" "gws --version" "optional, Google Workspace integration: npm install -g @googleworkspace/cli"
+check_cli_tool "restish" "restish --version" "optional, REST-API integrations: https://rest.sh"
 if [[ -f "$HOME/.claude.json" ]]; then
     # Baserow is optional (see toolchain.yaml) — informational only
     if jq -e '.mcpServers."baserow"' "$HOME/.claude.json" &>/dev/null; then
