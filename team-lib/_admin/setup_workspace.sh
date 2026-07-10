@@ -86,6 +86,23 @@ else
 fi
 
 # ============================================================================
+# EXTERNAL SKILL PACKS (public repos, cloned into skills/_external)
+# ============================================================================
+
+EXT_DIR="${TEAM_LIB_DIR}/skills/_external"
+clone_external_pack() {
+    local dir="$1" url="$2"
+    if [[ ! -d "$EXT_DIR/$dir/.git" ]]; then
+        echo "    Cloning external skill pack: $dir..."
+        rm -rf "$EXT_DIR/$dir"
+        git clone --depth 1 "$url" "$EXT_DIR/$dir" || echo "    ⚠️  Failed to clone $dir (continuing — re-run later)"
+    fi
+}
+mkdir -p "$EXT_DIR"
+clone_external_pack "anthropics" "https://github.com/anthropics/skills.git"
+clone_external_pack "rezvani-claude-skills" "https://github.com/alirezarezvani/claude-skills.git"
+
+# ============================================================================
 # SKILL DEPENDENCIES (npm packages)
 # ============================================================================
 

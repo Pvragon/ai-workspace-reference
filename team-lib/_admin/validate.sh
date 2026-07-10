@@ -14,7 +14,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 log_pass() { echo -e "${GREEN}✅ PASS:${NC} $1"; }
-log_fail() { echo -e "${RED}❌ FAIL:${NC} $1"; ((FAILURES++)); }
+log_fail() { echo -e "${RED}❌ FAIL:${NC} $1"; FAILURES=$((FAILURES+1)); }
 log_warn() { echo -e "${YELLOW}⚠️  WARN:${NC} $1"; }
 log_info() { echo "ℹ️  $1"; }
 
