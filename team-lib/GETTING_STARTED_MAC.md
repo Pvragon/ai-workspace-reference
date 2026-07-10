@@ -40,61 +40,30 @@ After installation, follow the on-screen instructions to add Homebrew to your PA
 
 ---
 
-## Phase 2: Bootstrap (Choose Your Path)
+## Phase 2: Bootstrap
 
-You're already in a native Unix environment. Choose the path that matches your role.
+You're already in a native Unix environment.
 
-### Option A: Standard User (I just want to use the tools)
-*Best for: Users who will not be modifying the core Team Library code.*
-
-1.  **Fetch the Setup Scripts**:
-    Clone explicitly to a temporary folder to get the installer.
+1.  **Clone the reference repo** (keep it — it's useful reference material afterward):
     ```bash
     cd ~
-    git clone https://github.com/Pvragon/pvragon-ai-library.git temp-setup
+    git clone https://github.com/Pvragon/ai-workspace-reference.git
     ```
 
 2.  **Run System Setup (Admin)**:
     ```bash
-    sudo ./temp-setup/_admin/setup_system.sh
+    sudo ~/ai-workspace-reference/team-lib/_admin/setup_system.sh
     ```
     *Note: The script auto-detects macOS and uses `brew` instead of `apt-get`.*
 
-3.  **Run Workspace Setup (User)**:
+3.  **Run Workspace Setup (User)** — scaffolds `~/ai-workspace`, extracts the team library, sets up your `my-lib`, Python venv, and toolchain:
     ```bash
-    ./temp-setup/_admin/setup_workspace.sh && rm -rf ~/temp-setup
+    ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh
     ```
-    *Follow the prompts. When asked about `my-lib`, choose "Create new" or "Clone existing" as appropriate.*
+    *Follow the prompts. When asked about `my-lib`, choose "Create new" (option 2) unless you already have a private library repo to clone.*
 
----
-
-### Option B: Contributor (I want to improve the Team Library)
-*Best for: Developers who plan to submit Pull Requests to `team-lib`.*
-
-1.  **Fork the Repository**:
-    *   Go to [Pvragon/pvragon-ai-library](https://github.com/Pvragon/pvragon-ai-library).
-    *   Click **Fork** (top right) → Select your username → Create Fork.
-
-2.  **Clone YOUR Fork**:
-    We clone *your* writeable copy directly to the final destination.
-    ```bash
-    mkdir -p ~/ai-workspace
-    # REPLACE <YOUR-USERNAME> BELOW:
-    git clone https://github.com/<YOUR-USERNAME>/pvragon-ai-library.git ~/ai-workspace/team-lib
-    ```
-
-3.  **Run Setup from Place**:
-    ```bash
-    ~/ai-workspace/team-lib/_admin/setup_workspace.sh
-    ```
-    *(The script will detect it's already cloned and skip the download step)*
-
-4.  **Configure Upstream**:
-    Link your repo back to the original so you can get updates.
-    ```bash
-    cd ~/ai-workspace/team-lib
-    git remote add upstream https://github.com/Pvragon/pvragon-ai-library.git
-    ```
+> [!NOTE]
+> **Working with a team?** If your team maintains its own team-library repo, point the setup at it instead: `TEAM_REPO_URL=https://github.com/<your-org>/<your-team-lib>.git ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh`
 
 ---
 
@@ -129,9 +98,9 @@ The `/ai-workspace` has four sub-directories, each with a specific role:
     *   **Rule:** This is where you should push your code while you're working on it.
 
 3.  **/team-lib** — **The Showroom.**
-    *   This is an exact replica of `my-lib`, BUT it's designed to be shared by the team.
-    *   It contains 'approved' skills and automations that we've developed as a team over time and released for others on the team to use.
-    *   This is the folder that is attached to the **`pvragon-ai-library`** repo.
+    *   Same shape as `my-lib`, BUT it's designed to be shared.
+    *   It contains 'approved' skills and automations, released for everyone using the library.
+    *   Bootstrapped from this reference repo; attach it to **your own team's repo** when you create one.
 
 4.  **/projects** — **The Factory.**
     *   This is where agentic development on apps happens.
@@ -145,32 +114,17 @@ How does code get from your lab (`my-lib`) to the team (`team-lib`)?
 2.  **Graduate to `team-lib`**: Once something is stable and useful for the team, move it to `team-lib`.
     *   *Option A*: Use the graduation skill (if available).
     *   *Option B*: Manually copy the folder (like `saas-usage-audit`) and drop the pieces into their appropriate `/team-lib` locations.
-3.  **Pull Request**: Create a Pull Request against the `team-lib` repo (`pvragon-ai-library`) for review.
+3.  **Pull Request**: If your team-lib is a shared repo, open a Pull Request for review.
 
 ---
 
-## 🤝 How to Contribute (For Option B Users)
+## 🤝 Contributing Back
 
-Because you are working on a **Fork**, you cannot break the main team updates. Here is the workflow:
+Found a fix or improvement that belongs in the reference itself? PRs to [`Pvragon/ai-workspace-reference`](https://github.com/Pvragon/ai-workspace-reference) are welcome:
 
-### 1. Update your code
-Before starting work, make sure you have the latest team updates.
-*   **GitHub UI**: Go to your fork on GitHub. Click **"Sync fork"**.
-*   **Terminal**: `git pull upstream main`
-
-### 2. Make your changes
-Create a branch, write code, commit, and push to *your* fork.
-```bash
-git checkout -b feature/my-cool-feature
-# ... work ...
-git push origin feature/my-cool-feature
-```
-
-### 3. Open a Pull Request
-*   Go to your fork on GitHub.
-*   Click **"Compare & pull request"**.
-*   Base: `Pvragon/pvragon-ai-library` provided by `main`.
-*   Head: `<Your-Username>/pvragon-ai-library` provided by `feature/my-cool-feature`.
+1.  Fork the repo on GitHub, clone your fork, create a branch.
+2.  Make your change (keep it generic — no personal paths, names, or credentials).
+3.  Push to your fork and open a Pull Request.
 
 
 ### 🎉 Congratulations!

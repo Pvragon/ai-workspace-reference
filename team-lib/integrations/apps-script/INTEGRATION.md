@@ -30,10 +30,10 @@ The Google Workspace REST APIs have structural gaps that have been open for 10+ 
 
 1. **Install clasp:** `npm install -g @google/clasp`
 2. **Enable Apps Script API:** Visit https://script.google.com/home/usersettings and toggle on
-3. **Enable Apps Script API on GCP project:** Visit https://console.cloud.google.com/apis/library/script.googleapis.com?project=pvragon-ai-workspace and click Enable
+3. **Enable Apps Script API on GCP project:** Visit https://console.cloud.google.com/apis/library/script.googleapis.com?project=your-gcp-project and click Enable
 4. **Login (management):** `clasp login --creds ~/.config/gws/client_secret.json`
 5. **Login (execution):** `clasp login --creds ~/.config/gws/client_secret.json --use-project-scopes --user run`
-6. **Link GCP project:** In the Apps Script editor (Project Settings → GCP Project → Change project → paste project number `343345206797`)
+6. **Link GCP project:** In the Apps Script editor (Project Settings → GCP Project → Change project → paste project number `YOUR_PROJECT_NUMBER`)
 7. **Deploy as API Executable:** In the Apps Script editor (Deploy → New deployment → API Executable → access: Anyone)
 
 ## Available Scopes
@@ -66,10 +66,10 @@ clasp run-function functionName --user run --params '["arg1", "arg2"]'
 
 ## Project Details
 
-- **Script ID:** `1vi6GF35frg6ECCxEy8DieOrRTXEw6FGBUx2A3hxIqAbisFkTsnI40bBs`
-- **GCP Project:** `pvragon-ai-workspace` (project number: `343345206797`)
+- **Script ID:** `YOUR_SCRIPT_ID`
+- **GCP Project:** `your-gcp-project` (project number: `YOUR_PROJECT_NUMBER`)
 - **OAuth Client:** Desktop App via `~/.config/gws/client_secret.json`
-- **Editor URL:** https://script.google.com/d/1vi6GF35frg6ECCxEy8DieOrRTXEw6FGBUx2A3hxIqAbisFkTsnI40bBs/edit
+- **Editor URL:** https://script.google.com/d/YOUR_SCRIPT_ID/edit
 
 ## Adding New Functions
 

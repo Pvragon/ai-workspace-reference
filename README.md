@@ -57,13 +57,28 @@ Agent identity and memory live in a git-backed repo with symlink adapters per ve
 | [`execution-standard.md`](team-lib/context/indexed/execution-standard.md) | Script pattern specification |
 | [`nick-saraev-doe-framework.md`](team-lib/context/indexed/nick-saraev-doe-framework.md) | DOE framework theory |
 
-## Interactive Presentation
+## Interactive Presentations
 
-For a visual walkthrough of the architecture, see the [AI Workspace Onboarding Presentation](https://prez.prgn.ai/pvragon/ai-workspace-onboarding.html).
+- [How Rowan Works](https://prez.prgn.ai/pvragon/how-rowan-works) — the infrastructure behind a persistent AI collaborator, one concept per slide
+- [AI Workspace Onboarding](https://prez.prgn.ai/pvragon/ai-workspace-onboarding.html) — visual walkthrough of the architecture
+- [The Pvragon AI Workspace](https://prez.prgn.ai/pvragon/ai-workspace-intro.html) — the original intro deck
 
 ## Getting Started
 
-See [`team-lib/GETTING_STARTED.md`](team-lib/GETTING_STARTED.md) for setup instructions.
+**Quick start** (Linux/WSL — see [the full guide](team-lib/GETTING_STARTED.md), or [the Mac guide](team-lib/GETTING_STARTED_MAC.md)):
+
+```bash
+cd ~
+git clone https://github.com/Pvragon/ai-workspace-reference.git
+sudo ~/ai-workspace-reference/team-lib/_admin/setup_system.sh      # system deps
+~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh        # workspace scaffold + team-lib + my-lib + toolchain
+```
+
+Then create your agent from the example (see [Getting Started, Phase 5](team-lib/GETTING_STARTED.md#phase-5-create-your-agent)):
+
+```bash
+cp -r ~/ai-workspace-reference/agents/example-agent ~/ai-workspace/agents/<agent-name>
+```
 
 ## What's Included vs. What's Not
 

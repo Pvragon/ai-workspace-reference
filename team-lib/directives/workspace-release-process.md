@@ -200,7 +200,7 @@ The script will:
 
 - [ ] Tag created and pushed
 - [ ] GitHub release published
-- [ ] Release notes visible at: https://github.com/Pvragon/pvragon-ai-library/releases
+- [ ] Release notes visible at: https://github.com/<your-org>/<your-team-lib>/releases
 
 ---
 
@@ -225,7 +225,7 @@ The script will:
 
 **Output:**
 - [ ] Release notes file: `my-lib/runtime/deliverables/YYMMDD-release-notes-v[Version].md`
-- [ ] GitHub release: https://github.com/Pvragon/pvragon-ai-library/releases/tag/vX.Y.Z
+- [ ] GitHub release: https://github.com/<your-org>/<your-team-lib>/releases/tag/vX.Y.Z
 
 ---
 

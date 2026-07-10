@@ -1,7 +1,8 @@
 ---
 name: example-feedback
 description: Demonstrates the feedback memory type — guidance on how to approach work
-type: feedback
+metadata:
+  type: feedback
 ---
 
 Always use self-documenting names for files, scripts, and variables — clarity over brevity.

@@ -64,7 +64,7 @@ JH Manual Pulse <HH:MM AM/PM>: Thread "<thread name>" registered to task <task_i
 Post immediately without asking for confirmation.
 
 ```bash
-source ~/ai-workspace/personal/secrets/.env && echo '{"type":"message","content":"<message>"}' | restish post clickup-v3/workspaces/9011906822/chat/channels/5-90117802942-8/messages
+source ~/ai-workspace/personal/secrets/.env && echo '{"type":"message","content":"<message>"}' | restish post clickup-v3/workspaces/YOUR_WORKSPACE_ID/chat/channels/YOUR_CHANNEL_ID/messages
 ```
 
 **Important**: Escape any double quotes in the message content with `\"`.
