@@ -74,7 +74,15 @@ skills:
     capabilities: [branding, design-tokens, brand-guidelines, content-pipeline, brand-onboarding]
     dependencies: [node]
     tags: [brand, tokens, guidelines, onboarding, w3c, content-pipeline]
-    version: "1.2.0"
+    version: "1.3.0"
+
+  - name: generate-brand-guide-site
+    description: "Render a brand's tokens + guidelines into a polished, self-contained brand-guide.html. Consumes brand-tokens.json + narrative sections of brand-guidelines.md; LLM-designed, script-verified (validator rejects any hex/font not in the tokens file)."
+    path: skills/generate-brand-guide-site/SKILL.md
+    capabilities: [branding, brand-documentation, html-generation, design-tokens]
+    dependencies: [node]
+    tags: [brand, tokens, html, brand-guide, documentation, self-contained]
+    version: "1.0.0"
 
   - name: skill-autoresearch
     description: "Meta-skill that stress-tests and improves other skills through an automated loop: executor agents follow the skill procedure, score confusion quantitatively, fix issues, repeat until convergence. Based on Karpathy's autoresearch pattern."
