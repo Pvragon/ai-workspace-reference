@@ -2,10 +2,10 @@
 name: create-brand-guidelines
 description: "Create or update a brand-guidelines.md file for any brand — the single source of truth for all branded content generation."
 summary: "Interactive skill that produces a structured brand-guidelines.md by ingesting source materials (style guides, PDFs, websites, logos), extracting brand tokens, validating coverage, and walking the user through gap-filling. Supports create mode (new brand) and update mode (existing brand). Outputs brand-guidelines.md and brand-tokens.json."
-version: 1.2.0
+version: 1.3.0
 template: skill-definition
 created: 2026-03-16
-last_updated: 2026-03-16
+last_updated: 2026-07-13
 maintainer: pvragon
 dependencies: [node]
 tags: [branding, design-tokens, brand-guidelines, content-pipeline]
@@ -113,6 +113,15 @@ Read/view each provided material using your multimodal capabilities. Do not use 
 
 From the source materials, extract values for as many tokens as possible. Track gaps as you go — partial extraction is expected and handled in Step 7.
 
+**Never infer a rule from one accidental implementation.** A color that appears once on one web page is not a brand color; a repeated pattern across materials is. When sources conflict (e.g., the website CSS disagrees with the PDF style guide), resolve explicitly in this order:
+
+1. The user's designated source of truth (ask which, if conflict matters)
+2. Recent approved strategy documents over live implementation
+3. Live implementation over historical drafts
+4. Repeated patterns over isolated examples
+
+Record unresolved conflicts and present them to the user in Step 4 rather than silently picking one.
+
 **Token mapping guide:** Source materials rarely use our token names. Use this mapping:
 
 | Source material says | Maps to token |
@@ -200,8 +209,13 @@ Fill sections in this order:
 
 For each section:
 - Fill in extracted values
-- For fields that can be reasonably inferred (e.g., `color.text.onPrimary` is almost always white), fill with the value and add "(inferred)" in the Usage column
+- Tag each filled value's **provenance** in the Usage column (the parser ignores parentheticals there, so this is free metadata):
+  - *(no tag)* = **approved** — user-confirmed or from the designated source of truth
+  - `(observed)` — consistently present in materials but never formally approved
+  - `(proposed)` — your recommendation, awaiting user approval
+  - `(inferred)` — filled by convention (e.g., `color.text.onPrimary` is almost always white)
 - For fields that require brand owner input, leave the value blank and track as missing
+- Once the user confirms an `(observed)`/`(proposed)`/`(inferred)` value, remove the tag — untagged means approved
 
 **Heading Colors note:** The Fallback column in the heading table is *system documentation* — it shows what the parser uses when the Hex column is blank. Do not modify the Fallback column. If the brand specifies an explicit hex for a heading level, put it in the Hex column; the explicit value always wins over the fallback.
 
@@ -242,8 +256,10 @@ This estimate helps the user decide whether to continue filling gaps or move to 
 ### Step 7: Interactive gap-filling
 
 For each missing section the user wants to complete:
-- Ask focused questions specific to that section
+- Ask focused questions specific to that section, one at a time — never dump a questionnaire
+- Ask for **decisions, not information that can be inspected** — anything answerable from the source materials should have been extracted in Step 3
 - Provide sensible defaults where applicable ("Most brands use left-aligned body text — want to keep that, or switch to justified?")
+- When the user struggles with an abstract question, offer 2-3 concrete directions to pick from instead of rephrasing the abstraction
 - Accept "skip" to move on
 - Accept "done" to stop the interactive process entirely
 
@@ -311,6 +327,9 @@ After the parser has run, update the Template Metadata section at the bottom of 
 - [ ] Contrast failures explained (if any)
 - [ ] User informed of any missing required tokens
 - [ ] Template Metadata section updated with parser results
+- [ ] Handoff states which checks ran and any limitations honestly — list unresolved conflicts, `(observed)`/`(proposed)`/`(inferred)` values awaiting approval, and checks that did NOT run
+
+**Follow-on:** to produce human-facing visual brand documentation from the tokens, run `generate-brand-guide-site` — it renders brand-tokens.json + the narrative sections of this file into a self-contained brand-guide.html.
 
 ## Template Reference
 
