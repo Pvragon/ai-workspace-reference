@@ -266,7 +266,8 @@ The names are not sacred. The **separation** is. See [`references/08-recipes-and
    b. Decide whether a directive or skill exists for this work (consult registry). If yes, READ it before executing — your memory of its contents may be stale.
    c. Decide whether deterministic work belongs in a sub-script. If yes, write/use one.
    d. Execute. On error, fix the underlying issue and update the directive.
-6. **At session end:** debrief. Update memory topics; commit changes to the agent repo.
+   e. Commit at each logical checkpoint as you go — a completed unit of work, before a risky operation, after a verification passes. Commits are local, free, and need no permission; only the push/PR is gated. Don't wait for session end.
+6. **At session end:** debrief. Update memory topics; commit and push any remaining changes to the agent repo.
 
 This is the same loop, every session. Predictability is the point.
 

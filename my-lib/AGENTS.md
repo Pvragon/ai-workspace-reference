@@ -122,6 +122,16 @@ Match output length to what the surface is for. Default toward less; add length 
 - **Working artifacts** (`.tmp/` planning docs, scratch files): moderate — enough structure to navigate, no decorative prose.
 - **Deliverables** (`runtime/deliverables/`, specs, branded docs, client-facing material): full fidelity at the depth the reader needs. The humanizer gate applies here, not in chat.
 
+**9. Commit & version-control discipline**
+*Commit early, commit often; committing needs no permission.* A commit is local, free, and reversible — the only real risk is losing uncommitted work. Auto-commit at every logical checkpoint instead of batching a sprawling diff. Commit when ANY of these occur:
+- A logical unit of work is complete and leaves the tree self-consistent (one fix, feature increment, doc section, or refactor step).
+- **Before** any risky or hard-to-reverse operation (bulk edit, refactor, file moves/renames, dependency bump) — checkpoint first so there's a restore point.
+- **After** a verification passes (tests green, script runs clean, output confirmed) — capture the known-good state.
+- Before switching to an unrelated task, and alongside a registry-affecting change — commit the file and its `registry/*.yaml` entry in the same commit (atomic).
+- At every natural breakpoint, and before ending a session — never leave the tree dirty.
+
+Prefer many small scoped commits over few large ones; when in doubt, commit. Hygiene: one logical change per commit (atomic and scoped), conventional-commit messages (`type(scope): summary`), never knowingly commit secrets or large generated artifacts (respect `.gitignore`), and in a shared tree verify the staged set (`git diff --cached --stat`) before committing. **The push / PR is the only step that needs a human's sign-off — commit continuously, publish deliberately.**
+
 ## File Organization
 
 ### Directory Creation Rule
