@@ -65,7 +65,7 @@ Agent identity and memory live in a git-backed repo with symlink adapters per ve
 
 ## Getting Started
 
-**Quick start** (Linux/WSL — see [the full guide](team-lib/GETTING_STARTED.md), or [the Mac guide](team-lib/GETTING_STARTED_MAC.md)):
+**Quick start** (Linux/WSL — see [ONBOARDING.md](team-lib/ONBOARDING.md), the canonical blank-computer-to-named-agent guide, or [the Mac guide](team-lib/GETTING_STARTED_MAC.md) for macOS Phase 1):
 
 ```bash
 cd ~
@@ -74,7 +74,7 @@ sudo ~/ai-workspace-reference/team-lib/_admin/setup_system.sh      # system deps
 ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh        # workspace scaffold + team-lib + my-lib + toolchain
 ```
 
-Then create your agent from the example (see [Getting Started, Phase 5](team-lib/GETTING_STARTED.md#phase-5-create-your-agent)):
+Then name and create your agent — the choose-name ceremony (see [ONBOARDING.md, Phase 7](team-lib/ONBOARDING.md#phase-7-name-your-agent-)) — starting from the example:
 
 ```bash
 cp -r ~/ai-workspace-reference/agents/example-agent ~/ai-workspace/agents/<agent-name>

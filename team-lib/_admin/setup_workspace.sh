@@ -164,7 +164,9 @@ ensure_dir "${WORKSPACE_ROOT}/my-lib/executions"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/harnesses"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/registry"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/logs"
-ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/intermediates"
+ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/.tmp"
+ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/.tmp/_archive"
+ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables/_archive"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/logs"
 
@@ -177,6 +179,27 @@ ensure_dir "${WORKSPACE_ROOT}/agents"
 
 # Admin scripts
 ensure_dir "${WORKSPACE_ROOT}/team-lib/_admin"
+
+# ============================================================================
+# GIT IDENTITY (required before any commit can succeed)
+# ============================================================================
+# A blank machine has no user.name/user.email; the first commit anyone (or any
+# agent) makes would die with git's exit-128 identity error. Prompt once here.
+
+if [[ -z "$(git config --global user.name 2>/dev/null || true)" ]]; then
+    echo ""
+    echo "---> Git identity is not configured yet."
+    read -p "    Your full name (for git commits): " git_name
+    read -p "    Your work email (for git commits): " git_email
+    git config --global user.name "$git_name"
+    git config --global user.email "$git_email"
+    echo "    ✅ Git identity set."
+fi
+
+# Convention: new repos start on 'main' (fresh git defaults to 'master')
+if [[ -z "$(git config --global init.defaultBranch 2>/dev/null || true)" ]]; then
+    git config --global init.defaultBranch main
+fi
 
 # ============================================================================
 # INTERACTIVE MY-LIB SETUP
@@ -227,11 +250,31 @@ if [[ ! -d "$MY_LIB_DIR/.git" ]]; then
                 echo "    Initializing new git repo..."
                 git init "$MY_LIB_DIR"
                 ensure_file "$MY_LIB_DIR/.gitignore" "/runtime/
+.venv/
+node_modules/
+__pycache__/
+.env
 "
                 ensure_file "$MY_LIB_DIR/README.md" "# my-lib
 Private AI Library.
 "
                 echo "    ✅ Repo initialized."
+                # Offer to create a private GitHub remote so the lab is backed
+                # up from day one (requires gh, authenticated).
+                if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+                    read -p "    Create a private GitHub repo as its remote? [Y/n]: " make_remote
+                    if [[ ! "$make_remote" =~ ^[Nn] ]]; then
+                        read -p "    Repo name [$(whoami)-ai-library]: " repo_name
+                        repo_name="${repo_name:-$(whoami)-ai-library}"
+                        (cd "$MY_LIB_DIR" && \
+                            git add -A && git commit -qm "Initialize my-lib" && \
+                            gh repo create "$repo_name" --private --source=. --remote=origin --push) \
+                            && echo "    ✅ Private remote created and pushed." \
+                            || echo "    ⚠️  Remote creation failed — you can do it later: gh repo create"
+                    fi
+                else
+                    echo "    ℹ️  Tip: back this up later with: gh repo create $(whoami)-ai-library --private --source=. --push"
+                fi
                 valid_choice=true
                 ;;
             3)
@@ -398,6 +441,28 @@ ensure_file "${WORKSPACE_ROOT}/personal/preferences/personal.md" "# Personal Pre
 User: $(whoami)
 "
 
+# Secrets template — the canonical env file every execution script sources.
+# ONBOARDING.md's \"Get your keys\" section explains where each value comes from.
+ensure_file "${WORKSPACE_ROOT}/personal/secrets/.env.template" "# AI Workspace — secrets file
+# Copy real values in place of the placeholders. This file is the template;
+# the live copy is .env in this same directory. NEVER commit either one,
+# and never paste values into chat with an agent.
+
+# ── Team-shared (ask your team lead — one value provisioned for/by the team) ──
+# BASEROW_MCP_TOKEN=        # Baserow MCP access (optional — see _admin/toolchain.yaml)
+
+# ── Per-user (generate your own from each service's settings page) ──
+GOOGLE_WORKSPACE_EMAIL=     # your own work address
+# ANTHROPIC_API_KEY=        # only for direct API scripting; Claude Code has its own login
+
+# ── Project/role-specific — add when a project needs them ──
+# Ask the project lead; never copy another person's values.
+"
+if [[ ! -f "${WORKSPACE_ROOT}/personal/secrets/.env" ]]; then
+    cp "${WORKSPACE_ROOT}/personal/secrets/.env.template" "${WORKSPACE_ROOT}/personal/secrets/.env"
+    echo "Created file: ${WORKSPACE_ROOT}/personal/secrets/.env (fill in your keys)"
+fi
+
 # Team Lib README (Matches Documentation)
 ensure_file "${WORKSPACE_ROOT}/team-lib/README.md" "# Pvragon AI Library
 
@@ -489,9 +554,25 @@ When working in this directory, agents operate in **Engineering Mode**:
 # MANIFEST & WORKSPACE GENERATION
 # ============================================================================
 
+# Helper: report a repo's GitHub slug (owner/repo) or "null" if no remote.
+# Keeps the manifest honest per-user instead of hardcoding anyone's repos.
+repo_slug() {
+    local dir="$1"
+    local url
+    url=$(git -C "$dir" remote get-url origin 2>/dev/null || true)
+    if [[ -n "$url" ]]; then
+        echo "$url" | sed -E 's#^(https://github.com/|git@github.com:)##; s#\.git$##'
+    else
+        echo "null"
+    fi
+}
+
 generate_manifest() {
     local manifest_file="$1"
     local workspace_root="$2"
+    local team_lib_slug my_lib_slug
+    team_lib_slug=$(repo_slug "$workspace_root/team-lib")
+    my_lib_slug=$(repo_slug "$workspace_root/my-lib")
 
     cat > "$manifest_file" << EOF
 # workspace-manifest.yaml
@@ -523,7 +604,7 @@ roots:
     role: shared-sop
     description: "Shared team library - SOPs, directives, templates"
     is_git_repo: true
-    github_repo: null  # set to your team-library repo when you create one
+    github_repo: $team_lib_slug
     is_gitignored: false
     key_subdirs:
       registry: registry/
@@ -540,7 +621,7 @@ roots:
     role: user-directives
     description: "Personal overlay library - user directives & scripts"
     is_git_repo: true
-    github_repo: null  # set to your private my-lib repo when you create one
+    github_repo: $my_lib_slug
     is_gitignored: false
     key_subdirs:
       archive: archive/
@@ -582,12 +663,12 @@ generate_code_workspace() {
       "path": "personal"
     },
     {
-      "name": "1 🔧 /my-lib",
-      "path": "my-lib"
+      "name": "1 📚 /team-lib",
+      "path": "team-lib"
     },
     {
-      "name": "2 📚 /team-lib",
-      "path": "team-lib"
+      "name": "2 🔧 /my-lib",
+      "path": "my-lib"
     },
     {
       "name": "3 🚀 /projects",

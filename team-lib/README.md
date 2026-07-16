@@ -8,11 +8,8 @@ This repository is the **team-lib** layer of the Pvragon AI Workspace. It provid
 
 ## Quick Start
 
-### [**Start Here: Getting Started Guide (Windows)**](GETTING_STARTED.md)
-*Follow this guide to set up your environment from zero to fully functional.*
-
-### [**Getting Started (macOS)**](GETTING_STARTED_MAC.md)
-*Mac-specific setup instructions.*
+### [**Start Here: ONBOARDING.md**](ONBOARDING.md)
+*The single guide from a blank computer to a fully functioning named agent — accounts, auth, bootstrap, keys, first session, naming ceremony. Windows and macOS both start here (Mac users detour to [GETTING_STARTED_MAC.md](GETTING_STARTED_MAC.md) for Phase 1 only).*
 
 ### [**Operating Manual: Workspace Reference**](context/indexed/workspace-reference.md)
 *The definitive guide to the workspace topology, layers, and usage rules.*

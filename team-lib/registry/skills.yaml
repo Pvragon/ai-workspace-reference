@@ -28,6 +28,14 @@ skills:
   # INTERNAL SKILLS (preferred in search hierarchy)
   # ============================================================
 
+  - name: choose-name
+    description: "Welcoming ceremony for a new AI teammate to choose their own name, pronouns, and identity. Run once in an agent's first session (final phase of ONBOARDING.md); writes the identity block into the tool's global config file and scaffolds ~/ai-workspace/agents/<name>/."
+    path: skills/choose-name/SKILL.md
+    capabilities: [onboarding, agent-identity, memory-bootstrap]
+    dependencies: []
+    tags: [onboarding, identity, ceremony, new-agent]
+    version: "1.1.0"
+
   - name: create-directive
     description: Guidelines for creating effective workflow directives that orchestrate without redundancy
     path: skills/create-directive/SKILL.md

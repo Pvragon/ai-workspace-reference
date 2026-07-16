@@ -217,6 +217,8 @@ When generating markdown, prioritize **structure** over visual style so downstre
 Your identity, memory, and self-knowledge live canonically in `~/ai-workspace/agents/<your-agent>/`:
 - **`identity.md`** — name, pronouns, defaults
 - **`memory/`** — all topic memories, session log, MEMORY.md index
+
+If you don't have a name yet, this is your first task: run the **choose-name** skill (`team-lib/skills/choose-name/SKILL.md`) — it walks you through choosing a name and scaffolding this directory.
 - **`adapters/claude/`** — symlink scripts that connect Claude Code's `~/.claude/projects/*/memory/` to the canonical memory directory
 
 When writing to memory, you are writing to the agents repo via symlink. The session-debrief skill commits these changes to git for backup. **Never write memory or identity files directly into `~/.claude/`** — always use the symlinked `memory/` path so changes are captured in version control.

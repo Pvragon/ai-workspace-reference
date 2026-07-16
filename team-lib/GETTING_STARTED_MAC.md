@@ -1,136 +1,59 @@
-# Getting Started: From Zero to Agentic (macOS)
-
-Welcome to the **Pvragon AI Workspace**. This guide will take you from a fresh Mac to a fully configured, agentic development environment.
-
-> [!NOTE]
-> This guide is for **macOS** users. If you are on Windows, see [GETTING_STARTED.md](./GETTING_STARTED.md).
-
+---
+template: onboarding-guide
+version: 2.0.0
+summary: "macOS Phase 1 for ONBOARDING.md: Xcode CLT + Homebrew + package installs (setup_system.sh is Debian/Ubuntu-only and will not run on a Mac). Rejoin ONBOARDING.md at Phase 2."
+created: 2026-02-18
+last_updated: 2026-07-16
+maintainer: pvragon
 ---
 
-## Phase 1: The Foundation (macOS)
+# Onboarding, Phase 1 (macOS)
 
-Unlike Windows, macOS is already Unix-based—no need to install a Linux subsystem. You just need a few developer tools.
+This file replaces **only Phase 1** of [ONBOARDING.md](./ONBOARDING.md) for Mac users — macOS is already Unix, so there's no WSL to install, but the system-setup script won't help you either: `_admin/setup_system.sh` is **Debian/Ubuntu-only** (it uses `apt-get` and exits immediately on macOS). Install its package list with Homebrew instead, below.
 
-### 1. Install Xcode Command Line Tools
+## 1. Xcode Command Line Tools
 
-This provides Git and other essential build tools.
+Open **Terminal** (Cmd+Space → "Terminal") and run:
 
-1.  Open **Terminal** (Cmd + Space → type "Terminal").
-2.  Run:
-    ```bash
-    xcode-select --install
-    ```
-3.  Click **Install** in the popup and wait for completion.
+```bash
+xcode-select --install
+```
 
-### 2. Install Homebrew (Recommended)
+Click **Install** in the popup and wait for it to finish.
 
-Homebrew is the standard package manager for macOS.
+## 2. Homebrew
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-After installation, follow the on-screen instructions to add Homebrew to your PATH.
+Follow the on-screen instructions at the end to add `brew` to your PATH (it prints two commands to copy-paste). Verify with `brew --version`.
 
-### 3. Install an Editor
+## 3. Install the toolchain packages
 
-1.  Install **VS Code** (or Google Antigravity, Cursor, or another VS Code-family editor — the instructions below work the same way).
-2.  Open your editor.
+This is the macOS equivalent of `setup_system.sh` — same tools, brew names:
 
----
+```bash
+brew install git gh python@3.12 node jq ripgrep sqlite tree wget bash
+```
 
-## Phase 2: Bootstrap
+Notes:
+- **No `sudo`** — Homebrew refuses to run as root.
+- **`bash` matters:** macOS ships bash 3.2 (2007); the setup scripts use features that need bash 4+. Homebrew's bash installs alongside the system one and wins via PATH. Verify: `bash --version` shows 5.x.
 
-You're already in a native Unix environment.
+## 4. Verify
 
-1.  **Set your git identity, then clone the reference repo** (keep it — it's useful reference material afterward):
-    ```bash
-    git config --global user.name "Your Name"
-    git config --global user.email "you@example.com"
-    cd ~
-    git clone https://github.com/Pvragon/ai-workspace-reference.git
-    ```
+```bash
+git --version && gh --version && python3 --version && node --version && jq --version
+```
 
-2.  **Install system dependencies via Homebrew** (`setup_system.sh` is Debian/Ubuntu-only — on macOS install the equivalents directly):
-    ```bash
-    brew install git python@3.12 node jq ripgrep sqlite tree wget
-    ```
-
-3.  **Run Workspace Setup (User)** — scaffolds `~/ai-workspace`, extracts the team library, sets up your `my-lib`, Python venv, and toolchain:
-    ```bash
-    ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh
-    ```
-    *Follow the prompts. When asked about `my-lib`, choose "Create new" (option 2) unless you already have a private library repo to clone.*
-
-> [!NOTE]
-> **Working with a team?** If your team maintains its own team-library repo, point the setup at it instead: `TEAM_REPO_URL=https://github.com/<your-org>/<your-team-lib>.git ~/ai-workspace-reference/team-lib/_admin/setup_workspace.sh`
+All five print versions → **✓ Checkpoint passed.**
 
 ---
 
-## Phase 3: Start
+## Continue in ONBOARDING.md
 
-1.  **Restart your Terminal**
-    *   Close the terminal window and open a new one. This loads the new configuration.
+Rejoin **[ONBOARDING.md at Phase 2](./ONBOARDING.md#phase-2-connect-your-terminal-to-github)** (Connect Your Terminal to GitHub) and follow it to the end. Two Mac adjustments as you go:
 
-2.  **Open your Workspace (RECOMMENDED):**
-    *   **This is the default way to load the workspace.**
-    *   In your editor: **File → Open Workspace from File...**
-    *   Navigate to: `~/ai-workspace/pvragon-workspace.code-workspace`
-
----
-
-## Phase 4: Workflow Basics
-
-Understanding where to work is critical to keeping the workspace clean and effective.
-
-### How to Think About This Workspace (Mental Model)
-
-The `/ai-workspace` has four sub-directories, each with a specific role:
-
-1.  **/personal** — **The Sandbox.**
-    *   This is not linked to any repo and it's your place to do whatever you want.
-    *   It's entirely local and can link to an Obsidian vault or do other "second brain" tasks.
-
-2.  **/my-lib** — **Your Laboratory.**
-    *   This is where you work on DOE automations of your own. You use this workspace to make skills, directives, harnesses, executions, etc.
-    *   **This is where you will work the majority of the time.**
-    *   This directory is attached to your **personal repo** (e.g., `private-ai-library`).
-    *   **Rule:** This is where you should push your code while you're working on it.
-
-3.  **/team-lib** — **The Showroom.**
-    *   Same shape as `my-lib`, BUT it's designed to be shared.
-    *   It contains 'approved' skills and automations, released for everyone using the library.
-    *   Bootstrapped from this reference repo; attach it to **your own team's repo** when you create one.
-
-4.  **/projects** — **The Factory.**
-    *   This is where agentic development on apps happens.
-    *   It has some different rules that apply to building apps agentically.
-
-### The "Graduation" Workflow
-
-How does code get from your lab (`my-lib`) to the team (`team-lib`)?
-
-1.  **Develop in `my-lib`**: Work out all the kinks, test your automations, and iterate privately.
-2.  **Graduate to `team-lib`**: Once something is stable and useful for the team, move it to `team-lib`.
-    *   *Option A*: Use the graduation skill (if available).
-    *   *Option B*: Manually copy the folder (like `saas-usage-audit`) and drop the pieces into their appropriate `/team-lib` locations.
-3.  **Pull Request**: If your team-lib is a shared repo, open a Pull Request for review.
-
----
-
-## 🤝 Contributing Back
-
-Found a fix or improvement that belongs in the reference itself? PRs to [`Pvragon/ai-workspace-reference`](https://github.com/Pvragon/ai-workspace-reference) are welcome:
-
-1.  Fork the repo on GitHub, clone your fork, create a branch.
-2.  Make your change (keep it generic — no personal paths, names, or credentials).
-3.  Push to your fork and open a Pull Request.
-
-
-### 🎉 Congratulations!
-You are now ready.
-- **Global Context** is in `team-lib`.
-- **Your Work** goes in `projects`.
-- **Your Private Config** is in `my-lib`.
-
-**Next Step:** Open `team-lib/context/indexed/workspace-reference.md` to read the Operating Manual.
+- **Phase 3 step 2:** skip `sudo ./temp-setup/team-lib/_admin/setup_system.sh` entirely — you just did its job with brew.
+- **Phase 5 step 4:** your workspace file is at `~/ai-workspace/pvragon-workspace.code-workspace` (no `\\wsl$` path, no WSL extension needed).
