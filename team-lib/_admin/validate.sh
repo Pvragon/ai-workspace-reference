@@ -7,6 +7,10 @@ set -e
 WORKSPACE_ROOT="$HOME/ai-workspace"
 FAILURES=0
 
+# npm-type tools install to the user-level prefix (see configure_toolchain.sh);
+# make sure this shell can see them even if ~/.bashrc hasn't been re-sourced.
+export PATH="$HOME/.npm-global/bin:$PATH"
+
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -89,6 +93,11 @@ check_dir "personal/notes"
 check_dir "personal/preferences"
 check_dir "personal/scratch"
 check_dir "personal/secrets"
+if [[ -f "$WORKSPACE_ROOT/personal/secrets/.env" ]]; then
+    log_pass "Found personal/secrets/.env"
+else
+    log_warn "Missing personal/secrets/.env — copy from .env.template and fill in your keys"
+fi
 
 echo "----------------------------------------"
 
@@ -142,7 +151,7 @@ check_dir "my-lib/personas"
 check_dir "my-lib/registry"
 check_dir "my-lib/runtime"
 check_dir "my-lib/runtime/deliverables"
-check_dir "my-lib/runtime/intermediates"
+check_dir "my-lib/runtime/.tmp"
 check_dir "my-lib/runtime/logs"
 check_dir "my-lib/skills"
 
@@ -151,6 +160,7 @@ echo "----------------------------------------"
 # 4. Layer 3: Projects
 echo "Checking Layer 3: Projects..."
 check_dir "projects"
+check_dir "agents"
 
 echo "----------------------------------------"
 
@@ -158,6 +168,7 @@ echo "----------------------------------------"
 echo "Checking Toolchain..."
 check_cli_tool "gh" "gh --version" "install: sudo apt-get install -y gh"
 check_cli_tool "gws" "gws --version" "optional, Google Workspace integration: npm install -g @googleworkspace/cli"
+check_cli_tool "claude" "claude --version" "agent CLI: npm install -g @anthropic-ai/claude-code"
 check_cli_tool "restish" "restish --version" "optional, REST-API integrations: https://rest.sh"
 if [[ -f "$HOME/.claude.json" ]]; then
     # Baserow is optional (see toolchain.yaml) — informational only

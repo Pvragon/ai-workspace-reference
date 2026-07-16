@@ -19,6 +19,14 @@ cli_tools:
       Run 'gws auth login' to authenticate.
       WSL users: browser auth may not auto-launch. Copy the URL manually.
 
+  claude:
+    description: "Claude Code (agent CLI)"
+    install_type: npm
+    install_command: "npm install -g @anthropic-ai/claude-code"
+    check_command: "claude --version"
+    required: true
+    post_install_notes: "Run 'claude' once in ~/ai-workspace/my-lib and complete /login (your team's Claude account or an API key)."
+
 mcp_servers:
   clickup:
     description: "ClickUp project management"

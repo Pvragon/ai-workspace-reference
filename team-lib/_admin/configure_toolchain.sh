@@ -73,6 +73,28 @@ TOOLCHAIN_JSON=$(python3 "$PARSE_SCRIPT" "$TOOLCHAIN_YAML")
 # CLI TOOL INSTALLATION
 # ============================================================================
 
+# Global npm installs need root when node comes from apt (/usr prefix), which
+# breaks every npm-type tool for a normal user. Redirect the global prefix to
+# a user-level directory once, so the toolchain never needs sudo.
+NPM_PREFIX_READY=false
+ensure_npm_user_prefix() {
+    [[ "$NPM_PREFIX_READY" == "true" ]] && return 0
+    NPM_PREFIX_READY=true
+    if [[ $EUID -ne 0 ]]; then
+        local prefix
+        prefix=$(npm config get prefix 2>/dev/null || echo /usr)
+        if [[ "$prefix" == /usr* && ! -w "$prefix/lib/node_modules" ]]; then
+            npm config set prefix "$HOME/.npm-global"
+            mkdir -p "$HOME/.npm-global/bin"
+            export PATH="$HOME/.npm-global/bin:$PATH"
+            if ! grep -q '.npm-global/bin' "$HOME/.bashrc" 2>/dev/null; then
+                echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$HOME/.bashrc"
+            fi
+            echo "    ℹ️  npm global prefix set to ~/.npm-global (user-writable, no sudo)"
+        fi
+    fi
+}
+
 install_cli_tools() {
     echo ""
     echo "---> CLI Tools"
@@ -102,11 +124,12 @@ install_cli_tools() {
             elif [[ "$install_type" == "apt" ]]; then
                 echo "⚠️  not installed (requires sudo: $install_cmd)"
             elif [[ "$install_type" == "npm" ]]; then
+                ensure_npm_user_prefix
                 echo -n "installing..."
                 if eval "$install_cmd" &>/dev/null; then
                     echo " ✅ installed"
                 else
-                    echo " ❌ install failed"
+                    echo " ❌ install failed (retry by hand: $install_cmd — check network and 'npm config get prefix')"
                 fi
             else
                 echo "⚠️  unknown install_type: $install_type"
