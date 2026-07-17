@@ -21,7 +21,7 @@ compose-branded-template →  resolved doc templates                    (templat
 generate-brand-guide-site → brand-guide.html                          (documentation)  ← this skill
 ```
 
-Adapted from a community-shared `generate-brand-guide` skill. Its evidence-gathering/interview front half is replaced by our token pipeline; its presentation standards are kept.
+Adapted from the `generate-brand-guide` skill by **Zed / North Crow AI** (example at northcrow.ai/brand-guide), shared with permission and credited by request. Its evidence-gathering/interview front half is replaced by our token pipeline; its presentation standards are kept.
 
 ## When to Use
 
