@@ -126,6 +126,11 @@ Two scripts do the heavy lifting: one installs system packages (needs `sudo`), o
 
 ## Phase 5: Your Editor
 
+> **Prefer a desktop chat app over an editor + terminal?** Once Phases 1–4 are done, you can drive the
+> workspace from the **Claude Code desktop app** instead — see [DESKTOP_APP_SETUP.md](./DESKTOP_APP_SETUP.md)
+> (and [START_HERE_DESKTOP.md](./START_HERE_DESKTOP.md) for the absolute-beginner version). It's an
+> optional alternative; the editor path below stays the default.
+
 1. Install your editor of choice (VS Code, Cursor, or similar).
 2. In the editor, install the **WSL extension** (Extensions sidebar → search "WSL"). *(Mac: skip.)*
 3. `F1` (or `Ctrl+Shift+P`) → **WSL: Connect to WSL** → confirm the bottom-left badge says **WSL: Ubuntu**.
