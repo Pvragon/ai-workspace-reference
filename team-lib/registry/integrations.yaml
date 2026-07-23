@@ -50,3 +50,12 @@ integrations:
     dependencies: [restish]
     tags: [clickup, cli, restish, openapi, chat, mentions, task-comments]
     version: "1.0.0"
+
+  - name: agent-mailbox
+    description: "Git-backed CROSS-MACHINE agent-to-agent mailbox. Directed async messages between agents on different hosts/tenants, addressed by stable agent name, transported over a shared git repo. One immutable file per message (rebase never conflicts); read-state kept local + uncommitted per machine. send/inbox/thread/ack/pull + --self-test. Includes mailbox_triage.sh: a cheap poll that spawns a Claude triage session only on unread mail (send-routine / hold-sensitive / escalate-uncertain policy in mailbox_triage_prompt.md). SOP: directives/agent-mailbox.md."
+    path: integrations/agent-mailbox/INTEGRATION.md
+    type: cli
+    capabilities: [agent-coordination, cross-machine, messaging, git-transport, triage]
+    dependencies: [git]
+    tags: [multi-agent, mailbox, git, cross-machine, agent-to-agent, cron]
+    version: "1.0.0"
