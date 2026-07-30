@@ -168,7 +168,7 @@ If the task is large enough that step verification needs its own infrastructure 
 |---|---|---|
 | **Spec convergence** | "Make this spec better" | "Run council rubric. Min ≥ 4 on every dimension. Plateau detection: 2 iters with no improvement = stop." |
 | **Schedule tuning** | "Run this less often" | "Reduce to weekly. Verify: cron line shows `0 9 * * 1`. First run ≤ 9:05 next Monday." |
-| **Memory hygiene** | "Clean up the memory index" | "Remove entries last_updated > 90 days AND not referenced in last 5 sessions. Verify: index line count drops by N; no broken links remain." |
+| **Memory hygiene** | "Clean up the memory index" | "Roll entries with a score below X off the active index into the archive index — archive, never delete. Verify: active index line count drops by N; every rolled-off file still resolves; no broken links remain." |
 | **Council finding triage** | "Address the open issues" | "Each OI status moves from Open → Resolved or → Deferred (with reason). Verify: zero Open status entries remain, OR list of remaining Opens with explicit reasons surfaced." |
 
 ---

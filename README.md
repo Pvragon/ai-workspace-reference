@@ -13,7 +13,7 @@ The Pvragon AI Workspace solves four problems that make AI agents unreliable ove
 3. **No identity** — agents have no persistent context about your business
 4. **Compounding errors** — without guardrails, small mistakes snowball
 
-The solution is a four-layer hierarchy with clear boundaries, registry-driven execution, and a tiered memory system.
+The solution is a four-layer hierarchy with clear boundaries, registry-driven execution, and a two-axis tiered memory system with ranked retrieval.
 
 ## Architecture at a Glance
 
@@ -33,13 +33,32 @@ The solution is a four-layer hierarchy with clear boundaries, registry-driven ex
 ### DOE (Directive–Orchestration–Execution)
 Every task separates **what** (directives) from **who decides** (the AI reasoning loop) from **how** (deterministic scripts). Reliability comes from pushing repeatable steps into tested executions.
 
-### Four-Tier Memory
+### Memory: two orthogonal axes
+
+Memory is layered on **two independent axes** that cross rather than stack — every memory has a coordinate on both.
+
+**Axis A — Retention tiers** (how long does this last?). Spans *all* workspace artifacts, not just memory:
+
 | Tier | Lifetime | Example |
 |------|----------|---------|
-| **Long-term** | Persistent, versioned | Indexed context files, identity |
-| **Mid-term** | Cross-session, curated | Agent memory topics (MEMORY.md) |
+| **Long-term** | Persistent, versioned | Indexed context files, identity, lenses |
+| **Mid-term** | Cross-session, curated | Agent memory topics (MEMORY.md index) |
 | **Near-term** | Within-initiative | .tmp files, project plans |
 | **Session** | Single conversation | Active context window |
+
+**Axis B — Memory tiers** (what kind of memory is this, and what does promotion cost?). Memory only:
+
+| Tier | Function | Lives in |
+|------|----------|----------|
+| **T0 Working** | Active attention; dies with the session | Session context |
+| **T1 Episodic** | Recent events with provenance | `memory/short-term/YYMMDD-*.md` |
+| **T2 Semantic** | Decontextualized patterns | `memory/<type>_<topic>.md` topic files |
+| **T3 Situational lens** | Rules injected when narrow triggers match | `lenses/*.md` + a PreToolUse hook |
+| **T4 Always-on lens** | Shapes interpretation of every input | `AGENTS.md`, `CLAUDE.md`, `identity.md` |
+
+A T1 fact is *long-term* on Axis A (git-backed, never deleted) but *episodic* on Axis B. Promotion into T3/T4 is **always a deliberate human action** — auto-promotion would make any single error a permanent interpretive distortion.
+
+**Retrieval is ranked, and forgetting is real but lossless.** T2 memories carry `access_count` / `last_accessed` / `stability` frontmatter and are scored `(access_count + 1) * exp(-days / stability) + 0.6 * importance`, where `stability` grows with *spaced* reinforcement. The index is regenerated into a character-budgeted **Hot** band (auto-loaded) plus a **Cold** band, with the low-relevance tail rolled off to an archive index. Files are never deleted — only index visibility shifts, so a rolled-off memory is one read away and reading it re-warms it.
 
 ### Registry-Driven Execution
 Agents resolve tools via YAML manifests, not by guessing paths. Load order: team registry → personal overrides → project docs.
