@@ -37,13 +37,13 @@ Every task separates **what** (directives) from **who decides** (the AI reasonin
 
 Memory is layered on **two independent axes** that cross rather than stack — every memory has a coordinate on both.
 
-**Axis A — Retention tiers** (how long does this last?). Spans *all* workspace artifacts, not just memory:
+**Axis A — Retention** (how long does this last?). Spans *all* workspace artifacts, not just memory:
 
 | Tier | Lifetime | Example |
 |------|----------|---------|
-| **Long-term** | Persistent, versioned | Indexed context files, identity, lenses |
-| **Mid-term** | Cross-session, curated | Agent memory topics (MEMORY.md index) |
-| **Near-term** | Within-initiative | .tmp files, project plans |
+| **Durable** | Persistent, versioned | Indexed context files, identity, lenses |
+| **Curated** | Cross-session, actively maintained | Agent memory topics (MEMORY.md index) |
+| **Initiative** | Within-initiative | .tmp files, project plans |
 | **Session** | Single conversation | Active context window |
 
 **Axis B — Memory tiers** (what kind of memory is this, and what does promotion cost?). Memory only:
@@ -56,7 +56,7 @@ Memory is layered on **two independent axes** that cross rather than stack — e
 | **T3 Situational lens** | Rules injected when narrow triggers match | `lenses/*.md` + a PreToolUse hook |
 | **T4 Always-on lens** | Shapes interpretation of every input | `AGENTS.md`, `CLAUDE.md`, `identity.md` |
 
-A T1 fact is *long-term* on Axis A (git-backed, never deleted) but *episodic* on Axis B. Promotion into T3/T4 is **always a deliberate human action** — auto-promotion would make any single error a permanent interpretive distortion.
+A T1 fact is *Durable* on Axis A (git-backed, never deleted) but *episodic* on Axis B. Promotion into T3/T4 is **always a deliberate human action** — auto-promotion would make any single error a permanent interpretive distortion.
 
 **Retrieval is ranked, and forgetting is real but lossless.** T2 memories carry `access_count` / `last_accessed` / `stability` frontmatter and are scored `(access_count + 1) * exp(-days / stability) + 0.6 * importance`, where `stability` grows with *spaced* reinforcement. The index is regenerated into a character-budgeted **Hot** band (auto-loaded) plus a **Cold** band, with the low-relevance tail rolled off to an archive index. Files are never deleted — only index visibility shifts, so a rolled-off memory is one read away and reading it re-warms it.
 

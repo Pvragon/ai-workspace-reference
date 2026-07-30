@@ -1,9 +1,9 @@
 ---
 template: workspace-reference
-version: 1.10.0
+version: 1.11.0
 summary: "Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory conventions, functional stack (including integrations/ for CLIs, MCPs, and remote execution interfaces), agent identity system, registry strategy, governance, project docs structure, live-infrastructure documentation pattern, and T3/T4 memory split (situational hook-triggered lens vs always-on baked-in lens). v1.10.0 (2026-06-11): personal/ is now a private per-user repo and the Obsidian vault root (notes-shaped content only); added projects/personal monorepo for personal-domain micro-projects with ideation→build→standalone lifecycle."
 created: 2026-01-15
-last_updated: 2026-06-11
+last_updated: 2026-07-30
 maintainer: pvragon
 ---
 
@@ -62,14 +62,14 @@ Reliability comes from pushing repeatable steps into executions while keeping in
 
 Memory in this workspace is layered along **two independent axes**. Both are useful; they compose.
 
-#### Axis A — Lifetime / Persistence (legacy framing)
+#### Axis A — Retention (spans all workspace artifacts, not just memory)
 
 | Tier | Lifetime | Examples | Mechanism |
 |------|----------|----------|-----------|
-| **Long-term** | Persistent, versioned | Indexed context files (`*/context/indexed/`), identity.md, team-lib global context | Git-backed, registry-driven, progressive disclosure — loaded on-demand via index lookup |
-| **Mid-term** | Cross-session, curated | Agent memory topic files (MEMORY.md index), lessons-learned | Agent memory system — survives across conversations, pruned by distillation |
-| **Near-term** | Within-initiative | `.tmp/` working files, project plans, intermediate deliverables, current-state.md | Filesystem — cleared when the initiative completes |
-| **Session** | Single conversation | Everything actively loaded in the agent's context window | Volatile — subject to auto-compaction, lost when the session ends |
+| **Durable** | Persistent, versioned | Indexed context files (`*/context/indexed/`), identity.md, situational lenses, team-lib global context | Git-backed, registry-driven, progressive disclosure — loaded on-demand via index lookup |
+| **Curated** | Cross-session, actively maintained | Agent memory topic files (MEMORY.md index), lessons-learned | Agent memory system — survives across conversations. Curated at debrief; ranked and rolled off by the two-strength retrieval policy. **Nothing is deleted** — only index visibility shifts |
+| **Initiative** | Within-initiative | `.tmp/` working files, project plans, intermediate deliverables, current-state.md | Filesystem — cleared when the initiative completes |
+| **Session** | Single conversation | Everything actively loaded in the agent's context window | Volatile — lost when the session ends. Prefer deliberate session rotation (debrief + handoff, re-establishing from disk) over auto-compaction, which is lossy and rebuilds the prompt cache at a premium |
 
 #### Axis B — Memory Type (added 2026-04-30, neuroscience-grounded)
 
@@ -82,6 +82,16 @@ Borrowed from human memory research and validated against prior art (Generative 
 | **T2 Long-term retrievable (semantic)** | Cortical semantic memory (anterior temporal) | Decontextualized patterns, entity-property facts ("what's true of X?") | `agents/<agent>/memory/<topic>.md` topic files; future Graphiti graph |
 | **T3 Situational lens** | Domain-specific schemas | Lens-strength rules with **narrow trigger conditions**; activated at the moment they apply | `agents/<agent>/lenses/<topic>.md` with self-declared triggers; injected via PreToolUse hook (`inject_lens.py`) when matching tool fires |
 | **T4 Core / always-on lens** | Schemas, scripts, worldview | The LENS for everything — shapes interpretation of every input | `CLAUDE.md`, `AGENTS.md`, `identity.md`, skill base prompts |
+
+**Retrieval policy (substrate-agnostic).** Which T2 memories are *accessible* is governed by a
+two-strength model (Bjork & Bjork 1992): `score = (access_count + 1) * exp(-days_since_last_access /
+stability) + 0.6 * importance`, where `stability` is a per-file decay time-constant that **grows with
+spaced reinforcement** (14d base → 365d cap, x1.6 per reinforcement, gated so same-day re-reads don't
+count). A read or edit of a topic file reinforces it via a PreToolUse hook; a reranker regenerates the
+memory index into a character-budgeted **Hot** band (auto-loaded) plus a **Cold** band, rolling the
+low-relevance tail into an archive index. Files are never deleted — only index visibility shifts. A
+nightly maintenance cycle runs the deterministic grooming and cues one reflective wake (meditation +
+episodic→semantic consolidation).
 
 **Key property:** T2 is *abstraction, not summary* — semantic facts persist after every contributing episodic memory has aged out. T1, T2, T3, T4 fail independently (the neurodegeneration argument), so they live in separate file trees with separate update disciplines.
 
@@ -96,7 +106,7 @@ A T1 episodic fact in `memory/short-term/` is **long-term** on Axis A (git-backe
 **Design principles** (apply to both axes):
 
 * **Progressive disclosure governs loading.** Agents start with a minimal hot set (identity, memory index, current state, recent T1 episodic) and pull in additional context only when the index signals relevance. This keeps the context window focused regardless of how large the total corpus grows.
-* **Each tier has a different maintenance cadence.** Long-term context (Axis A) is updated via PR (team) or direct push (personal). Mid-term memory is curated during session debriefs. T2 → T3 promotion (Axis B) is **always deliberate human action** — never automatic — because T3 is the lens and errors there compound.
+* **Each tier has a different maintenance cadence.** Durable context (Axis A) is updated via PR (team) or direct push (personal). Curated memory is maintained during session debriefs. T2 → T3 promotion (Axis B) is **always deliberate human action** — never automatic — because T3 is the lens and errors there compound.
 * **Vendor-independent storage.** Agent identity and memory are stored in a git-backed repo (`agents/<agent-name>/`) rather than inside vendor-specific directories (e.g., `~/.claude/`). Vendor tooling accesses the data via symlinks, keeping the canonical data version-controlled and portable. See [Section 4.5](#45-agents--agent-identity--memory) for details.
 
 ---

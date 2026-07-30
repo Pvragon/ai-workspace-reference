@@ -1,7 +1,7 @@
 ---
 template: portable-agent-reference
 version: 0.1.0
-summary: "Four-tier memory hierarchy (long-term / mid-term / near-term / session); MEMORY.md index pattern; topic file conventions; what NOT to save; vendor-independent storage; dual-write to graph (optional, future)."
+summary: "Four retention tiers (durable / curated / initiative / session); MEMORY.md index pattern; topic file conventions; what NOT to save; vendor-independent storage; dual-write to graph (optional, future)."
 created: 2026-04-27
 last_updated: 2026-04-27
 maintainer: pvragon
@@ -12,23 +12,23 @@ runtime_neutral: true
 
 Memory is the agent's continuity across sessions. Get it wrong and the agent re-discovers the same thing every conversation. Get it right and the agent compounds learning.
 
-## The Four Tiers
+## The Four Retention Tiers
 
 | Tier | Lifetime | Examples | Storage | Maintenance |
 |---|---|---|---|---|
-| **Long-term** | Persistent, versioned | Architecture refs, governance docs, identity | `context/indexed/`, git-backed, registry-driven | PR / direct push, version-bumped |
-| **Mid-term** | Cross-session, curated | Topic memories, lessons learned, feedback rules | `memory/*.md` indexed by `MEMORY.md`, vendor-independent repo | Session debrief; pruned by distillation |
-| **Near-term** | Within-initiative | Working files, plans, screenshots, intermediate data | `runtime/.tmp/` — flat, YYMMDD-prefixed | Archived (not deleted) on initiative completion |
-| **Session** | Single conversation | Loaded prompts, recent tool output | Volatile; subject to compaction | Automatic by runtime |
+| **Durable** | Persistent, versioned | Architecture refs, governance docs, identity, lenses | `context/indexed/`, git-backed, registry-driven | PR / direct push, version-bumped |
+| **Curated** | Cross-session, actively maintained | Topic memories, lessons learned, feedback rules | `memory/*.md` indexed by `MEMORY.md`, vendor-independent repo | Session debrief; ranked and rolled off by a decay policy — archived, never deleted |
+| **Initiative** | Within-initiative | Working files, plans, screenshots, intermediate data | `runtime/.tmp/` — flat, YYMMDD-prefixed | Archived (not deleted) on initiative completion |
+| **Session** | Single conversation | Loaded prompts, recent tool output | Volatile; dies with the session | Rotated deliberately at debrief — prefer rotation over compaction |
 
-**Each tier has a different lifetime. Never confuse them.**
+**Each tier has a different lifetime. Never confuse them.** These four answer *how long does this last?* — a separate question from *what kind of memory is this?* (see the T0–T4 memory tiers).
 
 - Putting a long-running invariant in session memory → lost on next session.
 - Putting a one-shot task plan in mid-term memory → memory bloat, future-you wades through it.
 - Putting source-of-truth governance in mid-term memory → no version control, no audit trail.
 - Putting `runtime/.tmp/` content in version control → repo bloat, secrets risk.
 
-## Long-Term Tier — Versioned Reference
+## Durable Tier — Versioned Reference
 
 Lives in `context/indexed/` (or whatever your equivalent is). Examples:
 
@@ -47,9 +47,9 @@ Lives in `context/indexed/` (or whatever your equivalent is). Examples:
 
 **Anti-pattern:** Loading every long-term doc into the system prompt at session start. The point of indexed long-term context is that you scan the index → decide → load only relevant files. Always-on context means the doc set fights for token budget.
 
-## Mid-Term Tier — Cross-Session Curated Memory
+## Curated Tier — Cross-Session Memory
 
-This is the tier most agents underbuild. Mid-term memory is **what the agent has learned about the user, the project, the world, and itself, that would be lost if not written down.**
+This is the tier most agents underbuild. Curated memory is **what the agent has learned about the user, the project, the world, and itself, that would be lost if not written down.**
 
 ### The Index Pattern
 
@@ -124,7 +124,7 @@ These look like memories but aren't:
 
 When the user asks you to save *X* and *X* falls in the above, **push back gently and ask what was surprising about it**. The surprising thing is the memory.
 
-## Near-Term Tier — Within-Initiative Working Memory
+## Initiative Tier — Within-Initiative Working Files
 
 Lives in `runtime/.tmp/`. Examples:
 
@@ -171,7 +171,7 @@ This is what's currently in your context window. You don't manage it directly; t
 2. **Write back to disk early.** See structured-output-to-file-first.
 3. **Don't paste large data into chat.** If a file is 5,000 lines, summarize and reference; don't dump.
 4. **Use sub-agents to absorb context-heavy work.** A long Playwright session, a large codebase scan, a 200-row table parse — spawn a sub-agent, have it return only a summary.
-5. **Treat compaction as inevitable.** Don't store anything you need to remember in chat — store it in files.
+5. **Never rely on compaction.** Rotate sessions deliberately instead — compaction is lossy and rebuilds the prompt cache at a premium. Don't store anything you need to remember in chat; store it in files.
 
 ## Vendor-Independent Storage (Identity Repository Pattern)
 

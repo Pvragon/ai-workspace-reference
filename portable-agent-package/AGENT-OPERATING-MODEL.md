@@ -140,9 +140,9 @@ The skeleton is small. Five concepts; everything else is detail.
 
 | Tier | Lifetime | Examples | Storage |
 |---|---|---|---|
-| **Long-term** | Persistent, versioned | Architecture refs, identity, governance docs | `context/indexed/`, git-backed, registry-driven, on-demand |
-| **Mid-term** | Cross-session, curated | Topic memories, lessons learned, feedback rules | `memory/*.md` indexed by `MEMORY.md`, vendor-independent repo, symlinked into runtime |
-| **Near-term** | Within-initiative | Working files, plans, screenshots, intermediate data | `runtime/.tmp/` — flat, prefixed, archived not deleted |
+| **Durable** | Persistent, versioned | Architecture refs, identity, governance docs, lenses | `context/indexed/`, git-backed, registry-driven, on-demand |
+| **Curated** | Cross-session, actively maintained | Topic memories, lessons learned, feedback rules | `memory/*.md` indexed by `MEMORY.md`, vendor-independent repo, symlinked into runtime |
+| **Initiative** | Within-initiative | Working files, plans, screenshots, intermediate data | `runtime/.tmp/` — flat, prefixed, archived not deleted |
 | **Session** | Single conversation | Loaded prompts, recent tool output | Volatile; subject to compaction |
 
 **The cardinal rule:** anything you want to survive session end gets written to disk *first*, in the right tier. Chat output is ephemeral. Structured output longer than a few paragraphs is a file. See [`references/02-layered-memory.md`](references/02-layered-memory.md).
