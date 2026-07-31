@@ -68,8 +68,11 @@ def count_peers():
     reported "no peers" on a machine running three sessions.
     """
     here = Path(__file__).resolve().parent
-    for cand in (here.parent.parent / "my-lib/executions/session_activity.py",
-                 here / "session_activity.py"):
+    # team-lib first: the coordination layer graduated there on 2026-07-30 and the my-lib
+    # copy was deleted in the same commit. The my-lib path stays as a fallback for an
+    # install that has not taken that graduation yet.
+    for cand in (here / "session_activity.py",
+                 here.parent.parent / "my-lib/executions/session_activity.py"):
         if cand.is_file():
             try:
                 out = subprocess.run([sys.executable, str(cand), "roster"],

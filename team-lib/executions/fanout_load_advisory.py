@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "PreToolUse advisory on Agent/Workflow spawns: surfaces available memory, live
 #   peer count, and the safe worker count at the exact moment a fan-out is about to start.
 #   Speaks only when headroom is short. Never blocks."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-07-31
 # maintainer: your-agent
 # ---
 """fanout_load_advisory.py — say the number at the moment of the decision.
@@ -29,12 +29,27 @@ Design rules, each earned:
   swallowed — a check that quietly stops running looks exactly like a check with nothing
   to say (feedback_scheduled-reminder-must-self-verify-liveness).
 
-Exit code is always 0. Advisory text goes to stderr, matching inject_lens.py.
+Exit code is always 0. Advisory reaches MODEL context via hookSpecificOutput.additionalContext
+on stdout, with a stderr copy for the human — stderr alone would never reach the agent.
 """
 import json, subprocess, sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+
+
+def emit(advisory, hook_event="PreToolUse"):
+    """Reach the MODEL, not just the terminal.
+
+    stderr alone shows the human and stops there — the agent about to fan out or commit
+    never sees it, and that agent is the entire audience. `hookSpecificOutput`
+    `.additionalContext` on stdout is what enters model context; stderr is the human copy.
+    Both, always, exit 0. (Pattern taken from session_activity.py, whose peer-collision
+    advisory does reach context — which is how this omission was noticed at all.)
+    """
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": hook_event, "additionalContext": advisory}}))
+    print(advisory, file=sys.stderr)
 
 
 def main():
@@ -51,8 +66,8 @@ def main():
         d = json.loads(out.stdout)
     except Exception as e:
         # Loud, not silent — but still non-blocking.
-        print(f"⚠ Fan-out load check UNAVAILABLE ({type(e).__name__}: {e}). "
-              f"Run `free -h` and `/who` yourself before spawning 3+ workers.", file=sys.stderr)
+        emit(f"⚠ Fan-out load check UNAVAILABLE ({type(e).__name__}: {e}). "
+             f"Run `free -h` and `/who` yourself before spawning 3+ workers.")
         return 0
 
     n = d.get("safe_parallel_workers", 0)
@@ -70,9 +85,9 @@ def main():
     else:
         head = f"⚠ LOAD: at most {n} concurrent subagent(s) right now."
 
-    print(f"{head}\n  {d.get('why','')}\n"
-          f"  Advisory only, nothing is blocked. Two whole-machine freezes (2026-07-13, "
-          f"2026-07-30) came from fanning out past this.", file=sys.stderr)
+    emit(f"{head}\n  {d.get('why','')}\n"
+         f"  Advisory only, nothing is blocked. Two whole-machine freezes (2026-07-13, "
+         f"2026-07-30) came from fanning out past this.")
     return 0
 
 

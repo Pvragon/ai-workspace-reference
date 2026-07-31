@@ -2,9 +2,9 @@
 name: session-debrief
 description: "End-of-session procedure that captures learnings into memory topic files, verifies index consistency, updates current-state.md, and syncs changes to team-lib."
 summary: "Run at end of a work session to persist learnings, check index health, update workspace current state, and propagate improvements to team-lib. Uses preflight/postflight scripts for speed and reliability."
-version: 2.14.0
+version: 2.14.1
 created: 2026-02-20
-last_updated: 2026-07-30
+last_updated: 2026-07-31
 maintainer: pvragon
 ---
 
@@ -531,8 +531,33 @@ For each finding, one of three dispositions, and do it now rather than "later":
 - **Actionable but not yet decided** → a `my-lib/backlog/YYMMDD-<slug>.md` item.
 - **Routine/noise** → drop it silently.
 
-Then **surface the promoted findings to the user in Phase 4**, not just the file list. A
-finding the user never sees is barely better than one that was never written down.
+Then **route each promoted finding into the findings inbox** rather than reporting it at
+close:
+
+```bash
+python3 ~/ai-workspace/team-lib/executions/findings.py record \
+  --source debrief --key "<stable-slug>" --text "<one line>" [--severity critical]
+```
+
+**Only `--severity critical` is surfaced in Phase 4** — a breaking bug, data loss, or a live
+production risk. Everything else waits in the inbox behind an ambient statusline count and a
+`findings.py list` pull.
+
+> **Why the close is the wrong moment (the operator, 2026-07-30).** These findings are legitimate
+> and were being surfaced at the exact point where context is highest and we are actively
+> trying to end a thread — *"basically like someone saying 'ok I need to go' and the person
+> they say it to saying 'wait but also this this and this'."* Session start is no better: you
+> arrive with a goal and get derailed before touching it.
+>
+> So the queue is never announced. It is read when there is space, on a pull.
+>
+> **Keep writing findings to disk exactly as before.** The disk write is what made findings
+> survive at all; only the READ moved. Narrowing what subagents record would restore the
+> precise failure this replaced — an observation dying with the window.
+>
+> Most of what this filter suppresses is the debrief auditing ITSELF — races between its own
+> concurrent subagents, its own preflight window. That is telemetry, and it was never work
+> for the user.
 
 **Enrich the active handoff brief, if there is one.** When this debrief follows a `/handoff`,
 the brief was written and the new window spawned BEFORE you ran — so everything you just
@@ -655,9 +680,40 @@ Summarize to the user what was updated:
 - Whether anything was synced to team-lib
 - Git commit results (agents repo + my-lib)
 - Any items flagged for attention
-- **Findings surfaced by the subagents (2e), and where each was promoted to** — these are the
-  observations that no artifact-grep would have caught; report them even when the debrief
-  otherwise went cleanly. If every findings file said `- none`, say that too.
+- **CRITICAL findings only** — a breaking bug, data loss, or a live production risk. Report
+  those in full. Everything else went to the findings inbox and must NOT be listed here.
+  On a clean run, say nothing at all about findings. A close-out is for leaving, not for
+  opening new work.
+
+**Then, LAST, the stale-findings offer.** Run:
+
+```bash
+python3 ~/ai-workspace/team-lib/executions/findings.py escalations --json
+```
+
+If it returns anything, add **one line at the very end** — an offer, never the content:
+
+> *"There are N findings waiting, oldest Xd. Want me to open a session to go through them?"*
+
+If yes, spawn a dedicated window:
+
+```bash
+bash ~/.claude/skills/handoff/handoff.sh findings-worklist \
+  --seed "Run /findings and work the list with me." --dir ~/ai-workspace/my-lib
+```
+
+> **Why an offer and not a report (the operator, 2026-07-31).** Every earlier attempt put the
+> findings themselves somewhere inside a live thread — at close, at start, at a Stop hook —
+> and all of them derail, because there is no good moment to hand someone new work inside
+> work they are already doing.
+>
+> An offer is different in kind. It opens nothing. It costs one line and one word to decline,
+> and if accepted the work happens in a session that exists only for it, competing with
+> nothing. **Do not list the findings here even if it seems helpful** — the moment you name
+> three of them, the close-out has become the thing this design exists to prevent.
+>
+> Only `escalations` (really old, or critical) triggers the offer. A fresh inbox stays
+> silent; the ambient statusline count is doing its job.
 - Whether a handoff brief was enriched with a `## Debrief addendum` (and which one), or why not
 - Session-log entry added
 - Pulse debrief posted (or skipped)

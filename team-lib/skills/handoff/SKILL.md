@@ -2,10 +2,10 @@
 name: handoff
 description: Rotate to a fresh session in one step — run /create-handoff-docs, spawn a NEW terminal window with a fresh Claude that auto-reads the brief and continues, THEN run /session-debrief in the old pane. Spawning before the (slow) debrief lets you keep working in the new window while the old one closes out. The new session inherits the current name with an incremented -N suffix, runs in the same worktree, and re-loads the active persona (e.g. /rc-cto). Does NOT close the current window.
 template: skill-definition
-version: 2.3.0
+version: 2.3.1
 summary: The session-rotate orchestrator. Order: /create-handoff-docs (brief) → spawn new window via skills/handoff/handoff.sh (fresh tmux mylib-<pid>, reaper-managed; `claude -n <current-name>-<n+1>` in the same worktree, seeded to read the brief + re-load the active persona) → /session-debrief in the old pane. Spawn-before-debrief so work continues immediately. Reaping is NOT a separate step; it comes from the debrief + the new window's SessionStart hook. Requires WSL + Windows Terminal.
 created: 2026-05-31
-last_updated: 2026-07-30
+last_updated: 2026-07-31
 maintainer: pvragon
 argument-hint: "(no args — derives everything from the current session)"
 ---
@@ -14,12 +14,21 @@ argument-hint: "(no args — derives everything from the current session)"
 
 Wrap up this thread and continue in a brand-new window, by composing existing skills. The new session picks up exactly where this one left off: same name (incremented), same worktree, same persona, brief already read.
 
-## 1. Compute the new session name
-Take the **current session's name** (the `/rename` name for this session). Append/increment a `-N` suffix:
-- If it ends in `-<integer>` → increment it (`foo-2` → `foo-3`).
-- Otherwise → append `-2` (`foo` → `foo-2`; "no suffix" = n=1, so next is n=2).
+## 1. Compute the new session name — MUST match `YYMMDD-<descriptive-name>`
+`NEW_NAME` MUST follow the standard thread-naming convention: a **`YYMMDD-` date prefix** + a descriptive
+slug. There are exactly two valid shapes:
 
-Call this `NEW_NAME`. (Example: `260531-review-toms-spreadsheet-billing-analysis` → `…-analysis-2`.)
+- **Current name already starts with a `YYMMDD-` date** → keep the date and append/increment a `-N` suffix:
+  - ends in `-<integer>` → increment it (`260531-foo-2` → `260531-foo-3`)
+  - otherwise → append `-2` (`260531-foo` → `260531-foo-2`; "no suffix" = n=1, so next is n=2)
+- **Current name is DATELESS** (no leading `YYMMDD-`, e.g. a descriptive debrief title like
+  `waystar-claims-working-view-skills`) → do NOT propagate the dateless name. Mint a fresh conventional
+  name: **`<today-YYMMDD>-<short-descriptive-slug>`** for the handoff's scope
+  (e.g. handing off "add ICN/ACNT columns" → `260724-waystar-deliverable-icn-acnt-columns`).
+
+**Sanity gate before proceeding: `NEW_NAME` must match `^[0-9]{6}-`.** If it doesn't, you built it wrong —
+fix it here. (Origin 2026-07-24: a dateless parent name propagated a dateless child thread that the operator had
+to rename by hand. The date prefix makes threads self-sort chronologically — same rule as file naming.)
 
 ## 2. Capture worktree + active persona
 - **Worktree:** the worktree this thread is working in — `git -C "$PWD" rev-parse --show-toplevel` (fall back to `$PWD`). Call it `WORKTREE`. The new session must run here.

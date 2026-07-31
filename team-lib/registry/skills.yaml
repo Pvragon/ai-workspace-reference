@@ -266,7 +266,7 @@ skills:
       - executions/regen_current_state.py
       - executions/sweep_workstreams.py
     tags: [session, debrief, memory, maintenance, published-from-my-lib]
-    version: "2.14.0"
+    version: "2.14.1"
 
   - name: scan-for-malware
     description: "Scan AND eradicate the Pvragon two-family credential-stealer malware (Family A self-decoding IIFE loader in postcss/eslint/woff2; Family B curl-pipe-bash dropper in .vscode/tasks.json; commit-hijack auto-push engine). SCAN: walks every git object across all branches/tags/PR refs plus working trees; catches new variants via recursive multi-layer decode (base64/hex/unicode/fromCharCode/unescape), a behavioral heuristic for executable behavior inside declarative config carriers, and type/magic-byte mismatch — not just known SHAs; emits a coverage block so there are no silent gaps. ERADICATE (eradicate.sh): self-serve cleans ONE infected repo you can push to — dry-run by default; --apply/--yes backs up the remote (never deleted), git-filter-repo-strips malicious + temp_*_push.bat engine blobs, restores clean carriers (tailwind v3/v4-aware postcss, eslint, vscode settings), force-pushes --all/--tags, re-clone-verifies, and WIP-guarded re-syncs the local clone. Push-access + uncommitted/unpushed-work guarded; owner-only (won't escalate)."
@@ -947,7 +947,7 @@ skills:
     path: skills/handoff/SKILL.md
     capabilities: [session-rotation, thread-handoff, new-window-launch, seeded-session, persona-reload, worktree-inherit]
     dependencies: [create-handoff-docs, session-debrief, skills/handoff/handoff.sh]
-    version: "2.3.0"
+    version: "2.3.1"
 
   - name: create-handoff-docs
     description: "Generate a thread-handoff context doc + verbatim cold-start prompt for a new session. Captures git state per touched repo, key decisions, anti-patterns, don't-redo judgment calls, runs a resume-safety check, and auto-commits the work + handoff doc on feature branches (with branch-safety + scope-discipline + no-auto-push guards). Use --no-commit to skip the commit step. (Renamed from `handoff` 2026-05-31; `/handoff` is now the session-rotate flow.)"
@@ -955,3 +955,10 @@ skills:
     capabilities: [thread-handoff, context-rotation, session-wrapup]
     dependencies: []
     version: "1.2.0"
+
+  - name: findings
+    description: "Open the findings inbox and WORK it. The pull side of the audit-findings queue: loads open findings, groups them by root cause, works each to fixed/dismissed/deferred. Findings are never raised inside another thread — this skill IS the thread. Offered at the end of a debrief when something has gone stale."
+    path: skills/findings/SKILL.md
+    capabilities: [findings, maintenance, inbox, worklist]
+    dependencies: [team-lib/executions/findings.py]
+    version: "1.0.0"

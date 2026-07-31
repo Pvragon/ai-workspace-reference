@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.0
+# version: 1.2.1
 # summary: "Headless driver for the sleep cycle — the durable scheduler's cron target, fired ONCE DAILY (3:47am, the overnight 'sleep' window). Runs the DETERMINISTIC, autonomous, safe passes directly (incremental groom, hygiene detect, consolidation scan, dream-journal decay, memory-index rerank, my-lib/team-lib layer-drift scan) and CUES the one daily metacognitive wake (meditate / consolidate) by recording what's due in a state file + selecting the next meditation object, without spending LLM tokens. Live-session-aware: skips heavier passes if a memory file was touched in the last BUSY_MINUTES. Design principle: this daily sleep is the ONLY clock-scheduled reasoning; all other wakes/reasoning are project/task-triggered (interactive sessions or explicit /schedule routines), never time-polled. Portable to a dedicated always-on machine later. The LLM wake runs via the /dream skill (interactive now; autonomous on the dedicated machine)."
 # created: 2026-07-12
-# last_updated: 2026-07-30
+# last_updated: 2026-07-31
 # maintainer: the-operator
 # ---
 """
@@ -90,6 +90,21 @@ def _run_sh(script, *args):
         return out[-1] if out else "ok"
     except Exception as e:
         return f"(error: {e})"
+
+
+def _finding(source, key, text, severity="normal"):
+    """Route an audit observation into the findings inbox instead of a log line.
+
+    Every scan below already ran nightly and every result already became a log.append()
+    that nobody read. The pipeline existed and terminated in a file. This is the missing
+    last inch: the same observation, in a queue with an ambient counter and a pull.
+    Best-effort — a findings failure must never kill the tick.
+    """
+    try:
+        _run("findings.py", "record", "--source", source, "--key", key,
+             "--text", text, "--severity", severity)
+    except Exception:
+        pass
 
 
 def _load_state() -> dict:
@@ -196,6 +211,9 @@ def main() -> int:
         d = json.loads(check)
         hard = sum(len(d[k]) for k in d if k != "dead_wikilink")
         log.append(f"hygiene: {hard} finding(s) remain")
+        if hard:
+            _finding("hygiene", "memory-self-check",
+                     f"{hard} memory hygiene finding(s) outstanding (memory_self_check.py)")
     except Exception:
         log.append("hygiene: (scan skipped)")
 
@@ -206,6 +224,9 @@ def main() -> int:
     except Exception:
         pass
     log.append(f"consolidation-scan: {ungraduated} residue file(s) due for graduation")
+    if ungraduated:
+        _finding("consolidation", "ungraduated-residue",
+                 f"{ungraduated} short-term residue file(s) due for graduation into T2")
 
     # Layer drift: is the shared library still current with the personal one?
     # Deterministic and read-only, so it belongs in this tick — a linter finds the
@@ -225,6 +246,10 @@ def main() -> int:
         log.append("layer-drift: (scan skipped)")
     else:
         log.append(f"layer-drift: {drift_actionable} actionable finding(s)")
+        if drift_actionable:
+            _finding("layer-drift", "actionable",
+                     f"{drift_actionable} actionable my-lib/team-lib drift finding(s): "
+                     + ", ".join(drift_items[:4]))
 
     # Close-signal coverage: how much of the corpus can the sweep actually close?
     # A workstream with no close_signal is invisible to pathway 1, so the sweep
@@ -236,12 +261,28 @@ def main() -> int:
         # No --json flag: the script emits JSON by default and REJECTS unknown args,
         # so passing one silently degraded this to "(scan skipped)".
         sw = json.loads(_run("sweep_workstreams.py"))
-        no_sig = len(sw.get("no_close_signal", []))
-        openable = len(sw.get("unresolved_open", [])) + len(sw.get("closed_by_signal", []))
-        total = no_sig + openable
-        pct = (openable * 100 // total) if total else 0
+        # READ the published summary; do not re-derive it. This block used to compute
+        # `no_sig + unresolved_open + closed_by_signal`, but those arrays are not a
+        # partition — an item with no signal that is also unresolved appears in two of
+        # them — so the denominator over-counted and coverage read ~2.5x too high.
+        # Fixed at the source 2026-07-30; the sweep now owns the number.
+        s = sw.get("summary", {})
+        no_sig, total, pct = (s.get("without_close_signal", 0), s.get("open_total", 0),
+                              s.get("coverage_pct", 0))
         log.append(f"close-signal-coverage: {no_sig} of {total} open workstream(s) "
                    f"can never auto-close ({pct}% covered)")
+        if no_sig:
+            _finding("close-signal", "untriaged",
+                     f"{no_sig} of {total} open workstreams have no close_signal — "
+                     f"the sweep cannot ever close them")
+        for x in sw.get("needs_attention", []):
+            _finding("sweep", f"attention:{x['name']}", f"{x['name']}: {x['detail']}")
+        for x in sw.get("unknown_status", []):
+            _finding("sweep", f"status:{x['name']}",
+                     f"{x['name']} has status '{x['status']}' — invisible to every pathway")
+        for x in sw.get("undateable", []):
+            _finding("sweep", f"undateable:{x['name']}",
+                     f"{x['name']} has no usable date — dormancy can never reach it")
     except Exception as e:
         log.append(f"close-signal-coverage: (scan skipped: {str(e)[:50]})")
 
@@ -276,6 +317,10 @@ def main() -> int:
 
     if not busy:
         log.append("rerank: " + _run("rerank_memory_index.py"))
+        # Findings hygiene runs AFTER every record above, so a condition that stopped
+
+        # being detected tonight closes tonight rather than lingering as queue debt.
+        log.append("findings: " + _run("findings.py", "sweep"))
 
     # --- cue the reflective (LLM) wakes ---
     last_med = state.get("last_meditation")

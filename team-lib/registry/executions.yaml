@@ -104,7 +104,7 @@ executions:
     path: "executions/dream_cycle.py"
     description: "Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank — then CUES the one daily metacognitive wake via a state file without spending tokens. Live-session-aware: skips mutating passes if a memory file changed in the last 10 minutes."
     tags: [memory, scheduler, cron, sleep-cycle, maintenance]
-    version: "1.0.0"
+    version: "1.2.1"
 
   dream_select:
     path: "executions/dream_select.py"
@@ -154,6 +154,18 @@ executions:
     tags: [memory, workstream, lifecycle, sweep, dormancy, automation]
     version: "2.0.0"
 
+  findings:
+    path: "executions/findings.py"
+    description: "The findings inbox — a PULL-only queue for audit observations, with an ambient statusline segment that escalates on the AGE of the oldest (dim under 3d, plain, yellow at 7d, red at 14d, RED CAPS at 21d) and is absent entirely when empty. Two clocks by design: first_seen drives escalation (how long you have ignored it), last_seen drives resolution (a finding the audit stops re-detecting closes itself, costing no decision). Exists because findings were being surfaced at session close and session start — the two moments with the least available attention. Subcommands: record (idempotent upsert, deduped by source+key), list, dismiss, sweep, statusline, escalations."
+    tags: [findings, inbox, attention, statusline, audit, timing]
+    version: "1.0.0"
+
+  staged_diff_advisory:
+    path: "executions/staged_diff_advisory.py"
+    description: "PreToolUse advisory on `git commit` (matcher Bash; the script itself regex-matches the command, because an `if: Bash(git commit*)` prefix filter never matches a compound `cd X && git add … && git commit …`). Prints the staged stat unasked and escalates when a live peer session shares repo@branch, since staging an explicit path is not protection when a sibling is editing that same file. Excludes its own roster row — the roster includes us, and a collision warning that fires on every solo commit is one you stop reading. Never blocks."
+    tags: [hook, claude-code, git, staging, concurrency, safety]
+    version: "1.0.1"
+
   machine_load:
     path: "executions/machine_load.py"
     description: "Single source of truth for the pre-fan-out load check: available memory, 1-min load, live peer sessions from the coordination roster, and a computed safe_parallel_workers with a plain verdict (parallel-ok / single-worker / serial-only). Budget reserves 4GB for the system, 2GB per worker, and 2GB for EACH live peer whose own fan-out is invisible to us; hard cap 3. An unreadable roster reports -1 (unknown) and is costed as 2 peers, never as 0 — a probe that fails toward the permissive answer launders an unknown into a reassurance. Consumed by session-debrief preflight and fanout_load_advisory.py."
@@ -164,7 +176,7 @@ executions:
     path: "executions/fanout_load_advisory.py"
     description: "PreToolUse advisory on Agent/Workflow spawns. Prints available memory, live peer count and the safe worker count at the moment a fan-out is about to begin — but ONLY when headroom is short, because an advisory that fires every time is one the reader learns to skip. Fails loud if the load probe itself breaks. Never blocks; always exits 0. Makes feedback_concurrent-load-freeze-260713 mechanical instead of caller discipline."
     tags: [hook, claude-code, load, fanout, subagents, safety]
-    version: "1.0.0"
+    version: "1.0.1"
 
   normalize_workstream_status:
     path: "executions/normalize_workstream_status.py"
@@ -241,4 +253,4 @@ executions:
     path: "executions/session_activity.py"
     description: "Tier 1 multi-agent session coordination — a peer-to-peer PRESENCE ROSTER (not an event log). WIRED into ~/.claude/settings.json 2026-07-11: SessionStart(start)/SessionEnd(end) maintain one roster {session_id,cwd,repo,branch,transcript_path,started_ts}; PreToolUse[Edit|Write|MultiEdit|NotebookEdit](pretool) injects a capped, deduped advisory when another LIVE session (liveness=transcript mtime, self-healing) shares the same repo+branch, escalating to file-level when the peer's JSONL tail shows the same file (disk=source of truth). NO prompt text; subagents (agent_id) skipped; never blocks a tool; exits 0 on any error. Tier 3 (async disk mailbox, no waking): `read` (UserPromptSubmit hook — injects NEW peer status changes + messages-addressed-to-me each turn, deduped via per-session read-cursor, silent otherwise), `status --set` (write this session's one-line focus to status.json), `send --to <id|name> --msg [--conv]` (append directed message to mailbox.jsonl), `inbox` (debug). Soak instrumentation: each advisory fire appends one line to ~/.claude/activity/advisory-soak.jsonl {ts,session,level,peers,repo,branch,target,tool}; `soak` mode prints a tuning summary (fires, file-vs-branch ratio, per-repo@branch, per-peer, per-day) for the 2026-07-25 review. Also: `who` (on-demand live-session table via list_claude_sessions, backs /who) and `roster` (debug). Tier 2.5 activity STREAM (Phase A, 2026-07-16): per-session feed-<sid>.jsonl — the pretool hook auto-appends a kind=edit note (deduped 10min/file) so 'editing this file' logs for free; manual `note \"text\" [--fyi|--broadcast|--to <peer>]` writes intent/fyi/broadcast entries; `feed` shows entries relevant to my surface (same repo+branch, broadcasts, or addressed-to-me) from the last 12h, `feed --all` shows everything. Write-heavy + read-gated by design. Phase B (2026-07-16): the read hook SHADOW-evaluates what the stream would inject (relevance gate + edit-collapse + cap) and logs each decision to feed-soak.jsonl without injecting; `feedsoak` prints the go/no-go summary. NO per-turn injection yet (Phase C, soak-gated). Spec: backlog/260716-activity-stream-coordination-spec.md. Files under ~/.claude/activity/. Judgment layer: directives/multi-agent-coordination.md. Design: backlog/260429-multi-agent-coordination-tiers.md."
     tags: [hook, claude-code, multi-agent, coordination, session, awareness, activity-stream]
-    version: "0.7.0"
+    version: "0.7.1"

@@ -602,7 +602,10 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
             except (UnicodeDecodeError, OSError):
                 continue
 
-            source_hits = _blocked(text, blocklist)
+            # Check what publishing would ACTUALLY produce. Testing the raw
+            # source reports files as leak-blocking that the publisher would
+            # generalize cleanly — e.g. a `maintainer:` field naming the agent.
+            source_hits = _blocked(_as_published(text), blocklist)
             published = rel in p_files
 
             # The ONLY true leak is an identifier in the PUBLISHED copy. Testing

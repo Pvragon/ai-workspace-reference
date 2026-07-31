@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # name: handoff.sh
-# version: 1.1.0
+# version: 1.1.1
 # summary: Launch worker for the /handoff (session-rotate) skill. Opens a NEW Windows
 #          Terminal window (WSL interop) running a fresh tmux session + a fresh,
 #          nvm-loaded `claude -n <name>` that reads a handoff brief on startup and
@@ -12,7 +12,7 @@
 #          /session-debrief that /handoff runs + the new session's SessionStart hook).
 #          nvm-load fix is load-bearing (else `claude` resolves to the Windows npm shim → exit 127).
 # created: 2026-05-31
-# last_updated: 2026-05-31
+# last_updated: 2026-07-31
 # maintainer: pvragon
 # usage: handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run]
 #   <claude_name>   Claude session display name (e.g. <current>-2). [A-Za-z0-9._-]+
@@ -22,25 +22,36 @@
 # ---
 set -euo pipefail
 
-DRY=0; DIR="$PWD"; pos=()
+DRY=0
+SEED_OVERRIDE=""; DIR="$PWD"; pos=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
     --dir) DIR="${2:?}"; shift ;;
+    --seed) SEED_OVERRIDE="$2"; shift ;;
     *) pos+=("$1") ;;
   esac; shift
 done
 NAME="${pos[0]:?usage: handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run]}"
-HANDOFF="${pos[1]:?usage: handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run]}"
+# A brief is required for a rotation but meaningless for a --seed session (there is no
+# document to hand off — the seed IS the instruction).
+HANDOFF="${pos[1]:-}"
+if [ -z "$SEED_OVERRIDE" ] && [ -z "$HANDOFF" ]; then
+  echo "usage: handoff.sh <claude_name> <handoff_path> [--dir DIR] [--seed TEXT] [--dry-run]"; exit 2
+fi
 
 [[ "$NAME" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "ERROR: name must match [A-Za-z0-9._-]+ (got '$NAME')"; exit 2; }
-[ -f "$HANDOFF" ] || { echo "ERROR: handoff file not found: $HANDOFF"; exit 2; }
+[ -n "$HANDOFF" ] && [ ! -f "$HANDOFF" ] && { echo "ERROR: handoff file not found: $HANDOFF"; exit 2; }
 [ -d "$DIR" ] || { echo "ERROR: --dir not a directory: $DIR"; exit 2; }
 command -v wt.exe >/dev/null 2>&1 || { echo "ERROR: wt.exe not found — need Windows Terminal via WSL interop"; exit 3; }
 
 INNER="$HOME/.claude/handoffs/.launch-${NAME}.sh"
 mkdir -p "$(dirname "$INNER")"
-SEED="Read your handoff brief at ${HANDOFF} and follow its startup instructions (re-load the active persona if noted, confirm the worktree, then continue), then give me a 3-line status summary and wait."
+# --seed lets a caller reuse this spawn path for a session that is NOT a rotation — the
+# findings worklist being the first. One spawn implementation, several intents; a second
+# copy of the wt.exe/tmux/nvm dance would drift from this one within a month.
+DEFAULT_SEED="Read your handoff brief at ${HANDOFF} and follow its startup instructions (re-load the active persona if noted, confirm the worktree, then continue), then give me a 3-line status summary and wait."
+SEED="${SEED_OVERRIDE:-$DEFAULT_SEED}"
 
 # Inner script runs inside the new window. tmux name = mylib-<pid> (reapable, like `go`);
 # Claude display name = ${NAME}. nvm loaded so `claude` resolves to the working binary.

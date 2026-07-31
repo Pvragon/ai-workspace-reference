@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 0.7.0
+# version: 0.7.1
 # summary: "Multi-agent session coordination. Tier 1 = peer-to-peer PRESENCE ROSTER (SessionStart/End maintain a live-session roster; PreToolUse[Edit|Write] injects a capped advisory when a LIVE peer shares repo+branch, escalating to file-level via peer-JSONL tail). Tier 3 = async disk mailbox + one-line status board (read once/turn, no waking). Tier 2.5 (Phase A, 2026-07-16) = per-session activity STREAM feed-<sid>.jsonl: verbose write-side (auto kind=edit notes from the pretool hook, deduped 10min/file; manual note/feed verbs for intent/fyi/broadcast) with an on-demand relevance-gated `feed` view (same repo+branch, broadcast, or addressed-to-me). Phase B (2026-07-16) = SHADOW soak: the read hook evaluates what the stream WOULD inject to each reader (same relevance gate + edit-collapse + FEED_INJECT_CAP) and logs each decision to feed-soak.jsonl WITHOUT injecting; `feedsoak` prints the go/no-go tuning summary (by decision/rule/kind/reader/day). NO per-turn injection yet — that is Phase C, gated behind the soak. Spec: backlog/260716-activity-stream-coordination-spec.md."
 # created: 2026-07-11
-# last_updated: 2026-07-16
+# last_updated: 2026-07-31
 # maintainer: pvragon
 # related:
 #   - backlog/260429-multi-agent-coordination-tiers.md   # design + locked decisions
@@ -917,14 +917,34 @@ def _read_updates(sid, cwd=None):
     rs["mailbox_ts"] = new_ts
 
     seen = rs.setdefault("status_seen", {})
+    # Liveness gate on the status channel. status.json is cleared ONLY by the
+    # SessionEnd hook (`end` mode pops the sid) — which does NOT fire on an abrupt
+    # close (window-X / WSL restart / killed pane / crash). Without this gate a dead
+    # session's last `status --set` focus would linger and be injected as a "peer
+    # update" forever (root-caused 2026-07-24). So: only inject a peer's focus while
+    # its session is still live (transcript touched < LIVENESS_MIN, same signal /who
+    # uses), and self-heal by pruning clearly-abandoned entries from status.json.
+    roster = _read_roster()
+    now = time.time()
+    dead = []
     for peer, st in _read_status().items():
         if peer == sid:
             continue
+        if not _fresh_entry(roster.get(peer, {})):
+            ts_val = _parse_ts(st.get("ts", ""))
+            if ts_val is None or (now - ts_val) > LIVENESS_MIN * 60:
+                dead.append(peer)          # dead + stale focus -> prune, never inject
+            continue                        # not live -> do not inject either way
         ts = st.get("ts", "")
         if seen.get(peer) != ts and st.get("focus"):
             out.append(f"• {st.get('name') or _short(peer)} → {st.get('focus')} "
                        f"({st.get('repo')}@{st.get('branch')})")
             seen[peer] = ts
+    if dead:
+        def _drop(d):
+            for k in dead:
+                d.pop(k, None)
+        _mutate_json(STATUS_PATH, _drop, {})
 
     _save_readstate(sid, rs)
     if not out:

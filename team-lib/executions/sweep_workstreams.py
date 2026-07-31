@@ -352,6 +352,11 @@ def main():
               "current_state_items": len(cs_links),
               "closed_by_signal": [], "went_dormant": [], "revived": [], "pinned_skipped": [],
               "judgment_only": [], "needs_attention": [], "unknown_status": [],
+              # Initialised here, not lazily via setdefault: the lazy version meant the key
+              # simply did not exist once every workstream had a signal, so the summary
+              # crashed on the first fully-triaged corpus — a bug that could only appear on
+              # success, and therefore only after the backfill was finished.
+              "no_close_signal": [], "undateable": [],
               "errors": [], "unresolved_open": []}
     scanned = 0
     with_signal = 0
@@ -397,7 +402,7 @@ def main():
             # resolves_when and neither pathway fired; a human had to read the prose to
             # notice the work was finished. Anything the sweep cannot see, it should say
             # it cannot see.
-            report.setdefault("no_close_signal", []).append(name)
+            report["no_close_signal"].append(name)
         closed = None
         judgment_reasons = []
         machine_signals = 0
@@ -432,10 +437,20 @@ def main():
         # The current-state membership test that used to live here is deliberately gone.
         # It meant the stalest items in the corpus — open, months old, already invisible —
         # were the exact set nothing could ever act on.
-        lt = fm.get("last_touched", "")
+        # Fall back to last_updated, then created. Without this, a workstream missing
+        # `last_touched` has age None, skips the dormancy branch entirely, and stays open
+        # forever — the third variant tonight of "the item the sweep declines to look at".
+        # Three open workstreams were in exactly that state, the oldest dated 2026-05-25.
+        lt = fm.get("last_touched") or fm.get("last_updated") or fm.get("created") or ""
+        dated_by = ("last_touched" if fm.get("last_touched")
+                    else "last_updated" if fm.get("last_updated")
+                    else "created" if fm.get("created") else "none")
         age = None
         if re.match(r"\d{4}-\d{2}-\d{2}", str(lt)):
             age = (today - datetime.date.fromisoformat(lt[:10])).days
+        else:
+            # No usable date anywhere: dormancy cannot reach it, so say so out loud.
+            report["undateable"].append({"name": name, "status": status})
         pinned = str(fm.get("pin", "")).strip().lower() in {"true", "yes", "1"}
         in_cs = name in cs_links
         if age is not None and age >= args.age_days:
@@ -443,7 +458,7 @@ def main():
                 report["pinned_skipped"].append({"name": name, "age_days": age})
             else:
                 report["went_dormant"].append({"name": name, "last_touched": lt, "age_days": age,
-                                               "in_current_state": in_cs})
+                                               "dated_by": dated_by, "in_current_state": in_cs})
                 if args.apply:
                     apply_dormant(path, args.today, age)
         else:
@@ -490,6 +505,7 @@ def main():
         "revived": len(report["revived"]),
         "dormant_total": report["dormant_total"],
         "unknown_status": len(report["unknown_status"]),
+        "undateable": len(report["undateable"]),
     }
     print(json.dumps(report, indent=2))
 
