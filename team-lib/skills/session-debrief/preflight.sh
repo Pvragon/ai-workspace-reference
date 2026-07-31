@@ -413,6 +413,32 @@ if [[ -f "$SNAPSHOT_FLEET" ]]; then
 fi
 
 # ============================================================
+# 8b. MACHINE LOAD — the pre-fan-out check, made non-optional
+# ============================================================
+# feedback_concurrent-load-freeze-260713 says to check `/who` AND `free -h` before
+# running >=3 workers. The machine froze by that exact mechanism twice (2026-07-13,
+# 2026-07-30). The second time the rule was current, had been read that same day, and
+# `/who` was checked — `free -h` was not. A safeguard phrased as "remember to check X
+# first" fails precisely when it matters: about to fan out, late in a long session.
+#
+# So nobody is asked to run a command. Preflight already runs before every debrief and
+# already shells out; it now REPORTS the numbers and states which fan-out mode is safe.
+# It never blocks — combined load across sessions is not observable from inside one
+# session, so the value is in surfacing the number, not in refusing.
+# The thresholds live in ONE place — team-lib/executions/machine_load.py — because the
+# PreToolUse advisory on Agent spawns needs the same numbers, and two copies of a
+# threshold is how they start disagreeing (AGENTS.md principle 15).
+_load_script=""
+for _root in "$TEAMLIB" "$WS_MYLIB" "$MYLIB"; do
+  [[ -n "$_root" && -f "$_root/executions/machine_load.py" ]] && { _load_script="$_root/executions/machine_load.py"; break; }
+done
+if [[ -n "$_load_script" ]]; then
+  _machine_load=$(python3 "$_load_script" 2>/dev/null)
+fi
+# Never let a failed probe read as a healthy machine.
+[[ -z "${_machine_load:-}" ]] && _machine_load='{"fanout_verdict":"unknown","safe_parallel_workers":0,"why":"machine_load.py unavailable — assume nothing"}'
+
+# ============================================================
 # 9. SESSION MARKER — unique token the LLM can pass to postflight
 # ============================================================
 # Rationale: $HOME/.claude/history.jsonl is shared across all concurrent
@@ -433,7 +459,16 @@ cat <<REPORT
     "approx_start": "$session_start",
     "end": "$session_end",
     "memory_index_lines": $memory_index_lines,
-    "session_marker": "$session_marker"
+    "session_marker": "$session_marker",
+    "machine_load": $(python3 -c '
+import json,sys
+d = json.loads(sys.stdin.read())
+d["note"] = ("READ THIS BEFORE ANY FAN-OUT. Do not spawn more than safe_parallel_workers "
+             "concurrent subagents; verdict serial-only means one at a time. Advisory, never "
+             "blocking — combined load across concurrent sessions is not observable from inside "
+             "one session. Two whole-machine freezes (2026-07-13, 2026-07-30) came from ignoring "
+             "exactly this; the second time the operator checked peers but not memory.")
+print(json.dumps(d))' <<< "$_machine_load")
   },
   "git_changes": {
     "files_changed": $all_changed_count,

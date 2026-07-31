@@ -233,12 +233,21 @@ regression that prompted during debrief on 2026-06-26.
        `gh`, file/grep markers). Any satisfied signal → flips `status: archived` +
        appends a note. This catches closes that happened in ANY thread at ANY time
        — it queries real state, not the last-5 session-log window.
-     - **Pathway 2 (age-out floor):** any still-open item that is (a) linked from
-       current-state.md, (b) older than `--age-days` (default 45), and (c) not
-       `pin: true` → converts to a `my-lib/backlog/<date>-<slug>.md` item and flips
-       `status: backlog`.
-   Read the JSON it prints and surface `closed_by_signal`, `aged_out`, and
-   `errors` in your return so the user sees what left current-state and why.
+     - **Pathway 2 (dormancy, corpus-wide):** any still-open item older than
+       `--age-days` (default 20) and not `pin: true` → flips `status: dormant`.
+       A workstream untouched for four weeks is closed: not finished, not queued,
+       moved on from. No backlog stub, no disposition step, no review — nothing is
+       required of anyone. The T2 file and its MEMORY.md row stay exactly where
+       they are, so ordinary recall still finds it. Dormancy removes an item from
+       ATTENTION, never from MEMORY.
+     - **Pathway 3 (revival):** a dormant item whose `last_touched` moves past its
+       `dormant_since` returns to `in-flight` automatically — working on it IS the
+       revival signal. `--revive NAME` forces it without an edit. This is what makes
+       closing on a timer safe, so never treat dormancy as a decision to agonise
+       over: a wrong one costs one edit to undo.
+   Read the JSON it prints and surface `closed_by_signal`, `went_dormant`,
+   `revived`, `needs_attention`, and `errors` in your return so the user sees what
+   left current-state and why.
 
    Then, for items still open that have NO machine-checkable `close_signal`, do the
    legacy soft check: grep the last 5 session-log entries against `resolves_when`;

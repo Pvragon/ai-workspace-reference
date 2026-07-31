@@ -7,21 +7,51 @@ Two pathways, run over EVERY project_*.md at each debrief (any thread, any time)
     Each open T2 may carry a `close_signal:` list of machine-checkable triggers.
     We evaluate them against LIVE sources, so a close that happened in a totally
     different thread weeks ago is still detected here:
-      - clickup:<taskId>            -> GET /api/v2/task; closed if status.type in {closed,done}
-      - pr:<owner>/<repo>#<num>     -> `gh pr view`; closed if state MERGED or CLOSED
+      - clickup:<taskId>            -> closed if status.type == closed, or the status NAME
+                                       is in DONE_STATUS_NAMES. Other done-type statuses
+                                       are surfaced, not closed (done != shipped).
+      - clickup-done:<taskId>       -> as above, but ANY done-type closes. Opt-in.
+      - pr:<owner>/<repo>#<num>     -> closed only if MERGED. CLOSED-unmerged is ABANDONED
+                                       and is surfaced for a human, not auto-closed.
+      - pr-any:<owner>/<repo>#<num> -> any terminal state closes ("resumed or closed").
       - file:<abs-path>             -> path exists
       - grep:<abs-path>::<regex>    -> regex found in file
+      - judgment:<reason>           -> NEVER closes; records that a human triaged this and
+                                       found nothing machine-checkable.
     OR-semantics: any satisfied signal closes the workstream.
 
-  Pathway 2 — age-out floor.
+  Pathway 2 — dormancy.
     Any still-open item (pathway 1 didn't close it) whose `last_touched` is older
-    than --age-days becomes a formal backlog item. Guarantees current-state stays
-    bounded regardless of whether a close was ever detectable.
+    than --age-days goes `dormant`: not finished, not queued, moved on from. This
+    is a CLOSE, not a queue — no stub, no disposition step, no review. The T2 file
+    and its MEMORY.md row stay exactly where they are, so ordinary recall still
+    finds it; dormancy removes an item from ATTENTION, never from MEMORY.
 
-Read-only by default (emits JSON). With --apply it mutates the T2 files:
-flips `status` -> archived|backlog, stamps last_touched, appends a note, and for
-age-outs writes a backlog stub. It NEVER edits current-state.md — the debrief's
-current-state regen is the single writer and drops any item now archived/backlog.
+    Applies corpus-wide, not just to current-state members. The old carve-out had
+    it backwards: an item 83 days old AND absent from current-state is the most
+    dormant object in the corpus, and it was the one guaranteed never to be acted
+    on (26 such items on 2026-07-30).
+
+  Pathway 3 — revival.
+    A dormant item whose `last_touched` moves past its `dormant_since` returns to
+    in-flight automatically. Working on it IS the revival signal — there is no
+    command to remember, which is the point. Closing on a 20-day timer is only
+    safe because coming back is free.
+
+    The clock reads `last_touched` ONLY. `last_accessed`/`access_count` move
+    whenever anything READS a memory file — including the index reranker — and
+    watching those would let a dormant item resurrect itself the moment something
+    glanced at it. The two fields look interchangeable and are not.
+
+Any status outside OPEN_STATUSES | CLOSED_STATUSES is reported as `unknown_status`
+rather than skipped in silence — a file the sweep declines to look at is
+indistinguishable from one that does not exist. Fix with
+normalize_workstream_status.py.
+
+Read-only by default (emits JSON). With --apply it mutates the T2 files: flips
+`status` -> archived (signal fired) or dormant (past the age threshold), and appends
+a note. It NEVER edits current-state.md — the debrief's current-state regen is the
+single writer and drops anything no longer open.
 """
 import argparse, json, os, re, subprocess, sys, datetime, pathlib
 import sys
@@ -42,6 +72,16 @@ MEM = memory_dir()
 BACKLOG = backlog_dir() or (agent_home() / "backlog")
 SECRETS_ENV = workspace() / "personal/secrets/.env"
 OPEN_STATUSES = {"in-flight", "handed-off", "follow-on"}
+# Terminal, and legitimately skipped. Anything outside OPEN | CLOSED is a defect, not a
+# state — see the unknown_status report key.
+CLOSED_STATUSES = {"archived", "dormant", "backlog"}
+
+# ClickUp done-type status NAMES that close a workstream (the operator, 2026-07-30). The work
+# may not be shipped — "staged" explicitly is not — but for the purpose of clearing
+# current-state, the team has moved on and it should stop occupying attention. Named
+# explicitly rather than accepting all done-type, so a new done-type status someone
+# invents later does not silently start closing workstreams.
+DONE_STATUS_NAMES = {"staged", "qa-in-prod"}
 
 # ---------- frontmatter ----------
 def parse_fm(text):
@@ -104,7 +144,21 @@ def check_clickup(task_id, cache):
             data = json.loads(r.read())
         stype = (data.get("status") or {}).get("type", "").lower()
         sname = (data.get("status") or {}).get("status", "")
-        res = ("closed", f"status={sname}") if stype in {"closed", "done"} else ("open", f"status={sname}")
+        # done-type != shipped. In this ClickUp space "staged" is typed `done` but means
+        # staged FOR release (the operator, 2026-07-30) — and ClickUp leaves date_closed null for
+        # it, agreeing the task is not closed. Auto-archiving on done-type would have
+        # retired BUG-011 while its ~3,731-row backfill was still unrun.
+        #
+        # Same shape as the merged-vs-closed PR bug: two states that read alike and mean
+        # opposite things. Only `closed`-type auto-closes; `done`-type is surfaced for a
+        # human. A workspace where done-type really does mean shipped can say so with an
+        # explicit clickup-done: signal rather than by loosening this for everyone.
+        if stype == "closed" or sname.strip().lower() in DONE_STATUS_NAMES:
+            res = ("closed", f"status={sname}")
+        elif stype == "done":
+            res = ("attention", f"status={sname} (done-type, not closed — shipped?)")
+        else:
+            res = ("open", f"status={sname}")
     except Exception as e:  # noqa
         res = ("error", f"{type(e).__name__}: {e}")
     cache[task_id] = res
@@ -162,6 +216,11 @@ def eval_signal(sig, cu_cache):
     kind = kind.strip().lower()
     if kind == "clickup":
         return check_clickup(arg.strip(), cu_cache)
+    if kind == "clickup-done":
+        # Opt-in: accept done-type as closed, for a list where done really does mean
+        # shipped. Explicit per-signal, so no other workstream inherits the assumption.
+        verdict, detail = check_clickup(arg.strip(), cu_cache)
+        return ("closed", detail) if verdict == "attention" else (verdict, detail)
     if kind == "pr":
         return check_pr(arg.strip())
     if kind == "pr-any":
@@ -222,47 +281,77 @@ def apply_archive(path, today, reason):
         t = t.rstrip() + "\n" + note
     path.write_text(t)
 
-def apply_backlog(path, fm, today):
-    name = path.stem
-    slug = slugify(name)
-    stub = BACKLOG / f"{today}-{slug}.md"
-    if not stub.exists():
-        stub.write_text(
-            f"# {name} — aged out of current-state {today}\n\n"
-            f"**Auto-created** by sweep_workstreams (open >age threshold, no close-signal fired).\n"
-            f"**Source T2:** `memory/{name}.md`\n"
-            f"**resolves_when:** {fm.get('resolves_when','(none)')}\n"
-            f"**resume_via:** {fm.get('resume_via','(none)')}\n\n"
-            "Disposition (close / re-activate / drop) happens at backlog review.\n")
-    t = clear_cs(set_status(path.read_text(), "backlog", today))
-    if "backlog:" not in t.split("---")[1]:
-        t = re.sub(r"^(\s*status: .*)$", rf"\1\nbacklog: my-lib/backlog/{today}-{slug}.md",
-                   t, count=1, flags=re.M)
-    note = (f"\n## Aged out to backlog {today}\n\nOpen past the age threshold with no "
-            f"close-signal; formalized at `my-lib/backlog/{today}-{slug}.md`.\n")
-    if f"## Aged out to backlog {today}" not in t:
+def apply_dormant(path, today, age):
+    """Go dormant WITHOUT stamping last_touched.
+
+    set_status() moves last_touched to today, which is right for an archive but fatal
+    here: revival compares last_touched against dormant_since, so stamping both to the
+    same date would mean no later edit could ever look newer, and touch-to-revive would
+    silently never fire. Preserving the real last_touched also keeps the record of how
+    long the item actually sat.
+    """
+    t = clear_cs(path.read_text())
+    if re.search(r"^\s*status:.*$", t, re.M):
+        t = re.sub(r"^(\s*)status:.*$", r"\1status: dormant", t, count=1, flags=re.M)
+    else:
+        t = t.replace("---\n", "---\nstatus: dormant\n", 1)
+    if re.search(r"^\s*dormant_since:.*$", t, re.M):
+        t = re.sub(r"^(\s*)dormant_since:.*$", rf"\1dormant_since: {today}", t, count=1, flags=re.M)
+    else:
+        t = re.sub(r"^(\s*status: dormant)$", rf"\1\ndormant_since: {today}", t, count=1, flags=re.M)
+    note = (f"\n## Dormant {today}\n\nUntouched for {age} days. Not finished and not queued — "
+            "moved on from. Nothing is required of anyone. Edit this file and the next sweep "
+            "returns it to in-flight automatically.\n")
+    if f"## Dormant {today}" not in t:
         t = t.rstrip() + "\n" + note
     path.write_text(t)
-    try:
-        return str(stub.relative_to(workspace()))
-    except ValueError:
-        return str(stub)
+
+def apply_revive(path, today):
+    t = path.read_text()
+    t = re.sub(r"^(\s*)status:.*$", r"\1status: in-flight", t, count=1, flags=re.M)
+    t = re.sub(r"^\s*dormant_since:.*\n", "", t, count=1, flags=re.M)
+    note = (f"\n## Revived {today}\n\nEdited after going dormant, so the sweep returned it to "
+            "in-flight.\n")
+    if f"## Revived {today}" not in t:
+        t = t.rstrip() + "\n" + note
+    path.write_text(t)
+
+# apply_backlog() removed 2026-07-30. Dormancy replaced the age-out->backlog pathway;
+# keeping a second, unreachable closing mechanism around is how the two copies of a
+# capability start drifting (AGENTS.md principle 15).
 
 # ---------- main ----------
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--today", default=datetime.date.today().isoformat())
-    ap.add_argument("--age-days", type=int, default=45)
+    # 20 days, per the operator 2026-07-30: "a project that sits for four weeks is 'done' and has
+    # been moved on from ... for now it's not even on the backburner any more. It's closed."
+    ap.add_argument("--age-days", type=int, default=20)
+    ap.add_argument("--revive", metavar="NAME",
+                    help="force a dormant workstream back to in-flight (with --apply)")
     ap.add_argument("--apply", action="store_true", help="perform mutations (default: report only)")
     args = ap.parse_args()
     today = datetime.date.fromisoformat(args.today)
+
+    if args.revive:
+        name = args.revive if args.revive.startswith("project_") else "project_" + args.revive
+        p = MEM / f"{name}.md"
+        if not p.exists():
+            print(json.dumps({"error": f"no such workstream: {name}"})); sys.exit(1)
+        st = (parse_fm(p.read_text())[0].get("status") or "").strip()
+        if st != "dormant":
+            print(json.dumps({"error": f"{name} is '{st}', not dormant"})); sys.exit(1)
+        if args.apply:
+            apply_revive(p, args.today)
+        print(json.dumps({"revived": name, "mode": "apply" if args.apply else "report"}))
+        return
 
     cu_cache = {}
     cs_links = load_current_state_links()
     report = {"reference_date": args.today, "age_days": args.age_days, "mode": "apply" if args.apply else "report",
               "current_state_items": len(cs_links),
-              "closed_by_signal": [], "aged_out": [], "stale_corpus_ignored": [], "pinned_skipped": [],
-              "judgment_only": [], "needs_attention": [],
+              "closed_by_signal": [], "went_dormant": [], "revived": [], "pinned_skipped": [],
+              "judgment_only": [], "needs_attention": [], "unknown_status": [],
               "errors": [], "unresolved_open": []}
     scanned = 0
     with_signal = 0
@@ -271,7 +360,27 @@ def main():
         text = path.read_text()
         fm, _ = parse_fm(text)
         status = (fm.get("status") or "").strip()
+        if status == "dormant":
+            # Pathway 3 — revival. A dormant item is not "open", so it is not scanned or
+            # counted, but it must still be VISITED: touch-to-revive is the counterweight
+            # that makes closing on a timer safe, and a counterweight that only works when
+            # someone remembers to invoke it is not a counterweight.
+            lt, ds = str(fm.get("last_touched", "")), str(fm.get("dormant_since", ""))
+            if re.match(r"\d{4}-\d{2}-\d{2}", lt) and re.match(r"\d{4}-\d{2}-\d{2}", ds) \
+                    and lt[:10] > ds[:10]:
+                report["revived"].append({"name": path.stem, "last_touched": lt[:10],
+                                          "dormant_since": ds[:10]})
+                if args.apply:
+                    apply_revive(path, args.today)
+            continue
         if status not in OPEN_STATUSES:
+            if status not in CLOSED_STATUSES:
+                # An unrecognised or missing status is invisible to BOTH pathways: it can
+                # neither close nor go dormant, and appears in no count. On 2026-07-30
+                # that hid 66 files, one of which (v2-contract-billing-grain-and-rates)
+                # was active work touched six days earlier. Never skip in silence again —
+                # normalize with normalize_workstream_status.py.
+                report["unknown_status"].append({"name": path.stem, "status": status or "(none)"})
             continue
         scanned += 1
         name = path.stem
@@ -318,7 +427,11 @@ def main():
             if args.apply:
                 apply_archive(path, args.today, f"{closed[0]} ({closed[1]})")
             continue
-        # age-out (pathway 2) — scoped to current-state members, honors pin:
+        # Pathway 2 — dormancy. Corpus-wide; `pin: true` is the ONLY exemption.
+        #
+        # The current-state membership test that used to live here is deliberately gone.
+        # It meant the stalest items in the corpus — open, months old, already invisible —
+        # were the exact set nothing could ever act on.
         lt = fm.get("last_touched", "")
         age = None
         if re.match(r"\d{4}-\d{2}-\d{2}", str(lt)):
@@ -328,18 +441,18 @@ def main():
         if age is not None and age >= args.age_days:
             if pinned:
                 report["pinned_skipped"].append({"name": name, "age_days": age})
-            elif not in_cs:
-                # old parked corpus note, not cluttering current-state -> leave alone
-                report["stale_corpus_ignored"].append({"name": name, "age_days": age})
             else:
-                entry = {"name": name, "last_touched": lt, "age_days": age, "resume_via": fm.get("resume_via", "")}
+                report["went_dormant"].append({"name": name, "last_touched": lt, "age_days": age,
+                                               "in_current_state": in_cs})
                 if args.apply:
-                    entry["backlog"] = apply_backlog(path, fm, args.today)
-                report["aged_out"].append(entry)
+                    apply_dormant(path, args.today, age)
         else:
             report["unresolved_open"].append({"name": name, "status": status, "last_touched": lt,
                                               "age_days": age, "in_current_state": in_cs, "signals": len(signals)})
     report["scanned_open"] = scanned
+    report["dormant_total"] = sum(
+        1 for p in MEM.glob("project_*.md")
+        if (parse_fm(p.read_text())[0].get("status") or "").strip() == "dormant")
     # Emit the denominator and the ratio EXPLICITLY rather than making every caller
     # derive them. On 2026-07-30 three different figures for this one measurement
     # appeared within hours — "55 of 97 / 43%", "55 of 67 / 18%", "55 of 66 / 83%" —
@@ -348,7 +461,7 @@ def main():
     # A number that must be computed by the reader will be computed differently by
     # each reader; publish it once, from the code that owns it.
     #
-    # 2026-07-31 — that first fix published a number, but the WRONG number: 97, from
+    # 2026-07-30 — that first fix published a number, but the WRONG number: 97, from
     # summing `no_close_signal + unresolved_open + closed_by_signal`. Those arrays are
     # not a partition. `no_close_signal` is a property of an item; `unresolved_open` /
     # `aged_out` / `stale_corpus_ignored` / `pinned_skipped` are its disposition. An item
@@ -373,6 +486,10 @@ def main():
         "without_close_signal": len(report["no_close_signal"]),
         "coverage_pct": round(100 * with_signal / scanned) if scanned else 0,
         "triaged_pct": round(100 * (with_signal + judgment_only) / scanned) if scanned else 0,
+        "went_dormant": len(report["went_dormant"]),
+        "revived": len(report["revived"]),
+        "dormant_total": report["dormant_total"],
+        "unknown_status": len(report["unknown_status"]),
     }
     print(json.dumps(report, indent=2))
 

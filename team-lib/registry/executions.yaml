@@ -21,6 +21,12 @@ executions:
     description: "PreToolUse hook on `git push` that keeps frontmatter versions honest. For every versioned file whose BODY changed in the commits about to be pushed without its `version:` changing, it bumps the patch level, stamps last_updated, syncs any registry entry recording the same version, and commits that as a chore(version) commit so the push carries it. Resolves the standing tension between AGENTS.md Op#10 (commit early and often) and the frontmatter versioning rule by putting the version at the PUBLISH boundary rather than every commit: a commit is a private checkpoint, a version is a published identity. Escalate or skip per-push with [minor]/[major]/[no-version] in any commit message in the range. Never blocks — any error defers silently so a push is never lost. Origin: 62% version compliance measured across 90 days (91 commits / 57 bumps), 26% on the most-iterated skill."
     tags: [hook, claude-code, versioning, frontmatter, registry, drift, publish-boundary]
     version: "1.0.1"
+  publish_public_reference:
+    path: "executions/publish_public_reference.py"
+    description: "Publishes team-lib into the public reference repo as a GENERALIZATION driven entirely by registry/mirror.yaml: copies every included tree, drops what is proprietary, rewrites operator and client identifiers into placeholders, and REFUSES any file still containing a blocked term afterwards. Text-vs-binary by decodability, not suffix. --prune deletes published files whose source is gone, but never touches excluded paths (excluded means unmanaged, not delete). Dry-run by default."
+    tags: [publication, public-repo, scrub, generalization, reference]
+    version: "1.0.0"
+
   layer_drift_scan:
     path: "executions/layer_drift_scan.py"
     description: "Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by comparing CONTENT HASHES, not version numbers — three shared skills once carried identical versions with different content. Walks registry/mirror.yaml; honours two-sided `mirror: divergent` declarations; also checks that every registry entry resolves on disk. Read-only. Run nightly by dream_cycle.py."
@@ -144,8 +150,26 @@ executions:
 
   sweep_workstreams:
     path: "executions/sweep_workstreams.py"
-    description: "Workstream lifecycle sweep over T2 project memories. Pathway 1 evaluates machine-checkable close_signals (ClickUp/GitHub/filesystem/grep) against live state and auto-archives on a hit — thread-independent. Pathway 2 age-outs stale current-state items into backlog stubs."
-    tags: [memory, workstream, lifecycle, sweep, automation]
+    description: "Workstream lifecycle sweep over T2 project memories. Pathway 1 evaluates machine-checkable close_signals (ClickUp/GitHub/filesystem/grep/judgment) against live state and auto-archives on a hit — thread-independent. Pathway 2 flips anything untouched past --age-days (default 20) to dormant, corpus-wide, with no stub or review queue. Pathway 3 revives a dormant item automatically once its last_touched moves again. Reports unknown_status rather than skipping unrecognised files."
+    tags: [memory, workstream, lifecycle, sweep, dormancy, automation]
+    version: "2.0.0"
+
+  machine_load:
+    path: "executions/machine_load.py"
+    description: "Single source of truth for the pre-fan-out load check: available memory, 1-min load, live peer sessions from the coordination roster, and a computed safe_parallel_workers with a plain verdict (parallel-ok / single-worker / serial-only). Budget reserves 4GB for the system, 2GB per worker, and 2GB for EACH live peer whose own fan-out is invisible to us; hard cap 3. An unreadable roster reports -1 (unknown) and is costed as 2 peers, never as 0 — a probe that fails toward the permissive answer launders an unknown into a reassurance. Consumed by session-debrief preflight and fanout_load_advisory.py."
+    tags: [load, fanout, subagents, safety, concurrency, wsl]
+    version: "1.0.0"
+
+  fanout_load_advisory:
+    path: "executions/fanout_load_advisory.py"
+    description: "PreToolUse advisory on Agent/Workflow spawns. Prints available memory, live peer count and the safe worker count at the moment a fan-out is about to begin — but ONLY when headroom is short, because an advisory that fires every time is one the reader learns to skip. Fails loud if the load probe itself breaks. Never blocks; always exits 0. Makes feedback_concurrent-load-freeze-260713 mechanical instead of caller discipline."
+    tags: [hook, claude-code, load, fanout, subagents, safety]
+    version: "1.0.0"
+
+  normalize_workstream_status:
+    path: "executions/normalize_workstream_status.py"
+    description: "One-shot migration putting every T2 project_*.md onto the canonical status vocabulary (in-flight/handed-off/follow-on/archived/dormant/backlog). A file with a missing or unrecognised status is invisible to both sweep pathways — it can neither close nor go dormant. Dry-run by default; --apply mutates."
+    tags: [memory, workstream, lifecycle, migration, normalization]
     version: "1.0.0"
 
   bootstrap_memory:
@@ -210,3 +234,11 @@ executions:
     description: "List currently-open Claude Code sessions joining BOTH identifiers: the tmux name (mylib-<pid>) and the Claude name (/rename or -n value from ~/.claude/sessions/<claude-pid>.json), plus worktree, status, sessionId. Liveness = live tmux client + WSL Relay(...) ancestry (survives the 'tmux outlives the closed window' leak that attached=1 doesn't), so OPEN vs PHANTOM vs ORPHAN are distinguished and window-closed orphans flagged for /reap-tmux. Read-only; --json for chaining (run() returns the dicts). Backs the /list-sessions skill."
     tags: [tmux, claude-code, session, inventory, wsl, observability]
     version: "1.0.0"
+
+  # --- Multi-agent coordination (graduated 2026-07-30) ---
+
+  session_activity:
+    path: "executions/session_activity.py"
+    description: "Tier 1 multi-agent session coordination — a peer-to-peer PRESENCE ROSTER (not an event log). WIRED into ~/.claude/settings.json 2026-07-11: SessionStart(start)/SessionEnd(end) maintain one roster {session_id,cwd,repo,branch,transcript_path,started_ts}; PreToolUse[Edit|Write|MultiEdit|NotebookEdit](pretool) injects a capped, deduped advisory when another LIVE session (liveness=transcript mtime, self-healing) shares the same repo+branch, escalating to file-level when the peer's JSONL tail shows the same file (disk=source of truth). NO prompt text; subagents (agent_id) skipped; never blocks a tool; exits 0 on any error. Tier 3 (async disk mailbox, no waking): `read` (UserPromptSubmit hook — injects NEW peer status changes + messages-addressed-to-me each turn, deduped via per-session read-cursor, silent otherwise), `status --set` (write this session's one-line focus to status.json), `send --to <id|name> --msg [--conv]` (append directed message to mailbox.jsonl), `inbox` (debug). Soak instrumentation: each advisory fire appends one line to ~/.claude/activity/advisory-soak.jsonl {ts,session,level,peers,repo,branch,target,tool}; `soak` mode prints a tuning summary (fires, file-vs-branch ratio, per-repo@branch, per-peer, per-day) for the 2026-07-25 review. Also: `who` (on-demand live-session table via list_claude_sessions, backs /who) and `roster` (debug). Tier 2.5 activity STREAM (Phase A, 2026-07-16): per-session feed-<sid>.jsonl — the pretool hook auto-appends a kind=edit note (deduped 10min/file) so 'editing this file' logs for free; manual `note \"text\" [--fyi|--broadcast|--to <peer>]` writes intent/fyi/broadcast entries; `feed` shows entries relevant to my surface (same repo+branch, broadcasts, or addressed-to-me) from the last 12h, `feed --all` shows everything. Write-heavy + read-gated by design. Phase B (2026-07-16): the read hook SHADOW-evaluates what the stream would inject (relevance gate + edit-collapse + cap) and logs each decision to feed-soak.jsonl without injecting; `feedsoak` prints the go/no-go summary. NO per-turn injection yet (Phase C, soak-gated). Spec: backlog/260716-activity-stream-coordination-spec.md. Files under ~/.claude/activity/. Judgment layer: directives/multi-agent-coordination.md. Design: backlog/260429-multi-agent-coordination-tiers.md."
+    tags: [hook, claude-code, multi-agent, coordination, session, awareness, activity-stream]
+    version: "0.7.0"

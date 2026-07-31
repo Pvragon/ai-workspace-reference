@@ -904,3 +904,54 @@ skills:
     dependencies: [python3]
     tags: [memory, hygiene, linter, maintenance, self-check]
     version: "1.0.0"
+
+  # --- Multi-agent coordination + session lifecycle (graduated from my-lib 2026-07-30) ---
+
+  - name: who
+    description: "Show which other Claude Code sessions are live now, what each is doing (busy/idle + repo@branch + cwd), and whether each is bridged (reachable for messaging) vs local. On-demand multi-instance awareness; active-query companion to the passive PreToolUse roster advisory. Wraps executions/session_activity.py who."
+    path: skills/who/SKILL.md
+    capabilities: [session-awareness, multi-agent-coordination, observability]
+    dependencies: [list_claude_sessions, session_activity]
+    version: "1.0.0"
+
+  - name: list-sessions
+    description: "List the Claude Code sessions open right now with BOTH identifiers side-by-side — tmux name (mylib-<pid>) and Claude name (/rename or -n display name) — plus worktree, status, sessionId. Thin wrapper over executions/list_claude_sessions.py. Liveness via live-client + WSL-relay-ancestry, so phantom/orphan (window-closed) sessions are separated from genuinely-open ones and flagged for /reap-tmux. Read-only."
+    path: skills/list-sessions/SKILL.md
+    capabilities: [tmux, session-inventory, observability]
+    dependencies: [../team-lib/executions/list_claude_sessions.py]
+    version: "1.0.0"
+
+  - name: store-sessions
+    description: "Snapshot every open Claude session (tmux label + Claude name + sessionId + cwd) to a dated ~/.claude/session-snapshots/ file so the fleet can be rebuilt after a reboot/wsl --shutdown (which kills the tmux server + all claude processes). Thin wrapper over executions/session_snapshots.py store. Run before restarting; nightly 00:00 auto-snapshot is the safety net. Pairs with /resume-sessions. Read-only."
+    path: skills/store-sessions/SKILL.md
+    capabilities: [tmux, session-snapshot, reboot-recovery]
+    dependencies: [../team-lib/executions/session_snapshots.py, ../team-lib/executions/list_claude_sessions.py]
+    version: "1.0.0"
+
+  - name: resume-sessions
+    description: "Rebuild the whole Claude session fleet from a /store-sessions snapshot — one Windows Terminal window per session, each RE-ATTACHING to its still-live tmux session (closed window, no reboot) or RESUMING from disk (claude --resume <id> -n <name>) post-reboot, tmux label = Claude name, in the original cwd. Thin wrapper over executions/session_snapshots.py resume. Defaults to newest snapshot; accepts YYMMDD/file. AUTO-RECONCILES the snapshot against the transcript logs (--no-reconcile opts out) so workstreams that rotated generation via /handoff after the snapshot are never lost — the snapshot alone is never current, and the logs alone can't tell open-but-idle from closed. Guarantees nothing missing, not nothing extra; preview with --dry-run and prune there. Needs WSL + Windows Terminal."
+    path: skills/resume-sessions/SKILL.md
+    capabilities: [tmux, session-restore, reboot-recovery, window-launch]
+    dependencies: [../team-lib/executions/session_snapshots.py, ../team-lib/executions/list_claude_sessions.py, skills/store-sessions/SKILL.md]
+    version: "1.0.0"
+
+  - name: reap-tmux
+    description: "Clean up orphaned go-created tmux sessions (mylib-<pid>) that are detached and idle/dead. Thin wrapper over skills/reap-tmux/reap_tmux_sessions.sh. Dry-run by default; --live to actually kill. Never touches attached/current sessions; claude state stays /resume-able. Also deployed via the SessionStart hook, /session-debrief postflight, and /handoff."
+    path: skills/reap-tmux/SKILL.md
+    capabilities: [tmux-cleanup, session-hygiene, reaper]
+    dependencies: [skills/reap-tmux/reap_tmux_sessions.sh]
+    version: "1.0.0"
+
+  - name: handoff
+    description: "Rotate to a fresh session in one step. Order: /create-handoff-docs (brief) → spawn a NEW Windows-Terminal window (skills/handoff/handoff.sh) → /session-debrief in the old pane. Spawn-before-debrief so you keep working in the new window while the old one closes out (debrief is slow). New session inherits the current name with an incremented -N suffix, runs in the same worktree, and re-loads the active persona (e.g. /rc-cto). Does NOT close the current window; does not reap separately (reap comes from the debrief + the new window's SessionStart hook, both live). Requires WSL + Windows Terminal."
+    path: skills/handoff/SKILL.md
+    capabilities: [session-rotation, thread-handoff, new-window-launch, seeded-session, persona-reload, worktree-inherit]
+    dependencies: [create-handoff-docs, session-debrief, skills/handoff/handoff.sh]
+    version: "2.3.0"
+
+  - name: create-handoff-docs
+    description: "Generate a thread-handoff context doc + verbatim cold-start prompt for a new session. Captures git state per touched repo, key decisions, anti-patterns, don't-redo judgment calls, runs a resume-safety check, and auto-commits the work + handoff doc on feature branches (with branch-safety + scope-discipline + no-auto-push guards). Use --no-commit to skip the commit step. (Renamed from `handoff` 2026-05-31; `/handoff` is now the session-rotate flow.)"
+    path: skills/create-handoff-docs/SKILL.md
+    capabilities: [thread-handoff, context-rotation, session-wrapup]
+    dependencies: []
+    version: "1.2.0"
