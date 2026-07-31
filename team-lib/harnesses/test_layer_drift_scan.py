@@ -105,6 +105,24 @@ def _build(root: Path) -> None:
     _write(mine / "registry/skills.yaml",
            "skills:\n  - name: alpha\n    path: skills/alpha/SKILL.md\n")
 
+    # --- split capability -------------------------------------------------
+    # MUST FIRE — the real 2026-07-31 shape: the EXECUTION graduated, the skill
+    # that drives it did not, so the shared layer ships a store nothing can drain.
+    _write(team / "executions/findings.py", "# ---\n# version: 1.0.0\n# ---\nx = 1\n")
+    _write(mine / "skills/findings/SKILL.md", _fm(body="work the findings list"))
+
+    # MUST NOT FIRE — both halves present in the shared layer (the fixed state,
+    # and what a symlinked personal copy looks like on disk).
+    _write(team / "executions/paired.py", "# ---\n# version: 1.0.0\n# ---\nx = 1\n")
+    _write(team / "skills/paired/SKILL.md", _fm(body="drives paired.py"))
+    _write(mine / "skills/paired/SKILL.md", _fm(body="drives paired.py"))
+
+    # MUST NOT FIRE — wholly personal capability. Never graduated in any kind, so
+    # it is `ungraduated`, not a split. The rule is about shared-layer
+    # completeness, NOT "every personal caller must graduate".
+    _write(mine / "skills/local-only/SKILL.md", _fm(body="personal"))
+    _write(mine / "executions/local_only.py", "# ---\n# version: 1.0.0\n# ---\nx = 1\n")
+
 
 CASES = [
     # (item, expected_kind or None for "must not be reported", note)
@@ -119,6 +137,9 @@ CASES = [
     ("directives/known.md", "known-drift", "visible version skew"),
     ("registry/shared:skills.yaml", "registry-dangling", "entry resolves to nothing"),
     ("registry/personal:skills.yaml", None, "entry that resolves is silent"),
+    ("capability/findings", "split-capability", "execution graduated, its skill did not"),
+    ("capability/paired", None, "both halves present in the shared layer"),
+    ("capability/local-only", None, "wholly personal — ungraduated, not split"),
 ]
 
 

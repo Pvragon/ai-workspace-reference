@@ -254,6 +254,38 @@ def main():
               "               separate command to let the gate see it.", file=sys.stderr)
         sys.exit(0)
 
+    # --- split-capability advisory ---------------------------------------
+    # A push is when a graduation becomes real for someone else, which makes it
+    # the enforceable equivalent of "check at graduation time". The graduation
+    # SCRIPT is not that point: it went five months unused, and neither real
+    # graduation invoked it — a gate inside a tool nobody calls catches nothing.
+    #
+    # This WARNS rather than blocks, deliberately. Nothing in this hook has ever
+    # been able to cost someone a push, and a split is not always a mistake; the
+    # cost of a false block is higher than the cost of a loud warning delivered
+    # at exactly the right moment. The nightly scan carries the same check as the
+    # backstop for anything already on main.
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from layer_drift_scan import _split_capabilities  # noqa: E402
+        _p = os.path.join(WORKSPACE, "my-lib")
+        _s = os.path.join(WORKSPACE, "team-lib")
+        if os.path.isdir(_p) and os.path.isdir(_s):
+            import pathlib as _pl
+            splits = _split_capabilities(_pl.Path(_p), _pl.Path(_s))
+            if splits:
+                beat("split", ",".join(f["item"] for f in splits))
+                print("[version-gate] SPLIT CAPABILITY — team-lib ships only part of "
+                      f"{len(splits)} capability(ies):", file=sys.stderr)
+                for f in splits:
+                    print(f"    {f['item']}: team-lib has {', '.join(f['shared_has'])}"
+                          f" but NOT {', '.join(f['personal_only'])}", file=sys.stderr)
+                print("    A teammate installing team-lib gets a fragment they cannot use.\n"
+                      "    Graduate the missing piece, or record why the split is intended.",
+                      file=sys.stderr)
+    except Exception:
+        pass  # advisory only: never cost anyone a push
+
     # What is actually about to be pushed?
     rng = git(repo, "rev-list", "--count", "@{u}..HEAD")
     if not rng or rng == "0":

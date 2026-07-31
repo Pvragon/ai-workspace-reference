@@ -2,7 +2,7 @@
 name: session-debrief
 description: "End-of-session procedure that captures learnings into memory topic files, verifies index consistency, updates current-state.md, and syncs changes to team-lib."
 summary: "Run at end of a work session to persist learnings, check index health, update workspace current state, and propagate improvements to team-lib. Uses preflight/postflight scripts for speed and reliability."
-version: 2.14.1
+version: 2.15.0
 created: 2026-02-20
 last_updated: 2026-07-31
 maintainer: pvragon
@@ -679,11 +679,38 @@ Summarize to the user what was updated:
 - What changed in current-state.md
 - Whether anything was synced to team-lib
 - Git commit results (agents repo + my-lib)
-- Any items flagged for attention
-- **CRITICAL findings only** — a breaking bug, data loss, or a live production risk. Report
-  those in full. Everything else went to the findings inbox and must NOT be listed here.
-  On a clean run, say nothing at all about findings. A close-out is for leaving, not for
-  opening new work.
+- Any items a subagent flagged for attention — **mechanical facts only** (a headline shortened,
+  a file that changed under an edit, a render that withheld an item). If the "flag" is really an
+  observation about the workspace, it is a finding: it goes to the inbox under the one-line rule
+  below, not here. This bullet is the most common way the rule below gets bypassed.
+- **Findings: ONE line, naming what you filed — nothing more.** The permitted form is exactly:
+
+  > *"Added to the findings inbox: `<key>`, `<key>`, `<key>`."*
+
+  Keys only. No summaries, no "worth a look", no "the interesting one is…", no severity
+  editorializing. If you filed nothing, say nothing about findings at all.
+
+  **The escalation gate is mechanical — it is not a judgment call you make here.** You may write
+  more than that one line about a finding **if and only if you passed `--severity critical` to
+  `findings.py record` for it in 2e.** No critical record ⇒ no prose, full stop. Do not
+  re-adjudicate at close time whether something "feels serious enough": you already made that
+  call in 2e, with the tool, where it is recorded and checkable.
+
+  `--severity critical` means a breaking bug, data loss in progress, or a live production risk —
+  something that gets **worse while the user sleeps**. It does not mean stale metadata, a
+  false-positive probe, a naming inconsistency, an unverified suspicion, or a workstream that
+  "may already be closable". Test before you type: *if the user reads this tomorrow instead of
+  right now, is anything materially worse?* If no, it is one line with the others.
+
+  > **Why this is a gate and not guidance (the operator, 2026-07-31).** "CRITICAL findings only — a
+  > breaking bug, data loss, or a live production risk" was already the rule, in those words, and
+  > it was violated on the very run that produced this edit: a stale `close_signal` string got a
+  > full paragraph at close-out, plus a "one thing genuinely worth your attention" framing that
+  > made it sound urgent. Nothing in the old wording was unclear. The defect is that it asked for
+  > a severity judgment at the end of a long session — the moment that judgment is worst, and the
+  > moment the cost of getting it wrong is highest, because the user is trying to leave. So the
+  > gate now reads a fact recorded earlier (`--severity critical`, in 2e) rather than asking for a
+  > fresh opinion now. Same family as `feedback_mechanism-in-tool-not-discipline-in-prompt`.
 
 **Then, LAST, the stale-findings offer.** Run:
 

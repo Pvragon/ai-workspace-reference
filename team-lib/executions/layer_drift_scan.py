@@ -658,6 +658,57 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
     return findings
 
 
+def _split_capabilities(personal_root: Path, shared_root: Path) -> list[dict]:
+    """A capability present in the shared layer must be COMPLETE there.
+
+    A capability is a stem that can appear as several kinds: `findings.py` (an
+    execution), `findings/` (a skill), `findings.md` (a directive). Graduating one
+    kind without its siblings leaves the shared layer holding a fragment — on
+    2026-07-31 team-lib shipped `findings.py`, its two clocks and its statusline
+    segment, with no `/findings` skill to work the list. The store accumulated and
+    nothing could drain it.
+
+    File-level drift detection is blind to this: there is no pair to compare, so a
+    half-graduated capability produces zero drift findings. This is the check for
+    the shape that mistake actually has.
+
+    Note the direction. The rule is NOT "every personal caller must graduate" — a
+    personal skill driving a shared execution is perfectly legitimate. The rule is
+    that whatever the shared layer already ships must be usable on its own.
+    """
+    SKIP_PREFIX = ("_", "ext-", ".")
+
+    def kinds_by_stem(root: Path) -> dict[str, set[str]]:
+        out: dict[str, set[str]] = {}
+        for p in (root / "executions").glob("*"):
+            if p.is_file() and p.suffix in (".py", ".sh") and not p.name.startswith(SKIP_PREFIX):
+                out.setdefault(p.stem, set()).add("execution")
+        for p in (root / "skills").glob("*"):
+            if p.is_dir() and not p.name.startswith(SKIP_PREFIX):
+                out.setdefault(p.name, set()).add("skill")
+        for p in (root / "directives").glob("*.md"):
+            if p.stem != "index" and not p.name.startswith(SKIP_PREFIX):
+                out.setdefault(p.stem, set()).add("directive")
+        return out
+
+    personal, shared = kinds_by_stem(personal_root), kinds_by_stem(shared_root)
+
+    findings: list[dict] = []
+    for stem in sorted(personal):
+        if stem not in shared:
+            continue                      # wholly ungraduated — a different finding
+        missing = personal[stem] - shared[stem]
+        if missing:
+            findings.append(_finding(
+                "split-capability", "high", "capability", stem,
+                shared_has=sorted(shared[stem]), personal_only=sorted(missing),
+                hint=f"team-lib ships the {'/'.join(sorted(shared[stem]))} but not the "
+                     f"{'/'.join(sorted(missing))}; a teammate gets a fragment they "
+                     f"cannot use. Graduate the missing piece or explain the split.",
+            ))
+    return findings
+
+
 def _public_sweep(spec: dict, public_root: Path) -> list[dict]:
     """Scan the ENTIRE public repo for blocked identifiers, independent of the
     publication mapping.
@@ -772,6 +823,9 @@ def run(manifest: str | Path | None = None, tree: str | None = None,
         findings += _scan_tree({**t, "_always": always}, personal_root, shared_root)
 
     portability_exempt: list[str] = []
+    if tree in (None, "capability"):
+        findings += _split_capabilities(personal_root, shared_root)
+
     if tree in (None, "portability"):
         findings += _portability(spec.get("portability") or {}, shared_root)
         portability_exempt = getattr(_portability, "exempted", [])
@@ -834,6 +888,7 @@ _LABEL = {
     "pair-missing": "MISSING       (declared mirror absent)",
     "derived-behind": "DERIVED BEHIND (shared copy is missing whole sections)",
     "derived-extra": "derived extra (shared copy has sections the source lost)",
+    "split-capability": "SPLIT CAPABILITY (shared layer ships only part of it)",
     "LEAK": "LEAK — PUBLISHED (a client/operator identifier is already public)",
     "leak-blocks-publish": "leak blocks publish (identifier present; refresh is blocked)",
     "stale-in-public": "stale in public (published copy no longer matches team-lib)",
@@ -904,6 +959,9 @@ def _render(result: dict) -> str:
             lines.append(f"      [{kind}] x{len(examples)}")
             for ex in examples[:2]:
                 lines.append(f"        {ex}")
+        if f.get("shared_has"):
+            lines.append(f"      team-lib has: {', '.join(f['shared_has'])}"
+                         f"  |  MISSING: {', '.join(f['personal_only'])}")
         for ident in (f.get("identifiers") or [])[:6]:
             lines.append(f"      >> {ident}")
         if f.get("one_sided_declaration"):

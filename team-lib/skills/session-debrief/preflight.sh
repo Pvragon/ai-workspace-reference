@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.2.0
+# version: 1.2.1
 # summary: "Deterministic pre-flight for session-debrief: collects git changes, checks registry consistency, detects sync needs, flags stale state, pre-stages today's T1 facts/residue files, head-starts background transcript+state-dump jobs. Outputs structured JSON."
 # created: 2026-03-31
-# last_updated: 2026-07-30
+# last_updated: 2026-07-31
 # maintainer: pvragon
 # ---
 #
@@ -205,21 +205,45 @@ if [[ -f "$CURRENT_STATE" ]]; then
     fi
   fi
 
-  # Count decisions older than 14 days
+  # Count decisions older than 14 days.
+  #
+  # This scanned EVERY line of current-state.md for ANY date substring, which made it a
+  # false positive by construction — it conflated "a date appears somewhere in this file"
+  # with "a stale decision exists." On 2026-07-31 it reported 3; all three were legitimate:
+  # two ship-dates cited in Follow-On workstream prose, and one date quoted INSIDE a
+  # same-day decision ("retiring the 2026-04-30 un-graduation rationale").
+  #
+  # Two independent bugs, and scoping alone fixes only the first:
+  #   1. no section scoping — Follow-On/Handed-Off prose was being counted as decisions;
+  #   2. no anchoring — a FRESH decision that merely mentions an old date still misfires.
+  # So: read only the `## Recent Decisions` section, and only the leading `- YYYY-MM-DD:`
+  # entry stamp. A date in the body of a decision is prose, not the decision's age.
+  #
+  # Same family as feedback_probe-must-not-collapse-unknown-into-a-value: a probe that
+  # measures something adjacent to what it claims to measure. Here it over-reported, which
+  # is the benign direction — it spends attention rather than withholding it — but a flag
+  # that cries wolf every run is one the operator learns to skip, and then it protects
+  # nothing on the day a decision really has gone stale.
   old_decisions=$(python3 -c "
-import re, sys
+import re
 from datetime import datetime, timedelta
 cutoff = datetime.now() - timedelta(days=14)
-count = 0
+count, in_section = 0, False
 with open('$CURRENT_STATE') as f:
     for line in f:
-        dates = re.findall(r'\d{4}-\d{2}-\d{2}', line)
-        for d in dates:
-            try:
-                if datetime.strptime(d, '%Y-%m-%d') < cutoff:
-                    count += 1
-                    break
-            except: pass
+        if line.startswith('## '):
+            in_section = line.startswith('## Recent Decisions')
+            continue
+        if not in_section:
+            continue
+        m = re.match(r'\s*-\s*(\d{4}-\d{2}-\d{2}):', line)   # the entry stamp ONLY
+        if not m:
+            continue
+        try:
+            if datetime.strptime(m.group(1), '%Y-%m-%d') < cutoff:
+                count += 1
+        except ValueError:
+            pass
 print(count)
 " 2>/dev/null || echo "0")
 
