@@ -235,8 +235,20 @@ def main():
     beat("push", cmd[:80].replace("\n", " "))
 
     # Resolve the repo: an explicit -C wins, else the session cwd.
+    # The hook sees the command TEXT, not the expanded shell. `git -C $r push` in a
+    # loop yields the literal "$r", which resolves to nothing and skipped the gate
+    # entirely — observed 2026-07-31 on a three-repo push loop, where the
+    # split-capability check silently did not run. Fall back to the session cwd
+    # whenever the -C argument is not a real directory, rather than giving up.
     m = re.search(r"git\s+-C\s+(\S+)", cmd)
-    repo = os.path.expanduser(m.group(1)) if m else (data.get("cwd") or os.getcwd())
+    repo = None
+    if m:
+        cand = os.path.expanduser(m.group(1))
+        if os.path.isdir(cand):
+            repo = cand
+        else:
+            beat("unexpanded-C", m.group(1)[:40])
+    repo = repo or data.get("cwd") or os.getcwd()
     repo = git(repo, "rev-parse", "--show-toplevel") or repo
     if not repo.startswith(WORKSPACE):
         beat("skip", f"outside workspace: {repo}")
