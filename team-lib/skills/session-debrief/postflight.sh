@@ -171,7 +171,7 @@ CLAUDE_PROJECT="$WS_CLAUDE_PROJECT"
 # Prefer explicit --session-id (reliable with multiple agent terminals).
 # The session's project dir isn't always the current repo — if the session was
 # launched from a different cwd (e.g., my-lib) but has added working dirs (e.g.,
-# northwind), the JSONL lives under the launch-cwd's encoded project dir. So if the
+# a project repo), the JSONL lives under the launch-cwd's encoded project dir. So if the
 # path-derived CLAUDE_PROJECT doesn't hold the file, fall back to a global search
 # under ~/.claude/projects/.
 if [[ -n "$SESSION_ID" ]]; then
