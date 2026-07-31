@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.1.0
-# summary: "Deterministic post-flight for session-debrief: cleans Zone.Identifier junk, runs adapters, commits repos, posts pulse debrief. Takes debrief message as argument."
+# version: 1.7.0
+# summary: "Deterministic post-flight for session-debrief: cleans Zone.Identifier junk, extracts session transcripts, dumps system state, runs adapters, AUTO-EXTRACTS touched files from JSONL, commits repos, posts pulse debrief. v1.6.0 adds the dream-cycle memory self-maintenance: an incremental groom (memory_self_check.py --fix-safe --limit 15, deterministic frontmatter backfills) + a detection pass surfacing remaining hygiene findings, then the two-strength memory-index rerank. All memory steps non-fatal. v1.4.2 hardens PATH (self-adds ~/.local/bin) so the pulse post (restish) survives degraded non-login shells."
 # created: 2026-03-31
-# last_updated: 2026-04-09
+# last_updated: 2026-07-30
 # maintainer: pvragon
 # ---
 #
 # postflight.sh — Session debrief post-flight actions
 #
 # Runs all deterministic wrap-up steps in one pass:
-#   0. Workspace hygiene: remove WSL Zone.Identifier junk files
-#   1. Claude adapter: symlinks + config backup
-#   2. Agent identity repo: stage + commit + push
-#   3. my-lib repo: stage + commit (no push)
-#   4. Pulse channel: post debrief message
+#   0.  Workspace hygiene: remove WSL Zone.Identifier junk files
+#   0b. Session transcript extraction: JSONL → filtered markdown (T1 verbatim)
+#   0c. System state dump: crontab, hooks, settings, MCP → agents/system-state/
+#   1.  Claude adapter: symlinks + config backup
+#   2.  Agent identity repo: stage + commit + push (auto-stages transcripts/ and system-state/)
+#   3.  my-lib repo: stage + commit (no push)
+#   4.  Pulse channel: post debrief message
 #
 # Usage: bash postflight.sh [--pulse-message "message"] [--session-name "name"]
 #
@@ -26,6 +28,20 @@
 #   --skip-commit           Skip git commits (dry run for adapters only)
 
 set -euo pipefail
+
+# --- PATH hardening (resilient to degraded / non-login shells) ---
+# A non-login shell — e.g. a session reconnected after a network drop — may not
+# have sourced ~/.profile, which is what normally puts ~/.local/bin on PATH.
+# Tools invoked below (notably `restish` for the pulse post) live there, so
+# self-add the usual user bin dirs defensively. Idempotent.
+for _d in "$HOME/.local/bin" "$HOME/bin"; do
+  case ":$PATH:" in
+    *":$_d:"*) : ;;                      # already present
+    *) [ -d "$_d" ] && PATH="$_d:$PATH" ;;
+  esac
+done
+export PATH
+unset _d
 
 # Discover workspace paths (no hardcoded user/repo names)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -86,19 +102,63 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Validate file-list args (unless skipping commits or using legacy fallback)
+# File-list args are now OPTIONAL — postflight auto-extracts touched files from
+# the session JSONL via executions/extract_touched_files.py if not provided.
+# This eliminates the brittle Phase 2h burden where the LLM had to track every
+# file. Explicit args still win as overrides (useful for surgical commits or
+# when bypassing autodetection).
+AUTO_EXTRACTED=false
 if [[ "$SKIP_COMMIT" == false && "$LEGACY_ADD_ALL" == false ]]; then
-  if [[ "$MYLIB_FILES_SET" == false ]]; then
-    echo "ERROR: --mylib-files is required (pass space-separated paths the debrief modified, or empty string to skip my-lib commit, or --legacy-add-all for catch-all behavior)." >&2
-    echo "  Example: --mylib-files \"backlog/foo.md skills/bar/SKILL.md\"" >&2
-    echo "  Skip:    --mylib-files \"\"" >&2
-    exit 1
-  fi
-  if [[ "$AGENTS_FILES_SET" == false ]]; then
-    echo "ERROR: --agents-files is required (pass space-separated paths the debrief modified, or empty string to skip agents commit, or --legacy-add-all for catch-all behavior)." >&2
-    echo "  Example: --agents-files \"memory/MEMORY.md memory/foo.md\"" >&2
-    echo "  Skip:    --agents-files \"\"" >&2
-    exit 1
+  if [[ "$MYLIB_FILES_SET" == false || "$AGENTS_FILES_SET" == false ]]; then
+    # Need session-id to find the JSONL; resolve from marker if needed (replicate the
+    # marker-resolution logic that the title-prepend step does later).
+    if [[ -z "$SESSION_ID" && -n "$SESSION_MARKER" ]]; then
+      MARKED_JSONL=$(grep -l "$SESSION_MARKER" "$HOME/.claude/projects/"*/*.jsonl 2>/dev/null | head -1)
+      if [[ -n "$MARKED_JSONL" ]]; then
+        SESSION_ID=$(basename "$MARKED_JSONL" .jsonl)
+        echo "Auto-extract: resolved session from marker: $SESSION_ID"
+      fi
+    fi
+
+    EXTRACT_TOUCHED=$(resolve_script "executions/extract_touched_files.py" || true)
+    if [[ -n "$EXTRACT_TOUCHED" && -n "$SESSION_ID" ]]; then
+      auto_out=$(python3 "$EXTRACT_TOUCHED" --session-id "$SESSION_ID" --format shell --mylib "$MYLIB" --agents "$AGENTS_REPO" 2>/dev/null || true)
+      if [[ -n "$auto_out" ]]; then
+        # auto_out has multiple lines: MYLIB_FILES='...' / AGENTS_FILES='...'
+        # Prefix each line with `auto_` (eval'ing the raw output would clobber
+        # any same-named variables in postflight's scope, AND a single `auto_`
+        # prefix only applies to the first line). sed prefixes per-line.
+        auto_out_prefixed=$(echo "$auto_out" | sed 's/^/auto_/')
+        eval "$auto_out_prefixed"
+        if [[ "$MYLIB_FILES_SET" == false ]]; then
+          MYLIB_FILES="${auto_MYLIB_FILES:-}"
+          MYLIB_FILES_SET=true
+          echo "Auto-extracted --mylib-files: $MYLIB_FILES"
+        fi
+        if [[ "$AGENTS_FILES_SET" == false ]]; then
+          AGENTS_FILES="${auto_AGENTS_FILES:-}"
+          AGENTS_FILES_SET=true
+          echo "Auto-extracted --agents-files: $AGENTS_FILES"
+        fi
+        AUTO_EXTRACTED=true
+      else
+        echo "WARNING: extract_touched_files returned empty; falling back to required-arg behavior" >&2
+      fi
+    fi
+
+    # If after auto-extract attempt either is still unset, fall back to error
+    if [[ "$MYLIB_FILES_SET" == false ]]; then
+      echo "ERROR: --mylib-files not provided and auto-extract failed (no session-id, no marker, or extract script missing)." >&2
+      echo "  Pass explicitly: --mylib-files \"backlog/foo.md skills/bar/SKILL.md\"" >&2
+      echo "  Or skip:         --mylib-files \"\"" >&2
+      exit 1
+    fi
+    if [[ "$AGENTS_FILES_SET" == false ]]; then
+      echo "ERROR: --agents-files not provided and auto-extract failed." >&2
+      echo "  Pass explicitly: --agents-files \"memory/MEMORY.md memory/foo.md\"" >&2
+      echo "  Or skip:         --agents-files \"\"" >&2
+      exit 1
+    fi
   fi
 fi
 
@@ -132,6 +192,86 @@ if [[ -n "$ZONE_CLEANER" ]]; then
   echo "$zone_out"
 else
   errors+=("zone_cleanup: script not found in repo/my-lib/team-lib under executions/clean_zone_identifiers.sh")
+fi
+
+# ============================================================
+# 0a2. TMUX SESSION REAP — clean up orphaned go-created sessions
+# ============================================================
+# Reaps detached/idle/dead mylib-<pid> sessions (LIVE). Never touches attached
+# or current sessions; claude state is /resume-able regardless. Logs to
+# runtime/logs/tmux-reaper.log. Matches the SessionStart hook's live posture. Non-fatal.
+echo ""
+echo "=== Reaping orphaned tmux sessions (live) ==="
+REAPER=$(resolve_script "skills/reap-tmux/reap_tmux_sessions.sh" || true)
+if [[ -n "$REAPER" ]]; then
+  reap_out=$(bash "$REAPER" --live --quiet 2>&1) && \
+    results+=("tmux_reap: ok") || \
+    errors+=("tmux_reap: FAILED — $reap_out")
+  echo "$reap_out"
+else
+  results+=("tmux_reap: skipped (skills/reap-tmux/reap_tmux_sessions.sh not found)")
+fi
+
+# ============================================================
+# 0b. SESSION TRANSCRIPT EXTRACTION — JSONL → filtered markdown
+# ============================================================
+# Deterministic: streams Claude Code session JSONLs into the agents
+# transcript archive. Idempotent (mtime-based skip), stdlib-only Python,
+# ~97-98% size reduction on tool-heavy sessions. Runs before the agents
+# repo commit (step 2) so newly-extracted transcripts get committed
+# automatically. Skipping is non-fatal.
+echo ""
+echo "=== Extracting session transcripts ==="
+
+EXTRACT_SCRIPT=$(resolve_script "executions/extract_session_transcripts.py" || true)
+if [[ -n "$EXTRACT_SCRIPT" ]]; then
+  extract_out=$(python3 "$EXTRACT_SCRIPT" 2>&1) && \
+    results+=("transcript_extract: ok") || \
+    errors+=("transcript_extract: FAILED — $extract_out")
+  echo "$extract_out" | tail -10
+else
+  errors+=("transcript_extract: script not found in repo/my-lib/team-lib under executions/extract_session_transcripts.py")
+fi
+
+# ============================================================
+# 0c. SYSTEM STATE DUMP — crontab, hooks, settings, MCP servers
+# ============================================================
+# Deterministic: writes git-backed snapshots of live infrastructure to
+# the agent's system-state/ dir. Pairs with my-lib/context/indexed/active-systems.md
+# (manual overview). Idempotent — only changes git-staged files when
+# infrastructure actually drifted. Skipping is non-fatal.
+echo ""
+echo "=== Dumping system state (crontab, hooks, settings, MCP) ==="
+
+DUMP_SCRIPT=$(resolve_script "executions/dump_system_state.py" || true)
+if [[ -n "$DUMP_SCRIPT" ]]; then
+  dump_out=$(python3 "$DUMP_SCRIPT" --quiet 2>&1) && \
+    results+=("system_state_dump: ok") || \
+    errors+=("system_state_dump: FAILED — $dump_out")
+  echo "$dump_out"
+else
+  errors+=("system_state_dump: script not found in repo/my-lib/team-lib under executions/dump_system_state.py")
+fi
+
+# ============================================================
+# 0d. ARCHIVE OLD TRANSCRIPTS — bound the ~/.claude corpus
+# ============================================================
+# Deterministic: moves session JSONLs older than 14 days out of the live
+# ~/.claude/projects dir (move-not-delete → ~/.claude/projects-archive) so the
+# statusline's ccusage cost meter can't re-parse a multi-GB pile, balloon RAM,
+# and thrash swap → freeze the box. Idempotent (mtime-based), same-fs renames.
+# Skipping is non-fatal. See memory: reference_ccusage-statusline-swap-thrash-crash.
+echo ""
+echo "=== Archiving old session transcripts ==="
+
+ARCHIVE_SCRIPT=$(resolve_script "executions/archive_old_transcripts.sh" || true)
+if [[ -n "$ARCHIVE_SCRIPT" ]]; then
+  archive_out=$(bash "$ARCHIVE_SCRIPT" 2>&1) && \
+    results+=("transcript_archive: ok") || \
+    errors+=("transcript_archive: FAILED — $archive_out")
+  echo "$archive_out" | tail -3
+else
+  errors+=("transcript_archive: script not found in repo/my-lib/team-lib under executions/archive_old_transcripts.sh")
 fi
 
 # ============================================================
@@ -305,6 +445,20 @@ if [[ "$SKIP_COMMIT" == false ]]; then
       errors+=("agents_add: FAILED for paths: $AGENTS_FILES")
       echo "ERROR: git add failed in agents repo for: $AGENTS_FILES" >&2
     }
+
+    # Auto-stage outputs from postflight steps 0b (transcripts/) and 0c (system-state/).
+    # The LLM in Phase 2h can't know about these (they're generated by postflight
+    # itself), and they're fully managed by their respective scripts — safe to
+    # sweep without triggering the unrelated-work concerns that gated the catch-all
+    # `git add -A`.
+    for auto_dir in transcripts system-state; do
+      if [[ -d "$auto_dir" ]]; then
+        git add "$auto_dir/" 2>&1 || {
+          errors+=("agents_add_${auto_dir}: FAILED")
+          echo "WARNING: git add $auto_dir/ failed; continuing." >&2
+        }
+      fi
+    done
   fi
 
   if [[ "$LEGACY_ADD_ALL" == true || -n "$AGENTS_FILES" ]]; then
@@ -344,6 +498,17 @@ if [[ "$SKIP_COMMIT" == false ]]; then
     echo "Skipping my-lib commit (--mylib-files was empty)."
     results+=("mylib_commit: skipped (empty file list)")
   else
+    # Normalize symlinked paths before staging. `.claude/skills` is a symlink to
+    # `skills/`, so `git add .claude/skills/foo` fails ("beyond a symbolic link").
+    # Rewrite any such path to its real target so `git add` succeeds.
+    NORM_MYLIB_FILES=""
+    for f in $MYLIB_FILES; do
+      case "$f" in
+        .claude/skills/*) f="skills/${f#.claude/skills/}" ;;
+      esac
+      NORM_MYLIB_FILES="$NORM_MYLIB_FILES $f"
+    done
+    MYLIB_FILES="${NORM_MYLIB_FILES# }"
     # Stage only the explicitly listed paths. Word-split on whitespace.
     # shellcheck disable=SC2086
     git add -- $MYLIB_FILES 2>&1 || {
@@ -378,13 +543,23 @@ if [[ "$SKIP_PULSE" == false ]] && [[ -n "$PULSE_MESSAGE" ]]; then
   if [[ -f "$SECRETS" ]]; then
     source "$SECRETS"
 
-    # JSON-escape the message
-    escaped_msg=$(python3 -c "import json,sys; print(json.dumps(sys.stdin.read().strip()))" <<< "$PULSE_MESSAGE")
-    payload="{\"type\":\"message\",\"content\":$escaped_msg}"
+    # .env defines these as CLICKUP_WORKSPACE_ID / PULSE_CHANNEL_ID; keep the
+    # legacy WS_* names as a fallback. (Mismatch silently posted to an empty URL
+    # — fixed 2026-06-25.)
+    ws_id="${CLICKUP_WORKSPACE_ID:-$WS_CLICKUP_WORKSPACE}"
+    ch_id="${PULSE_CHANNEL_ID:-$WS_PULSE_CHANNEL}"
 
-    pulse_out=$(echo "$payload" | restish post "clickup-v3/workspaces/${WS_CLICKUP_WORKSPACE}/chat/channels/${WS_PULSE_CHANNEL}/messages" 2>&1) && \
-      results+=("pulse_post: ok") || \
-      errors+=("pulse_post: FAILED — $pulse_out")
+    if [[ -z "$ws_id" || -z "$ch_id" ]]; then
+      errors+=("pulse_post: FAILED — workspace/channel id unset (need CLICKUP_WORKSPACE_ID + PULSE_CHANNEL_ID in $SECRETS)")
+    else
+      # JSON-escape the message
+      escaped_msg=$(python3 -c "import json,sys; print(json.dumps(sys.stdin.read().strip()))" <<< "$PULSE_MESSAGE")
+      payload="{\"type\":\"message\",\"content\":$escaped_msg}"
+
+      pulse_out=$(echo "$payload" | restish post "clickup-v3/workspaces/${ws_id}/chat/channels/${ch_id}/messages" 2>&1) && \
+        results+=("pulse_post: ok") || \
+        errors+=("pulse_post: FAILED — $pulse_out")
+    fi
   else
     errors+=("pulse_post: secrets file not found at $SECRETS")
   fi
@@ -392,6 +567,33 @@ elif [[ "$SKIP_PULSE" == true ]]; then
   results+=("pulse_post: skipped")
 else
   results+=("pulse_post: skipped (no message provided)")
+fi
+
+# ============================================================
+# STEP — Memory self-maintenance ("dream cycle" incremental groom + detection)
+# ============================================================
+# Incremental groom: apply a small capped batch of deterministic frontmatter
+# backfills (name/type from filename) so the corpus converges over sessions
+# without large diffs. Then a detection pass surfaces remaining hygiene findings.
+# Both non-fatal — memory hygiene never fails a debrief.
+GROOM=$(python3 "$HOME/ai-workspace/team-lib/executions/memory_self_check.py" --fix-safe --limit 15 2>/dev/null | head -1)
+results+=("memory_groom: ${GROOM:-skipped}")
+CHECK=$(python3 "$HOME/ai-workspace/team-lib/executions/memory_self_check.py" --json 2>/dev/null \
+  | python3 -c 'import json,sys
+try:
+  d=json.load(sys.stdin); hard=sum(len(d[k]) for k in d if k!="dead_wikilink")
+  print(f"{hard} hygiene finding(s) remain (see /self-check)" if hard else "clean")
+except Exception: print("check skipped")' 2>/dev/null)
+results+=("memory_self_check: ${CHECK:-skipped}")
+
+# ============================================================
+# STEP — Memory index rerank (two-strength Hot/Cold MEMORY.md)
+# ============================================================
+# Non-fatal by design: a rerank failure must never fail the debrief.
+if python3 "$HOME/ai-workspace/team-lib/executions/rerank_memory_index.py" >/dev/null 2>&1; then
+  results+=("memory_rerank: MEMORY.md hot/cold regenerated")
+else
+  results+=("memory_rerank: FAILED (non-fatal — run rerank_memory_index.py manually)")
 fi
 
 # ============================================================
@@ -405,6 +607,15 @@ done
 for e in "${errors[@]}"; do
   echo "  ✗ $e"
 done
+
+# Remote-control disconnect reminder — remote control cannot be toggled off
+# programmatically (interactive /remote-control only, by design; verified via
+# claude-code-guide 2026-07-13). Best we can do is detect the active connection
+# ($CLAUDE_CODE_BRIDGE_SESSION_ID, set v2.1.199+) and nudge the user.
+if [[ -n "${CLAUDE_CODE_BRIDGE_SESSION_ID:-}" ]]; then
+  echo ""
+  echo "⚠ Remote control still active — run /remote-control to disconnect."
+fi
 
 # Exit with error if any step failed
 if [[ ${#errors[@]} -gt 0 ]]; then

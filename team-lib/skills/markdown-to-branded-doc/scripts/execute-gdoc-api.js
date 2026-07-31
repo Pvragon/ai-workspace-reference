@@ -36,17 +36,20 @@ function main() {
     const args = process.argv.slice(2);
 
     if (args.length < 1) {
-        console.log('Usage: node execute-gdoc-api.js <plan.json> [--folder <folderId>] [--dry-run]');
+        console.log('Usage: node execute-gdoc-api.js <plan.json> [--folder <folderId>] [--existing-doc-id <id>] [--dry-run]');
         process.exit(1);
     }
 
     const planPath = args[0];
     let folderId = null;
     let dryRun = false;
+    let existingDocId = null;
 
     for (let i = 1; i < args.length; i++) {
         if (args[i] === '--folder' && args[i + 1]) {
             folderId = args[++i];
+        } else if (args[i] === '--existing-doc-id' && args[i + 1]) {
+            existingDocId = args[++i];
         } else if (args[i] === '--dry-run') {
             dryRun = true;
         }
@@ -87,7 +90,15 @@ function main() {
     const pageNumTemplateId = plan.googleDocTemplates?.pageNumber || PAGE_NUM_TEMPLATE_ID_FALLBACK;
     const letterheadTemplateId = plan.googleDocTemplates?.letterhead;
 
-    if (isLetterhead) {
+    if (existingDocId) {
+        // In-place re-render: use the provided doc ID, clear its body, then
+        // run the rest of the pipeline as usual. Preserves URL, comments
+        // pinned to the doc itself (not text-anchored), permissions, folder
+        // placement, and any external bookmarks.
+        documentId = existingDocId;
+        templateLabel = ' (in-place re-render of existing doc)';
+        console.log(`\nReusing existing document: ${documentId}${templateLabel}`);
+    } else if (isLetterhead) {
         if (!letterheadTemplateId) {
             const brand = plan.composedFrom?.brand || 'unknown';
             console.error(`\n❌ ERROR: No letterhead template ID for brand "${brand}".`);
@@ -105,7 +116,9 @@ function main() {
     } else {
         documentId = createDocument(plan.title);
     }
-    console.log(`\nCreated document: ${documentId}${templateLabel}`);
+    if (!existingDocId) {
+        console.log(`\nCreated document: ${documentId}${templateLabel}`);
+    }
 
     // Step 1b: Set document to PAGED mode if specified
     // Skip if created from template (already PAGED with correct margins)
@@ -116,8 +129,9 @@ function main() {
 
     // Step 1c: Clear template placeholder content (for template-based docs)
     // Templates like letterhead have placeholder text that must be removed
-    // before inserting the real content.
-    if (isLetterhead || usePageNumTemplate) {
+    // before inserting the real content. Same applies to in-place re-renders:
+    // we wipe whatever is there before laying down the new content.
+    if (isLetterhead || usePageNumTemplate || existingDocId) {
         clearTemplateBody(documentId);
     }
 
@@ -125,16 +139,24 @@ function main() {
     insertContent(documentId, plan.content);
     console.log('Inserted text content');
 
-    // Step 3: Apply native bullets to list items
-    if (plan.listItems && plan.listItems.length > 0) {
-        applyNativeBullets(documentId, plan.listItems);
-        console.log(`Applied native bullets to ${plan.listItems.length} list items`);
-    }
-
-    // Step 4: Apply all formatting in a single batchUpdate
+    // Step 3: Apply all formatting in a single batchUpdate.
+    //
+    // Formatting MUST run before native bullets. The renderer prepends leading
+    // `\t` characters to sub-bullet text to signal nestingLevel to the Docs
+    // API, and `createParagraphBullets` strips those tabs as it applies the
+    // bullet preset — which shifts every index after each tab by −1. The
+    // formatting requests reference pre-strip indices (matching the inserted
+    // text exactly), so they must be applied while the tabs are still present.
     if (plan.requests.length > 0) {
         applyFormatting(documentId, plan.requests);
         console.log(`Applied ${plan.requests.length} formatting requests`);
+    }
+
+    // Step 4: Apply native bullets to list items (strips the renderer's
+    // leading tabs and assigns nestingLevel from them).
+    if (plan.listItems && plan.listItems.length > 0) {
+        applyNativeBullets(documentId, plan.listItems);
+        console.log(`Applied native bullets to ${plan.listItems.length} list items`);
     }
 
     // Step 5: Insert tables (replacing placeholders)
@@ -161,6 +183,13 @@ function main() {
         console.log(`Inserted ${plan.pageBreaks.indices.length} page breaks`);
     }
 
+    // Step 5e: Insert body images (replacing [IMAGE_N] placeholders), centered.
+    // Runs after tables/page-breaks (index-dependent) and before orphan detection.
+    if (plan.images && plan.images.length > 0) {
+        insertImages(documentId, plan.images);
+        console.log(`Inserted ${plan.images.length} image(s)`);
+    }
+
     // Step 6: Set headers/footers
     // Skip for letterhead — the template already has the header configured
     // with company address, logo positioning, etc.
@@ -185,10 +214,17 @@ function main() {
         console.log('Orphan detection disabled for this template type');
     }
 
-    // Step 7: Move to folder if specified
+    // Step 7: Move to destination folder
+    // Template-based docs inherit the template's parent (Agent Templates).
+    // Always move: to --folder if specified, otherwise to Drive root.
+    // SKIP for in-place re-renders — the doc is already where it should be.
     if (folderId) {
         moveToFolder(documentId, folderId);
         console.log(`Moved to folder: ${folderId}`);
+    } else if ((isLetterhead || usePageNumTemplate) && !existingDocId) {
+        moveToFolder(documentId, 'root');
+        console.log('Moved to Drive root (no --folder specified; template-created docs default to Agent Templates)');
+        console.log('💡 Tip: pass --folder <folderId> to place the doc in a specific Drive folder');
     }
 
     const url = `https://docs.google.com/document/d/${documentId}/edit`;
@@ -372,13 +408,59 @@ function clearTemplateBody(documentId) {
 
     if (endIndex <= startIndex) return;
 
-    gws('docs', 'documents', 'batchUpdate', { documentId }, {
-        requests: [{
-            deleteContentRange: {
-                range: { startIndex, endIndex }
+    // Try the simple wholesale delete first. If that fails (existing doc with
+    // tables can produce invalid-range errors when the API can't delete a
+    // partially-overlapping segment), fall back to reverse element-by-element
+    // deletion which is robust against table boundaries.
+    try {
+        gws('docs', 'documents', 'batchUpdate', { documentId }, {
+            requests: [{
+                deleteContentRange: {
+                    range: { startIndex, endIndex }
+                }
+            }]
+        });
+        return;
+    } catch (err) {
+        // fall through to per-element deletion
+        console.warn('[clearTemplateBody] wholesale delete failed; falling back to per-element delete');
+    }
+
+    // Reverse-order delete: process elements from last to first so index
+    // shifts don't invalidate later requests. Skip the trailing 1-char
+    // paragraph (the doc must always end with at least one newline).
+    const elements = body.content.slice(1); // exclude leading sectionBreak
+    // Drop the trailing "empty paragraph" if present (the one char of newline)
+    let upTo = elements.length;
+    if (elements[upTo - 1] && elements[upTo - 1].paragraph &&
+        (elements[upTo - 1].endIndex - elements[upTo - 1].startIndex) <= 1) {
+        upTo -= 1;
+    }
+    for (let i = upTo - 1; i >= 0; i--) {
+        const el = elements[i];
+        const sIdx = el.startIndex;
+        const eIdx = el.endIndex;
+        if (eIdx <= sIdx) continue;
+        try {
+            gws('docs', 'documents', 'batchUpdate', { documentId }, {
+                requests: [{
+                    deleteContentRange: { range: { startIndex: sIdx, endIndex: eIdx } }
+                }]
+            });
+        } catch (e) {
+            // Try eIdx-1 (in case the element is the very last and includes the
+            // mandatory trailing newline).
+            try {
+                gws('docs', 'documents', 'batchUpdate', { documentId }, {
+                    requests: [{
+                        deleteContentRange: { range: { startIndex: sIdx, endIndex: eIdx - 1 } }
+                    }]
+                });
+            } catch (e2) {
+                console.warn(`  [clearTemplateBody] could not delete element at [${sIdx},${eIdx}], skipping`);
             }
-        }]
-    });
+        }
+    }
 }
 
 /**
@@ -501,6 +583,116 @@ function insertTables(documentId, tables, tableStyle) {
         const updatedDoc = gws('docs', 'documents', 'get', { documentId });
         populateTable(documentId, updatedDoc, placeholderIndex, table, tableStyle);
     }
+}
+
+/**
+ * Insert body images, replacing [IMAGE_N] placeholders. Mirrors insertTables:
+ * find the placeholder, upload the local file to Drive, delete the placeholder
+ * text, insert an inline image at that index, and center its paragraph.
+ * Processed in reverse order so earlier placeholder positions aren't disturbed.
+ */
+function insertImages(documentId, images) {
+    for (let i = images.length - 1; i >= 0; i--) {
+        const img = images[i];
+        if (!img.src || !fs.existsSync(img.src)) {
+            console.warn(`  Warning: image not found, skipping: ${img.src}`);
+            continue;
+        }
+
+        const doc = gws('docs', 'documents', 'get', { documentId });
+        const placeholderIndex = findPlaceholderIndex(doc, img.placeholder);
+        if (placeholderIndex === -1) {
+            console.warn(`  Warning: placeholder ${img.placeholder} not found, skipping image`);
+            continue;
+        }
+
+        // Google Docs fetches the image URI once and embeds a copy, so the file
+        // must be publicly readable at insert time (same mechanism as the logo).
+        const upload = uploadImageToDrive(img.src);
+        if (!upload) {
+            console.warn(`  Warning: could not upload ${img.src} to Drive, skipping image`);
+            continue;
+        }
+        const imageUrl = upload.url;
+
+        // Delete just the placeholder text (keep its trailing newline so the
+        // image sits in its own paragraph).
+        gws('docs', 'documents', 'batchUpdate', { documentId }, {
+            requests: [{
+                deleteContentRange: {
+                    range: { startIndex: placeholderIndex, endIndex: placeholderIndex + img.placeholder.length }
+                }
+            }]
+        });
+
+        // Insert the inline image at the placeholder position.
+        const dims = img.dimensions || { width: 300, height: 200 };
+        gws('docs', 'documents', 'batchUpdate', { documentId }, {
+            requests: [{
+                insertInlineImage: {
+                    location: { index: placeholderIndex },
+                    uri: imageUrl,
+                    objectSize: {
+                        width: { magnitude: dims.width, unit: 'PT' },
+                        height: { magnitude: dims.height, unit: 'PT' }
+                    }
+                }
+            }]
+        });
+
+        // Center the image's paragraph (default). The image occupies 1 index unit.
+        gws('docs', 'documents', 'batchUpdate', { documentId }, {
+            requests: [{
+                updateParagraphStyle: {
+                    range: { startIndex: placeholderIndex, endIndex: placeholderIndex + 1 },
+                    paragraphStyle: { alignment: img.alignment || 'CENTER' },
+                    fields: 'alignment'
+                }
+            }]
+        });
+
+        // The image is now embedded (Docs copies it at insert time), so trash the
+        // Drive upload to avoid littering the user's Drive root.
+        try {
+            execSync(
+                `gws drive files update --params '{"fileId":"${upload.fileId}"}' --json '{"trashed":true}'`,
+                { encoding: 'utf8', maxBuffer: 5 * 1024 * 1024 }
+            );
+        } catch (e) {
+            console.warn(`  Warning: could not trash temp Drive image ${upload.fileId}`);
+        }
+    }
+}
+
+/**
+ * Upload a local image to Drive, make it publicly readable, and return a
+ * fetchable uc URL. Returns null on failure. (Mirrors the first-page-logo path.)
+ */
+function uploadImageToDrive(localPath) {
+    const fileName = `_diagram_${Date.now()}_${Math.floor(Math.random() * 1e6)}.png`;
+    let uploadData;
+    try {
+        const uploadResult = execSync(
+            `gws drive files create --json '{"name":"${fileName}","mimeType":"image/png"}' --upload "${localPath}"`,
+            { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 }
+        );
+        uploadData = parseGwsOutput(uploadResult);
+    } catch (e) {
+        console.warn(`  Warning: Drive upload failed: ${e.message}`);
+        return null;
+    }
+    const fileId = uploadData && uploadData.id;
+    if (!fileId) return null;
+
+    try {
+        execSync(
+            `gws drive permissions create --params '{"fileId":"${fileId}"}' --json '{"role":"reader","type":"anyone"}'`,
+            { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
+        );
+    } catch (e) {
+        console.warn('  Warning: could not set image permissions (image may not render)');
+    }
+    return { url: `https://drive.google.com/uc?id=${fileId}`, fileId };
 }
 
 /**
@@ -769,37 +961,53 @@ function findTableNearIndex(doc, nearIndex) {
 
 /**
  * Step 3: Apply native Google Docs bullets to list item paragraphs.
- * Groups contiguous list items and applies createParagraphBullets.
- * Uses nestingLevel for nested bullets (no text-based indentation).
+ *
+ * Groups contiguous list items into a single Docs list per group, so that
+ * numbered lists keep continuous numbering across nested sub-items instead
+ * of restarting at 1 for every sub-bullet group.
+ *
+ * Nesting is signalled by leading `\t` characters that the renderer prepends
+ * to sub-bullet text (one tab per nesting level). The Docs API strips these
+ * tabs in `createParagraphBullets` and assigns `nestingLevel` accordingly,
+ * so we do NOT set `indentStart` manually — the preset's built-in per-level
+ * indents are correct (and the previous manual `36 * level` formula was
+ * off-by-one for level 1, leaving sub-bullets flat).
+ *
+ * Preset selection: the first item in each contiguous group is always a
+ * top-level (level 0) item — the renderer emits parents before children.
+ * That first item's `ordered` flag drives the preset for the whole group:
+ *   - numbered top  → NUMBERED_DECIMAL_ALPHA_ROMAN (1, 2, 3 / a, b, c / i, ii, iii)
+ *   - bullet top    → BULLET_DISC_CIRCLE_SQUARE     (•, ○, ▪)
+ * Mixed-type markdown (numbered top with bullet sub-items) renders as one
+ * unified numbered list, which preserves continuous numbering at the top.
  */
 function applyNativeBullets(documentId, listItems) {
     if (!listItems || listItems.length === 0) return;
 
-    const requests = [];
-
+    // Group contiguous list-items into "list groups" that share one Docs list.
+    // A new group starts whenever the current item's startIndex does not equal
+    // the previous item's endIndex (i.e., something non-list-item came between).
+    const groups = [];
+    let currentGroup = null;
     for (const item of listItems) {
-        // createParagraphBullets converts paragraphs to bullet/numbered lists
-        requests.push({
-            createParagraphBullets: {
-                range: { startIndex: item.startIndex, endIndex: item.endIndex },
-                bulletPreset: item.ordered ? 'NUMBERED_DECIMAL_ALPHA_ROMAN' : 'BULLET_DISC_CIRCLE_SQUARE'
-            }
-        });
-
-        // Set nesting level for sub-bullets
-        if (item.level > 0) {
-            requests.push({
-                updateParagraphStyle: {
-                    range: { startIndex: item.startIndex, endIndex: item.endIndex },
-                    paragraphStyle: {
-                        indentStart: { magnitude: 36 * item.level, unit: "PT" },
-                        indentFirstLine: { magnitude: 36 * item.level - 18, unit: "PT" }
-                    },
-                    fields: "indentStart,indentFirstLine"
-                }
-            });
+        if (currentGroup === null || item.startIndex !== currentGroup.endIndex) {
+            currentGroup = {
+                startIndex: item.startIndex,
+                endIndex: item.endIndex,
+                ordered: item.ordered
+            };
+            groups.push(currentGroup);
+        } else {
+            currentGroup.endIndex = item.endIndex;
         }
     }
+
+    const requests = groups.map(group => ({
+        createParagraphBullets: {
+            range: { startIndex: group.startIndex, endIndex: group.endIndex },
+            bulletPreset: group.ordered ? 'NUMBERED_DECIMAL_ALPHA_ROMAN' : 'BULLET_DISC_CIRCLE_SQUARE'
+        }
+    }));
 
     if (requests.length > 0) {
         gws('docs', 'documents', 'batchUpdate', { documentId }, { requests });
@@ -1040,13 +1248,39 @@ function setHeaderWithLogo(documentId, headerFooter) {
         return;
     }
 
-    // Create DEFAULT header (shows on all pages initially)
-    const createResponse = gws('docs', 'documents', 'batchUpdate', { documentId }, {
-        requests: [{ createHeader: { type: "DEFAULT", sectionBreakLocation: { index: 0 } } }]
-    });
-    const headerId = createResponse.replies?.[0]?.createHeader?.headerId;
+    // Create DEFAULT header (shows on all pages initially). On in-place
+    // re-renders, the existing doc may already have a header — in that case
+    // look up the existing one and reuse it (clearing its content first).
+    let headerId;
+    try {
+        const createResponse = gws('docs', 'documents', 'batchUpdate', { documentId }, {
+            requests: [{ createHeader: { type: "DEFAULT", sectionBreakLocation: { index: 0 } } }]
+        });
+        headerId = createResponse.replies?.[0]?.createHeader?.headerId;
+    } catch (err) {
+        // "Default header already exists" — fetch the existing one
+        const doc = gws('docs', 'documents', 'get', { documentId });
+        headerId = doc.documentStyle?.defaultHeaderId;
+        if (headerId) {
+            // Clear existing header content so we don't append to stale content
+            const existingHeader = doc.headers?.[headerId];
+            const headerContent = existingHeader?.content || [];
+            const lastEl = headerContent[headerContent.length - 1];
+            if (lastEl && lastEl.endIndex > 1) {
+                try {
+                    gws('docs', 'documents', 'batchUpdate', { documentId }, {
+                        requests: [{
+                            deleteContentRange: {
+                                range: { segmentId: headerId, startIndex: 0, endIndex: lastEl.endIndex - 1 }
+                            }
+                        }]
+                    });
+                } catch (_) { /* if header was already empty, fine */ }
+            }
+        }
+    }
     if (!headerId) {
-        console.warn('  Warning: could not create header');
+        console.warn('  Warning: could not create or reuse header');
         return;
     }
 
@@ -1212,8 +1446,13 @@ function insertLogoInHeader(documentId, headerId, logoPath, dims) {
 
     const logoUrl = `https://drive.google.com/uc?id=${logoFileId}`;
 
-    // Insert inline image
-    gws('docs', 'documents', 'batchUpdate', { documentId }, {
+    // Wait for permission propagation — without this, Docs API often fails with
+    // "There was a problem retrieving the image" because the public-read grant
+    // hasn't propagated yet.
+    execSync('sleep 6');
+
+    // Insert inline image (retry on transient fetch failure)
+    const insertReq = {
         requests: [{
             insertInlineImage: {
                 location: { segmentId: headerId, index: idx },
@@ -1224,7 +1463,20 @@ function insertLogoInHeader(documentId, headerId, logoPath, dims) {
                 }
             }
         }]
-    });
+    };
+    let lastErr;
+    for (const delay of [0, 5, 10]) {
+        if (delay) execSync(`sleep ${delay}`);
+        try {
+            gws('docs', 'documents', 'batchUpdate', { documentId }, insertReq);
+            lastErr = null;
+            break;
+        } catch (e) {
+            lastErr = e;
+            console.warn(`  insertInlineImage failed (will retry after ${delay + 5}s if attempts remain)`);
+        }
+    }
+    if (lastErr) throw lastErr;
 
     // Right-align the header paragraph
     try {
@@ -1271,10 +1523,11 @@ function insertLogoInHeader(documentId, headerId, logoPath, dims) {
  * Move a file to a specific Drive folder.
  */
 function moveToFolder(documentId, folderId) {
-    // Get current parents
+    // Get current parents (supportsAllDrives so shared-drive folders are visible)
     const file = gws('drive', 'files', 'get', {
         fileId: documentId,
-        fields: 'parents'
+        fields: 'parents',
+        supportsAllDrives: true
     });
 
     const currentParents = (file.parents || []).join(',');
@@ -1283,7 +1536,8 @@ function moveToFolder(documentId, folderId) {
         fileId: documentId,
         addParents: folderId,
         removeParents: currentParents,
-        fields: 'id,parents'
+        fields: 'id,parents',
+        supportsAllDrives: true
     });
 }
 

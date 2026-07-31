@@ -4,6 +4,9 @@
 #
 # Used by:
 #   executions/list_shared_drives.py — Google Drive API access
+#   skills/prepare-image-for-print/scripts/* — image analysis + print prep
 
 google-api-python-client>=2.100.0
 google-auth>=2.25.0
+pillow>=10.0.0
+numpy>=1.24.0

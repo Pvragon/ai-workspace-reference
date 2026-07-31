@@ -7,6 +7,8 @@ created: 2026-03-25
 last_updated: 2026-03-26
 maintainer: pvragon
 related:
+  - executions/pulse_activity_poster.py  # cron: posts to task activity threads
+  - executions/pulse_aw_summary.py       # cron: AW summaries to Pulse channel
   - runtime/.tmp/pulse-thread-registry.jsonl  # thread→task mapping (ephemeral)
 ---
 
@@ -41,7 +43,7 @@ JH Manual Pulse 04:45 PM: Wrapped schema review with Roman — all 5 tables appr
 
 ## Task Registration
 
-When the user links the current thread to a ClickUp task, append a registration entry to the registry file at `~/ai-workspace/my-lib/runtime/.tmp/pulse-thread-registry.jsonl` (one JSON object per line):
+When the user links the current thread to a ClickUp task, append a registration entry to the registry file at `runtime/.tmp/pulse-thread-registry.jsonl` in your personal library (one JSON object per line):
 
 ```json
 {"thread_name": "<Claude session/thread name>", "task_id": "<ClickUp task ID>", "task_name": "<task name if known>", "registered_at": "<ISO 8601 timestamp>"}
@@ -62,7 +64,7 @@ JH Manual Pulse <HH:MM AM/PM>: Thread "<thread name>" registered to task <task_i
 Post immediately without asking for confirmation.
 
 ```bash
-source ~/ai-workspace/personal/secrets/.env && echo '{"type":"message","content":"<message>"}' | restish post clickup-v3/workspaces/YOUR_WORKSPACE_ID/chat/channels/YOUR_CHANNEL_ID/messages
+source ~/ai-workspace/personal/secrets/.env && echo '{"type":"message","content":"<message>"}' | restish post clickup-v3/workspaces/9011906822/chat/channels/5-90117802942-8/messages
 ```
 
 **Important**: Escape any double quotes in the message content with `\"`.

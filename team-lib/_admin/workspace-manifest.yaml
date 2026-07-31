@@ -29,7 +29,7 @@ roots:
     role: shared-sop
     description: "Shared team library - SOPs, directives, templates"
     is_git_repo: true
-    github_repo: null  # set to your team-library repo when you create one
+    github_repo: Pvragon/pvragon-ai-library
     is_gitignored: false
     key_subdirs:
       registry: registry/
@@ -46,7 +46,7 @@ roots:
     role: user-directives
     description: "Personal overlay library - user directives & scripts"
     is_git_repo: true
-    github_repo: your-username/private-ai-library
+    github_repo: null  # setup_workspace.sh fills in the user's actual remote
     is_gitignored: false
     key_subdirs:
       archive: archive/

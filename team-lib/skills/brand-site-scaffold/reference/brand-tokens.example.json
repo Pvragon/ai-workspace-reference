@@ -1,0 +1,474 @@
+{
+  "$schema": "brand-tokens-v1",
+  "$generated": {
+    "from": "brand-guidelines.md",
+    "by": "parse-guidelines.js",
+    "at": "2026-07-17T20:28:21.969Z",
+    "guidelinesVersion": "1.1.0",
+    "coverage": {
+      "total": 102,
+      "defined": 84,
+      "derived": 15,
+      "missing": 4,
+      "percent": 82.4
+    }
+  },
+  "color": {
+    "brand": {
+      "primary": {
+        "$value": "#A62639",
+        "$type": "color",
+        "$description": "Lacquer"
+      },
+      "accent": {
+        "$value": "#66549B",
+        "$type": "color",
+        "$description": "Wisteria"
+      },
+      "tertiary": {
+        "$value": "#1D6A5A",
+        "$type": "color",
+        "$description": "Jade"
+      }
+    },
+    "text": {
+      "default": {
+        "$value": "#221E1A",
+        "$type": "color",
+        "$description": "Ink"
+      },
+      "subtle": {
+        "$value": "#5C524E",
+        "$type": "color",
+        "$description": "Muted"
+      },
+      "onPrimary": {
+        "$value": "#F5EFE3",
+        "$type": "color",
+        "$description": "Bone"
+      },
+      "onDark": {
+        "$value": "#F5EFE3",
+        "$type": "color",
+        "$description": "Bone"
+      }
+    },
+    "background": {
+      "default": {
+        "$value": "#FBE8DC",
+        "$type": "color",
+        "$description": "Peach"
+      },
+      "subtle": {
+        "$value": "#FEF4ED",
+        "$type": "color",
+        "$description": "Peach Panel"
+      },
+      "accent": {
+        "$value": "#C9B8E8",
+        "$type": "color",
+        "$description": "Lavender"
+      }
+    },
+    "border": {
+      "default": {
+        "$value": "#DEBB84",
+        "$type": "color",
+        "$description": "Brass Rule"
+      },
+      "subtle": {
+        "$value": "#BEAFA5",
+        "$type": "color",
+        "$description": "Hairline"
+      }
+    },
+    "link": {
+      "default": {
+        "$value": "#66549B",
+        "$type": "color",
+        "$description": "Wisteria"
+      },
+      "hover": {
+        "$value": "#52427E",
+        "$type": "color",
+        "$description": "Wisteria Deep"
+      },
+      "visited": {
+        "$value": "#66549B",
+        "$type": "color",
+        "$description": "Wisteria"
+      }
+    },
+    "status": {
+      "successLight": {
+        "$value": "#DDE8E6",
+        "$type": "color",
+        "$description": "Jade Tint"
+      },
+      "successMed": {
+        "$value": "#3FA98F",
+        "$type": "color",
+        "$description": "Jade Bright"
+      },
+      "successDark": {
+        "$value": "#1D6A5A",
+        "$type": "color",
+        "$description": "Jade"
+      },
+      "warningLight": {
+        "$value": "#F4E5E7",
+        "$type": "color",
+        "$description": "Lacquer Tint"
+      },
+      "warningMed": {
+        "$value": "#DA4167",
+        "$type": "color",
+        "$description": "Peony"
+      },
+      "warningDark": {
+        "$value": "#7C1D2C",
+        "$type": "color",
+        "$description": "Deep Lacquer"
+      }
+    },
+    "heading": {
+      "h1": {
+        "$value": "#A62639",
+        "$type": "color",
+        "$source": "explicit"
+      },
+      "h2": {
+        "$value": "#221E1A",
+        "$type": "color",
+        "$source": "explicit"
+      },
+      "h3": {
+        "$value": "#221E1A",
+        "$type": "color",
+        "$source": "explicit"
+      },
+      "h4": {
+        "$value": "#66549B",
+        "$type": "color",
+        "$source": "explicit"
+      },
+      "h5": {
+        "$value": "#221E1A",
+        "$type": "color",
+        "$source": "explicit"
+      },
+      "h6": {
+        "$value": "#5C524E",
+        "$type": "color",
+        "$source": "explicit"
+      }
+    },
+    "extended": {
+      "bone": {
+        "$value": "#F5EFE3",
+        "$type": "color",
+        "$description": "Bone"
+      },
+      "lavender": {
+        "$value": "#C9B8E8",
+        "$type": "color",
+        "$description": "Lavender"
+      },
+      "brass": {
+        "$value": "#C6973B",
+        "$type": "color",
+        "$description": "Brass"
+      },
+      "peony": {
+        "$value": "#DA4167",
+        "$type": "color",
+        "$description": "Peony"
+      },
+      "lacquerDeep": {
+        "$value": "#7C1D2C",
+        "$type": "color",
+        "$description": "Deep Lacquer"
+      },
+      "lacquerBright": {
+        "$value": "#D64550",
+        "$type": "color",
+        "$description": "Lacquer Bright"
+      },
+      "jadeBright": {
+        "$value": "#3FA98F",
+        "$type": "color",
+        "$description": "Jade Bright"
+      }
+    },
+    "derivative": {
+      "primary": {
+        "tint1": {
+          "$value": "#D4445A",
+          "$type": "color",
+          "$description": "+25% lightness"
+        },
+        "tint2": {
+          "$value": "#E38391",
+          "$type": "color",
+          "$description": "+50% lightness"
+        },
+        "tint3": {
+          "$value": "#F1C1C8",
+          "$type": "color",
+          "$description": "+75% lightness"
+        },
+        "shade1": {
+          "$value": "#681824",
+          "$type": "color",
+          "$description": "-25% lightness"
+        },
+        "shade2": {
+          "$value": "#2A0A0E",
+          "$type": "color",
+          "$description": "-50% lightness"
+        }
+      },
+      "accent": {
+        "tint1": {
+          "$value": "#9081BB",
+          "$type": "color",
+          "$description": "+25% lightness"
+        },
+        "tint2": {
+          "$value": "#BBB2D6",
+          "$type": "color",
+          "$description": "+50% lightness"
+        },
+        "tint3": {
+          "$value": "#E7E4F0",
+          "$type": "color",
+          "$description": "+75% lightness"
+        },
+        "shade1": {
+          "$value": "#453969",
+          "$type": "color",
+          "$description": "-25% lightness"
+        },
+        "shade2": {
+          "$value": "#251E38",
+          "$type": "color",
+          "$description": "-50% lightness"
+        }
+      },
+      "tertiary": {
+        "tint1": {
+          "$value": "#2DA68D",
+          "$type": "color",
+          "$description": "+25% lightness"
+        },
+        "tint2": {
+          "$value": "#51CFB5",
+          "$type": "color",
+          "$description": "+50% lightness"
+        },
+        "tint3": {
+          "$value": "#8DE0CF",
+          "$type": "color",
+          "$description": "+75% lightness"
+        },
+        "shade1": {
+          "$value": "#0D2E27",
+          "$type": "color",
+          "$description": "-25% lightness"
+        },
+        "shade2": {
+          "$value": "#000000",
+          "$type": "color",
+          "$description": "-50% lightness"
+        }
+      }
+    }
+  },
+  "typography": {
+    "font": {
+      "primary": {
+        "$value": "Atkinson Hyperlegible",
+        "$type": "fontFamily"
+      },
+      "secondary": {
+        "$value": "Fraunces",
+        "$type": "fontFamily"
+      },
+      "fallback": {
+        "$value": "Georgia",
+        "$type": "fontFamily"
+      },
+      "monospace": {
+        "$value": "Courier New",
+        "$type": "fontFamily"
+      }
+    },
+    "weight": {
+      "light": {
+        "$value": 400,
+        "$type": "fontWeight"
+      },
+      "body": {
+        "$value": 400,
+        "$type": "fontWeight"
+      },
+      "medium": {
+        "$value": 600,
+        "$type": "fontWeight"
+      },
+      "heading": {
+        "$value": 700,
+        "$type": "fontWeight"
+      },
+      "display": {
+        "$value": 900,
+        "$type": "fontWeight"
+      }
+    }
+  },
+  "logo": {
+    "full": {
+      "file": "wordmark.svg",
+      "absolutePath": "/home/you/ai-workspace/projects/one-mahjong/brand/wordmark.svg",
+      "width": null,
+      "height": null
+    },
+    "icon": {
+      "file": "favicon.svg",
+      "absolutePath": "/home/you/ai-workspace/projects/one-mahjong/brand/favicon.svg",
+      "width": null,
+      "height": null
+    },
+    "fullOnDark": {
+      "file": "wordmark.svg",
+      "absolutePath": "/home/you/ai-workspace/projects/one-mahjong/brand/wordmark.svg",
+      "width": null,
+      "height": null
+    },
+    "iconOnDark": {
+      "file": "favicon.svg",
+      "absolutePath": "/home/you/ai-workspace/projects/one-mahjong/brand/favicon.svg",
+      "width": null,
+      "height": null
+    }
+  },
+  "company": {
+    "name": "ONE Mahjong",
+    "legalName": null,
+    "tagline": "Free the game.",
+    "address": null,
+    "phone": null,
+    "email": null,
+    "website": "https://onemahjong.org"
+  },
+  "voice": {
+    "tone": "Wine night with sharp friends — warm, wry, confident, generous; short declaratives that end on a period",
+    "perspective": "First-person plural (we), speaking to \"you\" at the table; talks table talk (mahj, jokers, the Charleston)",
+    "formality": "Casual-smart; never startup, never greeting card",
+    "avoidance": "Startup-speak (unlock, seamless, elevate, community-driven experience); internet slang (bestie, iconic, vibes, girlie, slay, era); exclamation cheer, emoji confetti, hashtag piles; mocking players or the League; motive words (greedy, scam, racket, cartel, cabal, extortion); stating the incumbent's price; kitsch/granny-core framing"
+  },
+  "preference": {
+    "heading": {
+      "colorStrategy": "primary-only",
+      "weightProgression": "bold-to-italic"
+    },
+    "docs": {
+      "bodyFontSize": 12,
+      "bodyAlignment": "left",
+      "lineSpacing": 150,
+      "tableHeaders": "branded",
+      "alternatingRows": true,
+      "tableDensity": "standard",
+      "accentOnLabels": true,
+      "decorativeRules": true,
+      "callouts": true,
+      "tocDefault": false
+    },
+    "slides": {
+      "titleBackground": "primary",
+      "contentBackground": "light",
+      "closingBackground": "primary",
+      "logoProminence": "subtle",
+      "bulletMarker": "accent",
+      "accentStripe": true,
+      "footerContent": "numbers-and-company"
+    },
+    "web": {
+      "theme": "light",
+      "animation": "subtle",
+      "cardStyle": "bordered",
+      "interiorGlows": false,
+      "ctaStyle": "solid"
+    },
+    "social": {
+      "colorIntensity": "muted",
+      "logoPlacement": "corner",
+      "textOverlay": "dark-on-light"
+    },
+    "ads": {
+      "ctaStyle": "bold",
+      "backgroundUsage": "solid",
+      "borderTreatment": "subtle"
+    },
+    "longform": {
+      "pullQuotes": "accent-border",
+      "footnoteStyle": "endnotes",
+      "dropCaps": false,
+      "chapterStyle": "continuous"
+    }
+  },
+  "accessibility": {
+    "textContrast": "AA",
+    "uiContrast": "AA",
+    "computed": [
+      {
+        "foreground": "color.brand.primary",
+        "background": "color.background.default",
+        "ratio": 5.98,
+        "level": "AA"
+      },
+      {
+        "foreground": "color.brand.accent",
+        "background": "color.background.default",
+        "ratio": 5.35,
+        "level": "AA"
+      },
+      {
+        "foreground": "color.text.default",
+        "background": "color.background.default",
+        "ratio": 13.93,
+        "level": "AAA"
+      },
+      {
+        "foreground": "color.text.subtle",
+        "background": "color.background.default",
+        "ratio": 6.38,
+        "level": "AA"
+      },
+      {
+        "foreground": "color.heading.h1",
+        "background": "color.background.default",
+        "ratio": 5.98,
+        "level": "AA"
+      },
+      {
+        "foreground": "color.heading.h2",
+        "background": "color.background.default",
+        "ratio": 13.93,
+        "level": "AAA"
+      },
+      {
+        "foreground": "color.link.default",
+        "background": "color.background.default",
+        "ratio": 5.35,
+        "level": "AA"
+      },
+      {
+        "foreground": "color.text.onPrimary",
+        "background": "color.brand.primary",
+        "ratio": 6.2,
+        "level": "AA"
+      }
+    ]
+  }
+}

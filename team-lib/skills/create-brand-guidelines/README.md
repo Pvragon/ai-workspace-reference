@@ -329,9 +329,9 @@ team-lib/
 │       │           ├── slides-formal.json
 │       │           ├── slides-informational.json
 │       │           └── html-presentation.json
-│       ├── example-brand/
+│       ├── acme-health/
 │       │   └── (same structure)
-│       └── example-brand-2/
+│       └── northwind/
 │           └── (same structure)
 ```
 

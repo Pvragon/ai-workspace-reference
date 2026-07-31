@@ -24,7 +24,7 @@ const DEFAULT_TYPE = 'doc-report';
 /**
  * Load a pre-composed branded template.
  *
- * @param {string} brandName - Company slug (e.g., 'pvragon', 'acme-corp')
+ * @param {string} brandName - Company slug (e.g., 'pvragon', 'acme-health')
  * @param {string} docType - Document type (e.g., 'doc-report', 'doc-legal', 'slides-formal')
  * @returns {object} Fully resolved branded template
  */

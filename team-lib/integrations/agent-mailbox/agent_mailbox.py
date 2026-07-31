@@ -2,7 +2,7 @@
 # ---
 # template: execution
 # version: 0.1.0
-# summary: "Git-backed cross-machine agent-to-agent mailbox. Directed messages addressed by STABLE AGENT NAME (agent-a, agent-b), transported over a shared git repo (pull/push), stored one-file-per-message (never conflicts on rebase), with LOCAL uncommitted read-state per machine. The cross-machine sibling of session_activity.py's machine-local mailbox."
+# summary: "Git-backed cross-machine agent-to-agent mailbox. Directed messages addressed by STABLE AGENT NAME (rowan, vesper), transported over a shared git repo (pull/push), stored one-file-per-message (never conflicts on rebase), with LOCAL uncommitted read-state per machine. The cross-machine sibling of session_activity.py's machine-local mailbox."
 # created: 2026-07-21
 # last_updated: 2026-07-21
 # maintainer: pvragon
@@ -29,9 +29,9 @@ Transport: a shared git repo (private GitHub repo both machines can clone).
   ack   = mark message id(s) seen in local read-state
 
 CLI:
-    python3 agent_mailbox.py init --identity <your-agent> --remote git@github.com:<your-org>/agent-mailbox.git
+    python3 agent_mailbox.py init --identity rowan --remote git@github.com:Pvragon/agent-mailbox.git
     python3 agent_mailbox.py whoami
-    python3 agent_mailbox.py register --name vesper --machine machine-b
+    python3 agent_mailbox.py register --name vesper --machine trever-win
     python3 agent_mailbox.py agents
     python3 agent_mailbox.py send --to vesper --subject "hi" --msg "hello from the other side"
     python3 agent_mailbox.py inbox            # unread addressed to me
@@ -491,8 +491,8 @@ def _self_test():
         (rowan_repo / AGENTS_FILENAME).write_text("{}\n")
         _commit(rowan_repo, [rowan_repo / AGENTS_FILENAME], "init")
         _push(rowan_repo)
-        cmd_register("rowan", machine="machine-a")
-        cmd_register("vesper", machine="machine-b")
+        cmd_register("rowan", machine="the-operator-wsl")
+        cmd_register("vesper", machine="trever-win")
 
         # 3. rowan sends to vesper.
         send_res = cmd_send("vesper", "hello from the other side", subject="first contact")

@@ -57,6 +57,8 @@ run_cmd "apt-get install -y git"
 
 # Python
 echo "    ... Python3, Pip, Venv"
+# python3-yaml is REQUIRED: _admin/parse_toolchain.py imports yaml with the
+# system python3 — without this package, toolchain provisioning crashes.
 run_cmd "apt-get install -y python3 python3-pip python3-venv python3-yaml"
 
 # Node.js

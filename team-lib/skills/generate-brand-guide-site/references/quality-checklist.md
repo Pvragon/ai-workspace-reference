@@ -1,6 +1,6 @@
 # Quality Checklist
 
-Run before handoff. (Adapted from a community-shared generate-brand-guide quality checklist; evidence/governance items are handled upstream by our token pipeline, so this gate is presentation-focused.)
+Run before handoff. (Adapted from Kevin Oskow's generate-brand-guide quality checklist; evidence/governance items are handled upstream by our token pipeline, so this gate is presentation-focused.)
 
 ## Data fidelity
 

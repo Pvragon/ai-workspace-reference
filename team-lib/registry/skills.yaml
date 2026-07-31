@@ -28,14 +28,6 @@ skills:
   # INTERNAL SKILLS (preferred in search hierarchy)
   # ============================================================
 
-  - name: choose-name
-    description: "Welcoming ceremony for a new AI teammate to choose their own name, pronouns, and identity. Run once in an agent's first session (final phase of ONBOARDING.md); writes the identity block into the tool's global config file and scaffolds ~/ai-workspace/agents/<name>/."
-    path: skills/choose-name/SKILL.md
-    capabilities: [onboarding, agent-identity, memory-bootstrap]
-    dependencies: []
-    tags: [onboarding, identity, ceremony, new-agent]
-    version: "1.1.0"
-
   - name: create-directive
     description: Guidelines for creating effective workflow directives that orchestrate without redundancy
     path: skills/create-directive/SKILL.md
@@ -43,6 +35,22 @@ skills:
     dependencies: []
     tags: [directive, documentation, workflow, templates, best-practices]
     version: "1.1.0"
+
+  - name: generate-deals-pack
+    description: "Generate or recalibrate a consumer-deals domain pack (attribute extraction + value tables + scoring) for any product domain. Scrape-once-cache-iterate-offline so it never hits marketplace rate limits. Pairs with team-lib/integrations/consumer-deals."
+    path: skills/generate-deals-pack/SKILL.md
+    capabilities: [deal-mining, domain-pack-generation, valuation-calibration, attribute-extraction]
+    dependencies: [consumer-deals]
+    tags: [deals, offerup, marketplace, pack, valuation, extraction, rate-limit-safe]
+    version: "1.0.0"
+
+  - name: run-deal-hunt
+    description: "One-command marketplace deal hunt — 'find me the best <thing> under $X'. Drives the deals CLI scrape→value→rank end-to-end and writes a ranked deal report with an in-person verify protocol for too-good outliers. Read-only; verify-not-verdict. Executes directive run-deal-hunt."
+    path: skills/run-deal-hunt/SKILL.md
+    capabilities: [deal-mining, deal-hunt, valuation, ranking, deal-report]
+    dependencies: [consumer-deals, generate-deals-pack]
+    tags: [deals, offerup, marketplace, hunt, valuation, ranking, verify-tier, rate-limit-safe]
+    version: "1.0.0"
 
   - name: generate-release-notes
     description: Automate team release notes by analyzing git history and changelogs.
@@ -52,21 +60,110 @@ skills:
     tags: [release, changelog, git, documentation, automation]
     version: "1.0.0"
 
-  - name: check-workspace-consistency
-    description: Rigorously validate all files referencing workspace structure are in sync — three-pass protocol over templates, docs, and registries.
-    path: skills/_workspace-developer/check-workspace-consistency/SKILL.md
-    capabilities: [consistency-validation, structure-audit, release-gating]
-    dependencies: []
-    tags: [workspace, validation, consistency, release]
-    version: "1.1.0"
+  - name: mobile-overflow-audit
+    description: "Audit a Pvragon HTML presentation for content overflow at phone-landscape viewport. Walks every .slide via headless Chromium, measures scrollHeight vs clientHeight, reports per-slide overflow + detected component classes. Exits 1 if any slide overflows beyond threshold (default 5px), so it can gate CI or iterate-fix loops."
+    path: skills/mobile-overflow-audit/SKILL.md
+    capabilities: [mobile-audit, presentation-qa, html-presentation, layout-overflow-detection]
+    dependencies: [node, playwright]
+    tags: [pvragon, html-presentation, mobile, responsive, audit, playwright, presentations]
+    version: "1.0.0"
+
+  - name: build-branded-web-page
+    description: "Build, polish, and ship a branded static web page (landing/marketing) to a professional bar. Encodes the render+measure-before-ship gate (scrollWidth vs clientWidth at 2560/1440/768/375 via headless-Chromium DOM metrics — screenshots render BLACK, and the CDP script needs NO playwright install), WCAG contrast verified by math not eye, an accessible FAIL-SAFE email-capture form + serverless endpoint (503-never-drop, non-autofill honeypot, abuse-control gate before live), a humanizer/cut copy pass, and a mandatory independent review. Proven on the ONE Mahjong onemahjong.org v3 launch."
+    path: skills/build-branded-web-page/SKILL.md
+    capabilities: [web-page-build, responsive-qa, wcag-contrast, email-capture, serverless-form, humanizer-copy, deploy-verify]
+    dependencies: [node, chromium, python]
+    tags: [web, landing-page, responsive, accessibility, wcag, overflow, serverless, email-capture, humanizer, deploy, vercel]
+    version: "1.0.0"
+
+  # --- build-brand-site suite (app-framework multi-page site; orchestrator + 8 per-stage subskills) ---
+  - name: build-brand-site
+    description: "ORCHESTRATOR for building a multi-page branded marketing SITE on the app-framework path — Next.js (App Router) + Tailwind v4 + Untitled UI + a brand-token→@theme generator, statically rendered, Vercel. Runs the staged methodology (scaffold → components → chrome → sitemap → templates → pages → cohesion → deploy/extract), each stage its own subskill with a hard adversarial-review gate. Composes existing skills (ext-frontend-design, ext-ui-design-system, ext-webapp-testing, ext-humanizer, create-brand-guidelines) rather than re-deriving web/design craft; the unique contribution is the Untitled-UI token bridge + stack gotchas. Proven on the ONE Mahjong onemahjong.org rebuild. Use build-branded-web-page for a one-off static page."
+    path: skills/build-brand-site/SKILL.md
+    capabilities: [multi-page-site, brand-token-theme, staged-methodology, adversarial-gate, skill-composition, multi-brand-reuse]
+    dependencies: [node, pnpm, chromium, python]
+    tags: [web, site, next, tailwind, untitled-ui, brand-tokens, multi-brand, orchestrator, accessibility, vercel]
+    version: "1.0.0"
+
+  - name: brand-site-scaffold
+    description: "Stage 0 of build-brand-site. Scaffold a lean statically-rendered Next.js + Tailwind v4 + Untitled UI app, vet the supply chain, and stand up the reusable brand-token→@theme generator (build-brand-theme.mjs, vendored) that reskins the whole UUI set from one brand-tokens.json. Carries the OKLCH gamut-mapping, guarded-primary (brand-600 white-on-solid ≥4.5), warm-neutral-ramp, and surface≠page-ground lessons; wire the generator into predev/prebuild so brand.css can't drift."
+    path: skills/brand-site-scaffold/SKILL.md
+    capabilities: [scaffold, brand-token-bridge, oklch-theme, supply-chain-vet]
+    dependencies: [node, pnpm]
+    tags: [scaffold, next, tailwind, untitled-ui, brand-tokens, oklch, theme]
+    version: "1.0.0"
+
+  - name: brand-site-components
+    description: "Stage 1 of build-brand-site. Adopt the Untitled UI component set and brand-tune via tokens (not edits), verifying every variant/state by WCAG math. Composes ext-frontend-design + ext-ui-design-system for aesthetic/system. Carries the sharp edges: `untitledui add` overwrites customized deps + drags transitive bloat (add ALL before customizing; git status after each add), functional-border 3:1, ring-as-box-shadow reading, the RSC client-island boundary, Tailwind-v4 literal-class scanning."
+    path: skills/brand-site-components/SKILL.md
+    capabilities: [component-library, wcag-contrast, brand-tuning, rsc-boundary]
+    dependencies: [node, pnpm, python]
+    tags: [components, untitled-ui, wcag, contrast, react-aria, rsc]
+    version: "1.0.0"
+
+  - name: brand-site-chrome
+    description: "Stage 2 of build-brand-site. Build accessible header + footer chrome — skip-link, aria-current active route, keyboard-operable mobile disclosure (react-aria), and a footer carrying the CORRECT canonical domain (from brand.config.ts, never hardcoded) + independence/legal disclaimer. Thin stage, site-wide blast radius. Composes ext-frontend-design for the header layout."
+    path: skills/brand-site-chrome/SKILL.md
+    capabilities: [header-footer, nav-a11y, canonical-domain]
+    dependencies: [node, pnpm]
+    tags: [header, footer, navigation, accessibility, react-aria, canonical]
+    version: "1.0.0"
+
+  - name: brand-site-map
+    description: "Stage 3 of build-brand-site. Define the multi-page route structure with one intent per page — a REAL commerce/shop surface with a SHOP_LIVE seam (honest gated placeholder, never a dead-end link), traffic-driving SEO pages, and the sitemap.ts + robots.ts the Next base lacks. Composes ext-content-creator / ext-marketing-strategy-pmm for SEO intent. Kills the dead-end-funnel defect."
+    path: skills/brand-site-map/SKILL.md
+    capabilities: [sitemap, information-architecture, seo-routes, commerce-surface, anti-dead-end]
+    dependencies: [node]
+    tags: [sitemap, routes, seo, robots, commerce, funnel]
+    version: "1.0.0"
+
+  - name: brand-site-templates
+    description: "Stage 4 of build-brand-site. Build the reusable section library (hero, teaser, split, stat, cta-band, faq, prose-page, dividers) + page shells, with all copy moved OUT of JSX into per-brand content-data files — the second reusability seam after the token bridge. Split server shells from client islands at the section boundary. Composes ext-frontend-design for section composition/rhythm."
+    path: skills/brand-site-templates/SKILL.md
+    capabilities: [section-library, content-as-data, reuse-seam, rsc-split]
+    dependencies: [node]
+    tags: [templates, sections, content-as-data, reuse, rsc]
+    version: "1.0.0"
+
+  - name: brand-site-pages
+    description: "Stage 5 of build-brand-site. Compose real pages from sections, turn wall-of-text into scannable layouts, wire conversion funnels, and drop in the FAIL-SAFE email form (Next route handler: 503-when-no-key, non-autofill honeypot, timeout, no leak) with a11y error association (route errors through UUI Input hint+isInvalid so react-aria wires aria-describedby). Composes ext-humanizer + ext-content-creator for copy; reuses the form pattern from build-branded-web-page."
+    path: skills/brand-site-pages/SKILL.md
+    capabilities: [page-composition, humanizer-copy, email-capture, form-a11y, funnel-wiring]
+    dependencies: [node, python]
+    tags: [pages, copy, humanizer, email-capture, forms, accessibility, funnel]
+    version: "1.0.0"
+
+  - name: brand-site-cohesion-review
+    description: "Stage 6 of build-brand-site. Review the whole assembled site as ONE artifact against web+brand rubrics: brand-token fidelity, WCAG AA measured, responsive zero-overflow @ 2560/1440/768/375, perf budget, no dead ends, plus an interactive pass + a final INDEPENDENT adversarial review. Composes ext-webapp-testing + ext-code-reviewer + ext-senior-qa; reuses measure_overflow_web.mjs + contrast.py. Ships the vendored SwiftShader screenshot.mjs that actually renders in WSL2 (default headless Chromium paints black)."
+    path: skills/brand-site-cohesion-review/SKILL.md
+    capabilities: [whole-site-review, responsive-qa, wcag-measure, wsl-screenshot, adversarial-gate]
+    dependencies: [node, chromium, python]
+    tags: [review, cohesion, wcag, responsive, overflow, lighthouse, webapp-testing, wsl, screenshot]
+    version: "1.0.0"
+
+  - name: brand-site-deploy
+    description: "Stage 7 of build-brand-site. Deploy the static Next app to Vercel, curl-verify it live (routes 200, form fail-safe 503, OG/canonical correct), and EXTRACT the reusable pieces into the nextbase-component-kit / nextbase-landing-kit so the next brand starts from them. Carries the Vercel monorepo gotcha: build context = web/ only → vendor brand-tokens.json into web/. Composes ext-senior-devops + Vercel best-practices."
+    path: skills/brand-site-deploy/SKILL.md
+    capabilities: [vercel-deploy, live-verify, monorepo-tokens, kit-extraction, multi-brand-proof]
+    dependencies: [node, pnpm, vercel-cli]
+    tags: [deploy, vercel, monorepo, verify, extract, nextbase, reuse]
+    version: "1.0.0"
 
   - name: markdown-to-branded-doc
-    description: Convert markdown files to branded documents — .docx files or Google Docs via gws CLI
+    description: Convert markdown files to branded documents — .docx files or Google Docs via gws CLI. Supports surgical section-level updates to existing Google Docs that preserve URL, header/footer, and untouched sections. Renders ```mermaid fences to embedded, centered Excalidraw diagrams (default-on, --no-excalidraw to opt out) via the mermaid-to-excalidraw skill / excalidraw-cli — docx (local embed) and gdoc (Drive upload → insertInlineImage → auto-trash) both work end-to-end; gslides body-image support is a follow-up. Also documents the Pvragon HTML-presentation manual pathway (mobile-responsive v2 template — swipe nav, phone portrait/landscape regimes; full skill in backlog #260319).
     path: skills/markdown-to-branded-doc/SKILL.md
-    capabilities: [markdown-conversion, docx-generation, gdoc-generation, branding, document-formatting]
-    dependencies: [node, npm, marked, docx, gws, poppler-utils]
-    tags: [docx, gdoc, conversion, branding, export, formatting, google-docs, gws-cli]
-    version: "4.0.0"
+    capabilities: [markdown-conversion, docx-generation, gdoc-generation, gdoc-surgical-update, branding, document-formatting, mermaid-excalidraw-embed, html-presentation-pointer]
+    dependencies: [node, npm, marked, docx, gws, poppler-utils, excalidraw-cli]
+    tags: [docx, gdoc, conversion, branding, export, formatting, google-docs, gws-cli, surgical-update, mermaid, excalidraw, html-presentation, mobile-responsive]
+    version: "4.8.0"
+
+  - name: mermaid-to-excalidraw
+    description: "Render a COMPLETED (logic-locked) Mermaid diagram into a good-looking Excalidraw image (.svg/.png/.excalidraw, or .html responsive inline-SVG figure for decks/pages) for a document, with a MANDATORY visual-verify loop (Read the PNG, check labels/edges/layout, adjust font/padding or the Mermaid, re-render). Logic iteration stays in Mermaid; this is the one-way final render. Wraps the excalidraw-cli (`excalidraw mermaid`); also documents the programmatic renderMermaid() hook for doc-gen. Not for design work (pencil.dev); mmdc is not a substitute."
+    path: skills/mermaid-to-excalidraw/SKILL.md
+    capabilities: [mermaid-to-excalidraw, diagram-rendering, visual-verification, doc-injection, svg-export, png-export, html-figure-embed]
+    dependencies: [excalidraw-cli, node, playwright]
+    tags: [mermaid, excalidraw, diagram, flowchart, svg, png, html, visual-verify, docs, rendering]
+    version: "1.1.0"
 
   - name: compose-branded-template
     description: "Composes brand tokens with document type templates to produce fully resolved branded templates. Parses brand-guidelines.md into W3C-aligned brand-tokens.json, merges base+override templates, resolves all tokenRef dot-paths. Optionally creates Google Doc starter templates via clasp."
@@ -85,7 +182,7 @@ skills:
     version: "1.3.0"
 
   - name: generate-brand-guide-site
-    description: "Render a brand's tokens + guidelines into a polished, self-contained brand-guide.html. Consumes brand-tokens.json + narrative sections of brand-guidelines.md; LLM-designed, script-verified (validator rejects any hex/font not in the tokens file)."
+    description: "Render a brand's tokens + guidelines into a polished, self-contained brand-guide.html. Consumes brand-tokens.json + narrative sections of brand-guidelines.md; LLM-designed, script-verified (validator rejects any hex/font not in the tokens file). Adapted from Kevin Oskow's generate-brand-guide skill."
     path: skills/generate-brand-guide-site/SKILL.md
     capabilities: [branding, brand-documentation, html-generation, design-tokens]
     dependencies: [node]
@@ -98,7 +195,7 @@ skills:
     capabilities: [skill-testing, quality-improvement, autoresearch, self-improvement]
     dependencies: []
     tags: [meta-skill, quality, testing, autoresearch, improvement-loop]
-    version: "1.0.0"
+    version: "1.1.0"
 
   - name: scaffold-project-docs
     description: Bootstrap the standard docs/ structure for a new project in projects/
@@ -124,15 +221,63 @@ skills:
     tags: [workspace, updates, templates, maintenance]
     version: "1.0.0"
 
+  - name: update-drive-index
+    description: "Refreshes the Google Drive index by enumerating all Shared Drives and root-level contents via the Google Drive API."
+    path: skills/update-drive-index/SKILL.md
+    capabilities: [google-drive, index-refresh, api-enumeration]
+    dependencies: [google-drive-mcp]
+    tags: [google-drive, index, automation]
+    version: "1.1.0"
+
   # clickup-cli moved to integrations/ (2026-03-20)
 
+  - name: choose-name
+    description: "Welcoming ceremony for a new AI teammate to choose their own name, pronouns, and identity. Run once in an agent's first session (final phase of ONBOARDING.md); writes the identity block into the tool's global config file and scaffolds ~/ai-workspace/agents/<name>/."
+    path: skills/choose-name/SKILL.md
+    capabilities: [onboarding, agent-identity, memory-bootstrap]
+    dependencies: []
+    tags: [onboarding, identity, ceremony, new-agent]
+    version: "1.1.0"
+
+  - name: team-lib-currency
+    description: "Audit and repair drift between my-lib and team-lib — the copies a teammate actually installs. Runs layer_drift_scan.py, then supplies the judgment the scan withholds: which direction each divergence goes (graduate as a MOVE, pull back, merge, or declare intentionally divergent on both sides). Detection is scheduled nightly in the dream cycle; resolution is task-triggered and lives here."
+    path: skills/team-lib-currency/SKILL.md
+    capabilities: [drift-resolution, graduation, layer-currency, governance]
+    dependencies:
+      - executions/layer_drift_scan.py
+      - registry/mirror.yaml
+      - harnesses/test_layer_drift_scan.py
+    tags: [governance, currency, drift, graduation, team-lib, maintenance]
+    version: "1.0.0"
+
   - name: session-debrief
-    description: "End-of-session procedure: preflight.sh emits a deterministic JSON report (git changes, registry issues, stale flags), the agent captures learnings to memory topic files and updates current-state.md (structured snapshot, ~5KB cap), postflight.sh handles commits with explicit file lists."
+    description: "End-of-session procedure that captures learnings into the tiered memory architecture, verifies index consistency, updates current-state.md via the single-writer renderer, and runs a deterministic postflight (transcript extraction, system-state dump, fleet snapshot, commits, pulse). PUBLISHED FROM my-lib and BYTE-IDENTICAL to it — work on it there and re-copy; never edit this copy directly. No transform step: the skill is operator-neutral (agent paths bound to $AGENT_MEMORY/$AGENT_HOME from preflight, own scripts addressed via ~/.claude/skills/), so any difference between the layers is real drift."
     path: skills/session-debrief/SKILL.md
-    capabilities: [memory-management, registry-maintenance, state-tracking, team-sync]
-    dependencies: [bash, jq, git]
-    tags: [session, debrief, memory, maintenance, preflight, postflight]
-    version: "2.4.0"
+    capabilities: [debrief, memory-capture, registry-validation, workspace-hygiene, transcript-extraction, handoff-enrichment]
+    dependencies:
+      # All present in team-lib as of 2026-07-30 (graduated by the currency workstream).
+      - executions/clean_zone_identifiers.sh
+      - executions/extract_session_transcripts.py
+      - executions/dump_system_state.py
+      - executions/archive_old_transcripts.sh
+      - executions/extract_touched_files.py
+      - executions/session_snapshots.py
+      - executions/list_claude_sessions.py
+      - executions/regen_current_state.py
+      - executions/sweep_workstreams.py
+    tags: [session, debrief, memory, maintenance, published-from-my-lib]
+    version: "2.14.0"
+
+  - name: scan-for-malware
+    description: "Scan AND eradicate the Pvragon two-family credential-stealer malware (Family A self-decoding IIFE loader in postcss/eslint/woff2; Family B curl-pipe-bash dropper in .vscode/tasks.json; commit-hijack auto-push engine). SCAN: walks every git object across all branches/tags/PR refs plus working trees; catches new variants via recursive multi-layer decode (base64/hex/unicode/fromCharCode/unescape), a behavioral heuristic for executable behavior inside declarative config carriers, and type/magic-byte mismatch — not just known SHAs; emits a coverage block so there are no silent gaps. ERADICATE (eradicate.sh): self-serve cleans ONE infected repo you can push to — dry-run by default; --apply/--yes backs up the remote (never deleted), git-filter-repo-strips malicious + temp_*_push.bat engine blobs, restores clean carriers (tailwind v3/v4-aware postcss, eslint, vscode settings), force-pushes --all/--tags, re-clone-verifies, and WIP-guarded re-syncs the local clone. Push-access + uncommitted/unpushed-work guarded; owner-only (won't escalate)."
+    path: skills/scan-for-malware/SKILL.md
+    capabilities: [security-scan, malware-detection, incident-response, supply-chain-audit, malware-eradication, git-history-rewrite, exposure-assessment, credential-rotation]
+    dependencies: [python3, git, gh, git-filter-repo]
+    tags: [security, malware, incident-response, scan, eradicate, supply-chain, exposure, credentials]
+    version: "2.3.0"
+    # 4-phase incident kit: scan (detect) -> Step 1 eradicate -> Step 1.5 assess_exposure.sh (did the
+    # loader RUN here + reachable-secret surface; Linux/WSL/macOS, read-only, value-free) -> Step 2 rotate.
+    # Reference doc now includes the blockchain dead-drop C2 (EtherHiding) IOCs.
 
   # ============================================================
   # EXTERNAL SKILLS (lower priority in search hierarchy)
@@ -140,10 +285,45 @@ skills:
   # These are third-party skills from submodules in skills/_external/.
   # When an internal skill and external skill both match a query,
   # ALWAYS prefer the internal skill.
+  #
+  # Naming convention (adopted 2026-04-17):
+  #   All external skills are named `ext-<original>` in this registry, where
+  #   <original> is the skill's intrinsic frontmatter name (not the submodule
+  #   directory name). The `ext-*` prefix matches the symlink names under
+  #   my-lib/.claude/skills/, which is what Claude Code's skill-discovery
+  #   system sees at runtime. Invoke these skills by their `ext-*` name.
+  #
+  #   Examples:
+  #     - Anthropic `canvas-design`  → invoked as `ext-canvas-design`
+  #     - Anthropic `docx`           → invoked as `ext-docx`
+  #     - Blader submodule (frontmatter name: `humanizer`) → `ext-humanizer`
+  #
+  # Path handling (Option A — source-of-truth):
+  #   `path:` points to the ORIGINAL SKILL.md inside
+  #   team-lib/skills/_external/<provider>/... (the source of truth for the
+  #   skill's content). The runtime-invoked symlink lives at
+  #   my-lib/.claude/skills/ext-<original>/SKILL.md. We keep paths pointing at
+  #   the source file to preserve provenance and avoid crossing library
+  #   boundaries inside this team-lib registry.
+  #
+  # Not wired:
+  #   Anthropic's blank `template` scaffold (_external/anthropics/template/)
+  #   is intentionally NOT symlinked and NOT listed in this registry — it is
+  #   a scaffold, not a usable skill.
+  #
+  # Security scan provenance:
+  #   Trust tier, last-scanned SHA, LLM semantic review verdict, and any
+  #   findings live in team-lib/registry/skills-scan-state.yaml.
+  #
+  # Onboarding new external libraries:
+  #   Do NOT adopt a new external library directly into this registry —
+  #   route it through the curation pipeline (backlog #35) and the scanner
+  #   (backlog #36) first.
+  # ------------------------------------------------------------
 
   # --- Provider: Anthropic (skills/_external/anthropics/) ---
 
-  - name: anthropic-brand-guidelines
+  - name: ext-brand-guidelines
     description: "Applies Anthropic's official brand colors (dark #141413, orange #d97757) and typography (Poppins/Lora) to artifacts. NOT for creating brand guidelines — use create-brand-guidelines for that."
     path: skills/_external/anthropics/skills/brand-guidelines/SKILL.md
     capabilities: [branding, visual-identity, anthropic-brand]
@@ -152,7 +332,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: canvas-design
+  - name: ext-canvas-design
     description: "Design and create visual canvas-based artifacts with brand styling."
     path: skills/_external/anthropics/skills/canvas-design/SKILL.md
     capabilities: [design, canvas, visual-artifacts]
@@ -161,7 +341,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: algorithmic-art
+  - name: ext-algorithmic-art
     description: "Generate algorithmic art using JavaScript templates."
     path: skills/_external/anthropics/skills/algorithmic-art/SKILL.md
     capabilities: [generative-art, javascript, visualization]
@@ -170,7 +350,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: doc-coauthoring
+  - name: ext-doc-coauthoring
     description: "Collaborative document coauthoring with AI assistance."
     path: skills/_external/anthropics/skills/doc-coauthoring/SKILL.md
     capabilities: [document-editing, collaboration, writing]
@@ -179,7 +359,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: anthropic-docx
+  - name: ext-docx
     description: "Generate .docx files using Anthropic's approach."
     path: skills/_external/anthropics/skills/docx/SKILL.md
     capabilities: [docx-generation, document-formatting]
@@ -188,7 +368,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: mcp-builder
+  - name: ext-mcp-builder
     description: "Build MCP (Model Context Protocol) servers and tools."
     path: skills/_external/anthropics/skills/mcp-builder/SKILL.md
     capabilities: [mcp, server-building, tool-creation]
@@ -197,7 +377,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: internal-comms
+  - name: ext-internal-comms
     description: "Draft internal communications (memos, announcements, updates)."
     path: skills/_external/anthropics/skills/internal-comms/SKILL.md
     capabilities: [writing, internal-communications, memos]
@@ -206,7 +386,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: frontend-design
+  - name: ext-frontend-design
     description: "Design and build frontend interfaces with modern web technologies."
     path: skills/_external/anthropics/skills/frontend-design/SKILL.md
     capabilities: [frontend, web-design, ui]
@@ -215,7 +395,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: anthropic-pdf
+  - name: ext-pdf
     description: "Generate PDF documents."
     path: skills/_external/anthropics/skills/pdf/SKILL.md
     capabilities: [pdf-generation, document-formatting]
@@ -224,7 +404,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: anthropic-pptx
+  - name: ext-pptx
     description: "Generate PowerPoint presentations."
     path: skills/_external/anthropics/skills/pptx/SKILL.md
     capabilities: [pptx-generation, presentations, slides]
@@ -233,7 +413,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: web-artifacts-builder
+  - name: ext-web-artifacts-builder
     description: "Build standalone web artifacts (HTML/CSS/JS)."
     path: skills/_external/anthropics/skills/web-artifacts-builder/SKILL.md
     capabilities: [web-development, html, artifacts]
@@ -242,7 +422,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: webapp-testing
+  - name: ext-webapp-testing
     description: "Playwright-based testing toolkit for local web applications."
     path: skills/_external/anthropics/skills/webapp-testing/SKILL.md
     capabilities: [testing, playwright, browser-automation, screenshots]
@@ -251,7 +431,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: skill-creator
+  - name: ext-skill-creator
     description: "Create new skills with proper structure and documentation."
     path: skills/_external/anthropics/skills/skill-creator/SKILL.md
     capabilities: [skill-creation, scaffolding, templates]
@@ -260,7 +440,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: theme-factory
+  - name: ext-theme-factory
     description: "Create and apply visual themes to artifacts."
     path: skills/_external/anthropics/skills/theme-factory/SKILL.md
     capabilities: [theming, visual-design, styling]
@@ -269,7 +449,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: slack-gif-creator
+  - name: ext-slack-gif-creator
     description: "Create animated GIFs for Slack messages."
     path: skills/_external/anthropics/skills/slack-gif-creator/SKILL.md
     capabilities: [gif-creation, slack, animation]
@@ -278,7 +458,7 @@ skills:
     source: external
     provider: anthropic
 
-  - name: anthropic-xlsx
+  - name: ext-xlsx
     description: "Generate Excel spreadsheets."
     path: skills/_external/anthropics/skills/xlsx/SKILL.md
     capabilities: [xlsx-generation, spreadsheets, data-export]
@@ -291,7 +471,7 @@ skills:
   # Role-based persona skills for specialized domains.
 
   # C-Level
-  - name: cto-advisor
+  - name: ext-cto-advisor
     description: "CTO advisory persona for technology strategy and architecture decisions."
     path: skills/_external/rezvani-claude-skills/c-level-advisor/cto-advisor/SKILL.md
     capabilities: [technology-strategy, architecture, advisory]
@@ -300,7 +480,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: ceo-advisor
+  - name: ext-ceo-advisor
     description: "CEO advisory persona for business strategy and executive decisions."
     path: skills/_external/rezvani-claude-skills/c-level-advisor/ceo-advisor/SKILL.md
     capabilities: [business-strategy, executive-advisory]
@@ -310,7 +490,7 @@ skills:
     provider: rezvani
 
   # Engineering
-  - name: code-reviewer
+  - name: ext-code-reviewer
     description: "Comprehensive code review for TypeScript, JavaScript, Python, Swift, Kotlin, Go."
     path: skills/_external/rezvani-claude-skills/engineering-team/code-reviewer/SKILL.md
     capabilities: [code-review, quality-analysis, pr-review]
@@ -319,7 +499,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-architect
+  - name: ext-senior-architect
     description: "Senior software architect persona for system design and architecture."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-architect/SKILL.md
     capabilities: [architecture, system-design, technical-leadership]
@@ -328,7 +508,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-backend
+  - name: ext-senior-backend
     description: "Senior backend engineer persona."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-backend/SKILL.md
     capabilities: [backend-development, api-design, databases]
@@ -337,7 +517,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-frontend
+  - name: ext-senior-frontend
     description: "Senior frontend engineer persona."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-frontend/SKILL.md
     capabilities: [frontend-development, ui, react, web]
@@ -346,7 +526,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-fullstack
+  - name: ext-senior-fullstack
     description: "Senior fullstack engineer persona."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-fullstack/SKILL.md
     capabilities: [fullstack-development, web-applications]
@@ -355,7 +535,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-devops
+  - name: ext-senior-devops
     description: "Senior DevOps engineer persona for CI/CD, infrastructure, and cloud."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-devops/SKILL.md
     capabilities: [devops, ci-cd, infrastructure, cloud]
@@ -364,7 +544,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-security
+  - name: ext-senior-security
     description: "Senior security engineer persona."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-security/SKILL.md
     capabilities: [security, vulnerability-assessment, secure-design]
@@ -373,7 +553,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-secops
+  - name: ext-senior-secops
     description: "Senior SecOps engineer persona for security operations."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-secops/SKILL.md
     capabilities: [secops, incident-response, monitoring]
@@ -382,7 +562,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-data-engineer
+  - name: ext-senior-data-engineer
     description: "Senior data engineer persona for pipelines and data infrastructure."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-data-engineer/SKILL.md
     capabilities: [data-engineering, pipelines, etl, data-infrastructure]
@@ -391,7 +571,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-data-scientist
+  - name: ext-senior-data-scientist
     description: "Senior data scientist persona for ML, statistics, and analysis."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-data-scientist/SKILL.md
     capabilities: [data-science, machine-learning, statistics, analysis]
@@ -400,7 +580,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-ml-engineer
+  - name: ext-senior-ml-engineer
     description: "Senior ML engineer persona for model development and deployment."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-ml-engineer/SKILL.md
     capabilities: [ml-engineering, model-deployment, mlops]
@@ -409,7 +589,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-computer-vision
+  - name: ext-senior-computer-vision
     description: "Senior computer vision engineer persona."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-computer-vision/SKILL.md
     capabilities: [computer-vision, image-processing, deep-learning]
@@ -418,7 +598,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-qa
+  - name: ext-senior-qa
     description: "Senior QA engineer persona for test strategy and automation."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-qa/SKILL.md
     capabilities: [qa, testing, test-automation, quality-assurance]
@@ -427,7 +607,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: senior-prompt-engineer
+  - name: ext-senior-prompt-engineer
     description: "Senior prompt engineer persona for LLM optimization."
     path: skills/_external/rezvani-claude-skills/engineering-team/senior-prompt-engineer/SKILL.md
     capabilities: [prompt-engineering, llm-optimization]
@@ -436,7 +616,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: ms365-tenant-manager
+  - name: ext-ms365-tenant-manager
     description: "Microsoft 365 tenant management and administration."
     path: skills/_external/rezvani-claude-skills/engineering-team/ms365-tenant-manager/SKILL.md
     capabilities: [ms365, tenant-management, administration]
@@ -445,7 +625,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: aws-solution-architect
+  - name: ext-aws-solution-architect
     description: "AWS solution architect persona for cloud architecture."
     path: skills/_external/rezvani-claude-skills/engineering-team/aws-solution-architect/SKILL.md
     capabilities: [aws, cloud-architecture, solution-design]
@@ -454,7 +634,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: tdd-guide
+  - name: ext-tdd-guide
     description: "Test-driven development guide and methodology."
     path: skills/_external/rezvani-claude-skills/engineering-team/tdd-guide/SKILL.md
     capabilities: [tdd, testing-methodology, test-first]
@@ -463,7 +643,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: tech-stack-evaluator
+  - name: ext-tech-stack-evaluator
     description: "Technology stack evaluation and comparison."
     path: skills/_external/rezvani-claude-skills/engineering-team/tech-stack-evaluator/SKILL.md
     capabilities: [tech-evaluation, stack-comparison, decision-support]
@@ -473,7 +653,7 @@ skills:
     provider: rezvani
 
   # Marketing
-  - name: marketing-strategy-pmm
+  - name: ext-marketing-strategy-pmm
     description: "Product marketing manager persona for go-to-market strategy."
     path: skills/_external/rezvani-claude-skills/marketing-skill/marketing-strategy-pmm/SKILL.md
     capabilities: [marketing-strategy, gtm, product-marketing]
@@ -482,7 +662,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: marketing-demand-acquisition
+  - name: ext-marketing-demand-acquisition
     description: "Demand generation and customer acquisition strategy."
     path: skills/_external/rezvani-claude-skills/marketing-skill/marketing-demand-acquisition/SKILL.md
     capabilities: [demand-gen, acquisition, growth]
@@ -491,7 +671,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: content-creator
+  - name: ext-content-creator
     description: "Content creation and copywriting persona."
     path: skills/_external/rezvani-claude-skills/marketing-skill/content-creator/SKILL.md
     capabilities: [content-creation, copywriting, messaging]
@@ -500,7 +680,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: social-media-analyzer
+  - name: ext-social-media-analyzer
     description: "Social media analytics and strategy."
     path: skills/_external/rezvani-claude-skills/marketing-skill/social-media-analyzer/SKILL.md
     capabilities: [social-media, analytics, strategy]
@@ -509,7 +689,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: app-store-optimization
+  - name: ext-app-store-optimization
     description: "App store optimization (ASO) for mobile apps."
     path: skills/_external/rezvani-claude-skills/marketing-skill/app-store-optimization/SKILL.md
     capabilities: [aso, app-store, mobile-marketing]
@@ -519,7 +699,7 @@ skills:
     provider: rezvani
 
   # Product
-  - name: product-manager-toolkit
+  - name: ext-product-manager-toolkit
     description: "Product management toolkit for roadmapping, prioritization, and specs."
     path: skills/_external/rezvani-claude-skills/product-team/product-manager-toolkit/SKILL.md
     capabilities: [product-management, roadmapping, prioritization]
@@ -528,7 +708,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: product-strategist
+  - name: ext-product-strategist
     description: "Product strategy and market positioning."
     path: skills/_external/rezvani-claude-skills/product-team/product-strategist/SKILL.md
     capabilities: [product-strategy, market-positioning]
@@ -537,7 +717,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: agile-product-owner
+  - name: ext-agile-product-owner
     description: "Agile product owner persona for backlog management and sprint planning."
     path: skills/_external/rezvani-claude-skills/product-team/agile-product-owner/SKILL.md
     capabilities: [agile, product-ownership, backlog, sprint-planning]
@@ -546,7 +726,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: ui-design-system
+  - name: ext-ui-design-system
     description: "UI design system creation and management."
     path: skills/_external/rezvani-claude-skills/product-team/ui-design-system/SKILL.md
     capabilities: [design-system, ui-components, style-guide]
@@ -555,7 +735,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: ux-researcher-designer
+  - name: ext-ux-researcher-designer
     description: "UX research and design persona."
     path: skills/_external/rezvani-claude-skills/product-team/ux-researcher-designer/SKILL.md
     capabilities: [ux-research, user-testing, design]
@@ -565,7 +745,7 @@ skills:
     provider: rezvani
 
   # Quality / Regulatory Affairs
-  - name: quality-manager-qms-iso13485
+  - name: ext-quality-manager-qms-iso13485
     description: "ISO 13485 quality management system manager."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/quality-manager-qms-iso13485/SKILL.md
     capabilities: [qms, iso13485, quality-management]
@@ -574,7 +754,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: quality-manager-qmr
+  - name: ext-quality-manager-qmr
     description: "Quality management representative."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/quality-manager-qmr/SKILL.md
     capabilities: [qms, quality-representative]
@@ -583,7 +763,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: quality-documentation-manager
+  - name: ext-quality-documentation-manager
     description: "Quality documentation and controlled document management."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/quality-documentation-manager/SKILL.md
     capabilities: [documentation, controlled-documents, quality]
@@ -592,7 +772,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: qms-audit-expert
+  - name: ext-qms-audit-expert
     description: "QMS audit expert for internal and external audits."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/qms-audit-expert/SKILL.md
     capabilities: [auditing, qms, compliance]
@@ -601,7 +781,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: capa-officer
+  - name: ext-capa-officer
     description: "CAPA (Corrective and Preventive Action) management."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/capa-officer/SKILL.md
     capabilities: [capa, corrective-action, quality]
@@ -610,7 +790,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: risk-management-specialist
+  - name: ext-risk-management-specialist
     description: "Risk management for product development and compliance."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/risk-management-specialist/SKILL.md
     capabilities: [risk-management, risk-assessment, compliance]
@@ -619,7 +799,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: fda-consultant-specialist
+  - name: ext-fda-consultant-specialist
     description: "FDA regulatory affairs consultant."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/fda-consultant-specialist/SKILL.md
     capabilities: [fda, regulatory-affairs, compliance]
@@ -628,7 +808,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: regulatory-affairs-head
+  - name: ext-regulatory-affairs-head
     description: "Head of regulatory affairs for medical devices and healthcare."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/regulatory-affairs-head/SKILL.md
     capabilities: [regulatory-affairs, medical-devices, compliance]
@@ -637,7 +817,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: mdr-745-specialist
+  - name: ext-mdr-745-specialist
     description: "EU MDR 2017/745 medical device regulation specialist."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/mdr-745-specialist/SKILL.md
     capabilities: [mdr, eu-regulation, medical-devices]
@@ -646,7 +826,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: information-security-manager-iso27001
+  - name: ext-information-security-manager-iso27001
     description: "ISO 27001 information security management."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/information-security-manager-iso27001/SKILL.md
     capabilities: [iso27001, infosec, isms]
@@ -655,7 +835,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: isms-audit-expert
+  - name: ext-isms-audit-expert
     description: "ISMS audit expert for ISO 27001 compliance."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/isms-audit-expert/SKILL.md
     capabilities: [isms-audit, iso27001, compliance]
@@ -664,7 +844,7 @@ skills:
     source: external
     provider: rezvani
 
-  - name: gdpr-dsgvo-expert
+  - name: ext-gdpr-dsgvo-expert
     description: "GDPR/DSGVO data protection and privacy expert."
     path: skills/_external/rezvani-claude-skills/ra-qm-team/gdpr-dsgvo-expert/SKILL.md
     capabilities: [gdpr, data-protection, privacy]
@@ -675,7 +855,7 @@ skills:
 
   # --- Provider: Blader (skills/_external/blader-humanizer/) ---
 
-  - name: humanizer
+  - name: ext-humanizer
     description: Detect and rewrite AI writing patterns in deliverables. 24-pattern checklist based on Wikipedia AI Cleanup.
     path: skills/_external/blader-humanizer/SKILL.md
     capabilities: [ai-detection, writing-quality, humanization, content-review]
@@ -684,3 +864,43 @@ skills:
     source: external
     provider: blader
     version: "2.1.1"
+
+  - name: render-product-image
+    description: "Produce product/object images that are both photoreal AND dimensionally correct. Splits the job: a generative model (Gemini image / nano banana) for the beauty hero, a deterministic vector render for the exact-dimension spec plate; pixel-measurement (color ΔE + self-calibrating orthographic ratio) is the gate — never eyeball. Generative models can't be driven to exact ratios; deterministic renders can."
+    path: skills/render-product-image/SKILL.md
+    capabilities: [image-generation, product-render, dimension-accuracy, self-review]
+    dependencies: [python, pillow, chromium]
+    tags: [image-generation, gemini, nano-banana, product-mockup, measurement, self-review]
+    version: "1.0.0"
+
+  - name: prepare-image-for-print
+    description: "Take a low-resolution or damaged photo to a print-ready file at the size and medium the source can HONESTLY support. Diagnose first: required DPI falls out of VIEWING DISTANCE (3438/inches), not a fixed 300 — so large prints often need LESS resolution than small ones, and the binding constraint is how large the invented detail prints. Separates the two causes of softness that look identical and behave oppositely: dark+soft is JPEG compression loss (super-resolution can plausibly fill) while bright+soft is optical defocus (NO upscaler fixes it; sharpening around it makes it worse). Four-tier fidelity ladder — Lanczos / Real-ESRGAN (default) / ControlNet-Tile / general image models — with medium-forgiveness guidance (canvas forgives, acrylic prosecutes) and framing, matting, spacer and mounting rules. Always reports % reconstructed; never presents invented detail as recovered."
+    path: skills/prepare-image-for-print/SKILL.md
+    capabilities: [image-upscaling, super-resolution, print-preparation, detail-diagnostics, dpi-sizing, medium-selection, framing-guidance]
+    dependencies: [python, pillow, numpy, real-esrgan-ncnn]
+    tags: [image, print, upscaling, real-esrgan, photo, dpi, framing, giclee, restoration]
+    version: "1.0.0"
+
+  - name: publish-to-prez
+    description: "Publish an agentically-created self-contained HTML artifact (or branded deck) to prez.prgn.ai — Pvragon's team-owned host for agent-generated HTML (repo Pvragon/presentations, Vercel auto-deploy on push, cleanUrls, per-path password gating). The standard permanent home for HTML output instead of an ephemeral Claude Artifact. Covers file placement + YYMMDD naming, embedding mermaid diagrams as inlined Excalidraw SVG (no runtime), the password/protected-path mechanism (mechanism only — passwords live in Vercel env, never committed), deploy-by-push, and the 401→200 verification. Git = source of truth; the deployed page is a rendered view."
+    path: skills/publish-to-prez/SKILL.md
+    capabilities: [html-publishing, prez-hosting, static-site-deploy, password-gating, artifact-hosting, mermaid-excalidraw-embed, vercel-deploy]
+    dependencies: [git, node, excalidraw-cli, vercel-cli]
+    tags: [prez, presentations, html, publishing, vercel, hosting, artifact, password, deploy]
+    version: "1.0.0"
+
+  - name: dream
+    description: "Run a sleep-cycle wake — the reflective half of the agent memory system's nightly cycle. Modes: meditate (sustained attention on one rotating contemplation object, write first-person residue, optionally PROPOSE a self-edit — never apply one), consolidate (graduate old short-term residue into durable T2 semantic memory, then archive it), groom (deterministic hygiene), or auto (do whatever dream_cycle.py cued). The LLM act that the deterministic scheduler cues but never performs itself."
+    path: skills/dream/SKILL.md
+    capabilities: [memory-consolidation, meditation, reflective-wake, residue-writing, sleep-cycle]
+    dependencies: [python3]
+    tags: [memory, dream, meditation, consolidation, sleep-cycle, reflection, t1-t2]
+    version: "1.0.0"
+
+  - name: self-check
+    description: "Run the deterministic memory-hygiene linter and report. Detects index rows pointing at missing files, orphaned topic files, dead wikilinks, near-duplicate memories, frontmatter gaps and stale short-term residue; applies only unambiguous safe fixes and escalates anything needing judgment. The cheap detection half of the memory system's maintenance arm."
+    path: skills/self-check/SKILL.md
+    capabilities: [memory-hygiene, linting, safe-autofix, index-consistency]
+    dependencies: [python3]
+    tags: [memory, hygiene, linter, maintenance, self-check]
+    version: "1.0.0"

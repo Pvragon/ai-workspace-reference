@@ -1,0 +1,13 @@
+{
+  "name": "mobile-overflow-audit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Audit a Pvragon HTML presentation for content overflow at phone-landscape viewport.",
+  "main": "audit.js",
+  "scripts": {
+    "audit": "node audit.js"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

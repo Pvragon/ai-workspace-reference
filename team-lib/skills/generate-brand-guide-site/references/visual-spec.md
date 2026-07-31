@@ -1,6 +1,6 @@
 # Visual Guide Specification
 
-Create a polished, navigable guide that demonstrates the target brand while documenting it. (Adapted from a community-shared generate-brand-guide visual-spec; values-from-tokens rules are ours.)
+Create a polished, navigable guide that demonstrates the target brand while documenting it. (Adapted from Kevin Oskow's generate-brand-guide visual-spec; values-from-tokens rules are ours.)
 
 ## Page architecture
 

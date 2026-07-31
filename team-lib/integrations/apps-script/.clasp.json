@@ -1,0 +1,17 @@
+{
+  "scriptId": "1vi6GF35frg6ECCxEy8DieOrRTXEw6FGBUx2A3hxIqAbisFkTsnI40bBs",
+  "projectId": "pvragon-ai-workspace",
+  "rootDir": "",
+  "scriptExtensions": [
+    ".js",
+    ".gs"
+  ],
+  "htmlExtensions": [
+    ".html"
+  ],
+  "jsonExtensions": [
+    ".json"
+  ],
+  "filePushOrder": [],
+  "skipSubdirectories": false
+}

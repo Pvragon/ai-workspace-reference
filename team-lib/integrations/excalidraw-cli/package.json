@@ -1,0 +1,24 @@
+{
+  "name": "excalidraw-cli",
+  "version": "0.3.0",
+  "description": "Generic headless Excalidraw render CLI (MCP replacement): render Excalidraw element/scene JSON, or Mermaid text, to .excalidraw + .svg + .png for injecting into documents.",
+  "type": "module",
+  "bin": {
+    "excalidraw": "bin/excalidraw.mjs"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "postinstall": "node build.mjs || true",
+    "test": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.0",
+    "@excalidraw/mermaid-to-excalidraw": "^1.1.2",
+    "playwright": "^1.49.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

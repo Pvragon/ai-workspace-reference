@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.1.0
 # summary: "Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials from the Google Workspace MCP server."
 # created: 2026-02-25
-# last_updated: 2026-02-25
+# last_updated: 2026-03-04
 # maintainer: pvragon
 # ---
 """
@@ -16,22 +16,30 @@ stored at ~/.google_workspace_mcp/credentials/{email}.json.
 Usage:
     python list_shared_drives.py [--email EMAIL] [--depth DEPTH] [--json]
 
+Requires:
+    - GOOGLE_WORKSPACE_EMAIL env var (or --email flag)
+    - OAuth credentials at ~/.google_workspace_mcp/credentials/<email>.json
+
 Outputs:
     Drive ID, name, and root-level folder structure for each shared drive.
 """
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 CREDS_DIR = Path.home() / ".google_workspace_mcp" / "credentials"
-DEFAULT_EMAIL = "user@example.com"
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / "personal" / "secrets" / ".env"
+if _ENV_FILE.exists():
+    load_dotenv(_ENV_FILE)
 
 
 def load_credentials(email: str) -> Credentials:
@@ -157,7 +165,13 @@ def format_item(item, indent=0):
     return lines
 
 
-def run(email=DEFAULT_EMAIL, depth=1, as_json=False):
+def run(email=None, depth=1, as_json=False):
+    if email is None:
+        email = os.environ.get("GOOGLE_WORKSPACE_EMAIL")
+        if not email:
+            raise RuntimeError(
+                "No email provided. Set GOOGLE_WORKSPACE_EMAIL env var or pass --email."
+            )
     credentials = load_credentials(email)
     service = build("drive", "v3", credentials=credentials)
 
@@ -196,7 +210,7 @@ def run(email=DEFAULT_EMAIL, depth=1, as_json=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="List Google Workspace Shared Drives")
-    parser.add_argument("--email", default=DEFAULT_EMAIL)
+    parser.add_argument("--email", default=None, help="Google Workspace email (or set GOOGLE_WORKSPACE_EMAIL env var)")
     parser.add_argument("--depth", type=int, default=1, help="Folder depth to explore (1=root only)")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()

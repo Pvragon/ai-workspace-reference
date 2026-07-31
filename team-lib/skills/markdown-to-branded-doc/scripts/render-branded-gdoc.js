@@ -19,7 +19,29 @@
  */
 
 const fs = require('fs');
+const { imageSize: sizeOf } = require('image-size');
 const { spansToPlainText } = require('./lib/parser');
+
+// Fit a diagram to the letter content width (6.5in ≈ 468pt). Excalidraw PNGs are
+// exported at 2x, so px/2 ≈ points; cap width and preserve aspect ratio.
+const MAX_IMAGE_WIDTH_PT = 460;
+const IMAGE_EXPORT_SCALE = 2;
+
+function computeImageDimensions(src) {
+    try {
+        const { width, height } = sizeOf(fs.readFileSync(src));
+        let w = width / IMAGE_EXPORT_SCALE;
+        let h = height / IMAGE_EXPORT_SCALE;
+        if (w > MAX_IMAGE_WIDTH_PT) {
+            h = h * (MAX_IMAGE_WIDTH_PT / w);
+            w = MAX_IMAGE_WIDTH_PT;
+        }
+        return { width: Math.round(w), height: Math.round(h) };
+    } catch (e) {
+        console.warn(`  Warning: could not size image ${src}: ${e.message}`);
+        return { width: 300, height: 200 };
+    }
+}
 
 // ============================================================================
 // MAIN RENDER FUNCTION
@@ -37,7 +59,7 @@ function renderGdoc(ir, template, outputPath) {
     const lineSpacing = template.documentSettings?.lineSpacing || 115;
 
     // Pass 1: Build full plain text and track indices
-    const { fullText, segments, tableEntries } = buildTextBody(ir, template);
+    const { fullText, segments, tableEntries, imageEntries } = buildTextBody(ir, template);
 
     // Pass 2: Generate Google Docs API batchUpdate requests from segments
     const requests = buildBatchUpdateRequests(segments, template, fullText.length);
@@ -47,6 +69,15 @@ function renderGdoc(ir, template, outputPath) {
         placeholder: t.placeholder,
         headers: t.headers,
         rows: t.rows
+    }));
+
+    // Build image data (centered by default; dims fit to content width)
+    const images = imageEntries.map(im => ({
+        placeholder: im.placeholder,
+        src: im.src,
+        alt: im.alt,
+        alignment: 'CENTER',
+        dimensions: computeImageDimensions(im.src)
     }));
 
     // Extract list item ranges for native bullet application
@@ -87,6 +118,7 @@ function renderGdoc(ir, template, outputPath) {
         requests,
         listItems,
         tables,
+        images,
         header_footer: {
             header: brandName,
             footer: template.headerFooter?.footer?.text || "",
@@ -117,6 +149,7 @@ function renderGdoc(ir, template, outputPath) {
     console.log(`Brand: ${brandName}`);
     console.log(`batchUpdate requests: ${requests.length}`);
     console.log(`Tables: ${tables.length}`);
+    console.log(`Images: ${images.length}`);
 }
 
 // ============================================================================
@@ -149,7 +182,9 @@ function buildTextBody(ir, template) {
     const parts = [];
     const segments = [];
     const tableEntries = [];
+    const imageEntries = [];
     let tableCounter = 0;
+    let imageCounter = 0;
     let offset = 1; // Google Docs 1-based index
     let seenFirstSubtitle = false;
     const subtitleDetection = template.renderOptions?.subtitleDetection === true;
@@ -328,41 +363,78 @@ function buildTextBody(ir, template) {
                 offset += 1;
                 break;
             }
+
+            case 'image': {
+                // Text-first placeholder, mirroring tables. The executor finds
+                // [IMAGE_N], uploads the local file to Drive, and swaps in an
+                // inline image (centered by default).
+                imageCounter++;
+                const placeholder = `[IMAGE_${imageCounter}]`;
+                const startIndex = offset;
+                parts.push(placeholder + '\n');
+                offset += placeholder.length + 1;
+
+                segments.push({
+                    type: 'image-placeholder',
+                    startIndex,
+                    endIndex: startIndex + placeholder.length,
+                    imageIndex: imageCounter - 1
+                });
+
+                imageEntries.push({
+                    placeholder,
+                    src: block.src,
+                    alt: block.alt || ''
+                });
+                break;
+            }
         }
     }
 
     return {
         fullText: parts.join(''),
         segments,
-        tableEntries
+        tableEntries,
+        imageEntries
     };
 }
 
 /**
  * Recursively render list items into text and track segments.
- * Outputs plain text only (no prefix/indent) — native bullets are applied
- * via createParagraphBullets in the executor.
+ *
+ * Prepends `\t` × level to each item's text so that `createParagraphBullets`
+ * in the executor can determine the nesting level natively (the Docs API
+ * strips these tabs and assigns nestingLevel accordingly). Span offsets are
+ * computed against the tab-prefixed text so inline formatting still lands
+ * on the right characters.
+ *
+ * Grouping into a single Docs list is done in the executor — see
+ * `applyNativeBullets` in execute-gdoc-api.js.
  */
 function renderListText(block, parts, segments, offset, setOffset) {
     const isOrdered = block.ordered;
+    const tabPrefix = '\t'.repeat(block.level);
 
     block.items.forEach((item, index) => {
         const plainText = spansToPlainText(item.spans);
+        const lineText = tabPrefix + plainText;
         const startIndex = offset;
 
-        parts.push(plainText + '\n');
-        offset += plainText.length + 1;
+        parts.push(lineText + '\n');
+        offset += lineText.length + 1;
 
         segments.push({
             type: 'list-item',
             startIndex,
-            endIndex: startIndex + plainText.length + 1,
+            endIndex: startIndex + lineText.length + 1,
             ordered: isOrdered,
             level: block.level,
             itemIndex: index
         });
 
-        let spanOffset = startIndex;
+        // Span offsets start AFTER the tab prefix so formatting lands on the
+        // visible text characters.
+        let spanOffset = startIndex + tabPrefix.length;
         for (const span of item.spans) {
             const len = span.text.length;
             if (len > 0) {
@@ -387,6 +459,47 @@ function renderListText(block, parts, segments, offset, setOffset) {
                 offset = newOffset;
                 setOffset(offset);
             });
+        }
+
+        // Continuation paragraphs (loose-list extra paragraphs that the parser
+        // peeled off from item.spans). Rendered as plain paragraphs — NOT
+        // bulleted — and indented to align with the bullet item's text body.
+        if (item.continuations && item.continuations.length > 0) {
+            for (const cont of item.continuations) {
+                const contText = spansToPlainText(cont.spans);
+                const contStartIndex = offset;
+                parts.push(contText + '\n');
+                offset += contText.length + 1;
+
+                segments.push({
+                    type: 'paragraph',
+                    startIndex: contStartIndex,
+                    endIndex: contStartIndex + contText.length + 1,
+                    variant: 'list-continuation',
+                    listLevel: block.level,
+                    spans: cont.spans
+                });
+
+                let contSpanOffset = contStartIndex;
+                for (const span of cont.spans) {
+                    const len = span.text.length;
+                    if (len > 0) {
+                        segments.push({
+                            type: 'span',
+                            spanType: span.type,
+                            startIndex: contSpanOffset,
+                            endIndex: contSpanOffset + len,
+                            text: span.text,
+                            isLabel: span.isLabel,
+                            href: span.href,
+                            internal: span.internal
+                        });
+                    }
+                    contSpanOffset += len;
+                }
+
+                setOffset(offset);
+            }
         }
     });
 }
@@ -418,14 +531,20 @@ function buildBatchUpdateRequests(segments, template, contentLength) {
         }
     });
 
-    // Base line spacing for entire document
+    // Base line spacing + alignment for entire document.
+    // Alignment START (left) is the right default for body text; the page-numbers
+    // template document has JUSTIFY as the named-style default, which produces
+    // ugly word-spacing gaps wherever inline `code` spans appear. Heading /
+    // subtitle / table-cell-specific alignment requests run after this base
+    // sweep and override START where needed (e.g., centered subtitles).
     requests.push({
         updateParagraphStyle: {
             range: { startIndex: 1, endIndex },
             paragraphStyle: {
-                lineSpacing: lineSpacing
+                lineSpacing: lineSpacing,
+                alignment: "START"
             },
-            fields: "lineSpacing"
+            fields: "lineSpacing,alignment"
         }
     });
 
@@ -646,6 +765,28 @@ function buildParagraphRequests(seg, template) {
                     spaceBelow: { magnitude: bodyText.spaceAfter || 0, unit: "PT" }
                 },
                 fields: "spaceAbove,spaceBelow"
+            }
+        });
+    }
+
+    // List-continuation paragraphs — extra paragraphs attached to a list item
+    // (loose markdown lists). Indent to align with the bullet item's text body
+    // so the continuation visually belongs to its parent item. Indent matches
+    // the list level: ~36pt per level for the bullet column + 18pt past the
+    // glyph for the text body.
+    if (seg.variant === 'list-continuation') {
+        const level = (seg.listLevel || 0) + 1; // text-body indent of parent bullet
+        const indentPt = 36 * level;
+        requests.push({
+            updateParagraphStyle: {
+                range: { startIndex: seg.startIndex, endIndex: seg.endIndex },
+                paragraphStyle: {
+                    indentStart: { magnitude: indentPt, unit: "PT" },
+                    indentFirstLine: { magnitude: indentPt, unit: "PT" },
+                    spaceAbove: { magnitude: 6, unit: "PT" },
+                    spaceBelow: { magnitude: 6, unit: "PT" }
+                },
+                fields: "indentStart,indentFirstLine,spaceAbove,spaceBelow"
             }
         });
     }

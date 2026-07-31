@@ -21,7 +21,7 @@ compose-branded-template →  resolved doc templates                    (templat
 generate-brand-guide-site → brand-guide.html                          (documentation)  ← this skill
 ```
 
-Adapted from the `generate-brand-guide` skill by **Zed / North Crow AI** (example at northcrow.ai/brand-guide), shared with permission and credited by request. Its evidence-gathering/interview front half is replaced by our token pipeline; its presentation standards are kept.
+Adapted from Kevin Oskow's `generate-brand-guide` skill (shared 2026-07-10; example at northcrow.ai/brand-guide). His evidence-gathering/interview front half is replaced by our token pipeline; his presentation standards are kept. Original preserved at `my-lib/runtime/.tmp/260713-kevin-oskow-generate-brand-guide-skill/`. Public attribution approved by Kevin 2026-07-14: credit as **"Zed / North Crow AI"** (applied in the public reference copy 2026-07-16).
 
 ## When to Use
 

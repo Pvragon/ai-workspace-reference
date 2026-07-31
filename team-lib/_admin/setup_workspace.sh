@@ -32,11 +32,8 @@ ensure_file() {
 
 echo "=== Pvragon AI Workspace Setup ==="
 
-# Default Team Library URL (can be overridden via environment).
-# For a NEW workspace bootstrapped from the public reference, this repo IS
-# your starting team-lib — fork it, then point TEAM_REPO_URL at your fork
-# (or later at your own team's private library repo).
-TEAM_REPO_URL="${TEAM_REPO_URL:-https://github.com/Pvragon/ai-workspace-reference.git}"
+# Default Team Library URL (can be overridden via environment)
+TEAM_REPO_URL="${TEAM_REPO_URL:-https://github.com/Pvragon/pvragon-ai-library.git}"
 
 # ============================================================================
 # TEAM LIBRARY SETUP (Must happen first)
@@ -58,29 +55,11 @@ if [[ ! -d "$TEAM_LIB_DIR/.git" ]]; then
     fi
 
     echo "    Cloning team-lib from $TEAM_REPO_URL..."
-    CLONE_TMP="$(mktemp -d)"
-    if git clone "$TEAM_REPO_URL" "$CLONE_TMP/repo"; then
-        if [[ -d "$CLONE_TMP/repo/team-lib/_admin" ]]; then
-            # Reference-layout repo (wraps the whole workspace, team-lib is a
-            # subdirectory): extract the team-lib subtree and start it as a
-            # fresh local repo. Add your own remote later when you create
-            # your team's library repo.
-            echo "    Detected reference layout — extracting team-lib/ subtree..."
-            mv "$CLONE_TMP/repo/team-lib" "$TEAM_LIB_DIR"
-            # -c identity overrides: a fresh machine has no git user.name/email
-            # configured yet, and a bare `git commit` would die with exit 128
-            (cd "$TEAM_LIB_DIR" && git init -q && git add -A && \
-                git -c user.name="Workspace Setup" -c user.email="setup@ai-workspace.local" \
-                    commit -qm "Bootstrap team-lib from $TEAM_REPO_URL")
-        else
-            # Team-lib-rooted repo: use the clone directly
-            mv "$CLONE_TMP/repo" "$TEAM_LIB_DIR"
-        fi
-        rm -rf "$CLONE_TMP"
-        echo "    ✅ team-lib set up successfully."
+    if git clone --recurse-submodules "$TEAM_REPO_URL" "$TEAM_LIB_DIR"; then
+        echo "    ✅ team-lib cloned successfully."
     else
-        rm -rf "$CLONE_TMP"
         echo "    ❌ Failed to clone team-lib. Check your network connection and URL."
+        echo "    ℹ️  This is a private repo — you must be authenticated first: gh auth login"
         echo "    URL: $TEAM_REPO_URL"
         exit 1
     fi
@@ -89,22 +68,12 @@ else
     git -C "$TEAM_LIB_DIR" pull || echo "    ⚠️  Git pull failed (continuing anyway)."
 fi
 
-# ============================================================================
-# EXTERNAL SKILL PACKS (public repos, cloned into skills/_external)
-# ============================================================================
-
-EXT_DIR="${TEAM_LIB_DIR}/skills/_external"
-clone_external_pack() {
-    local dir="$1" url="$2"
-    if [[ ! -d "$EXT_DIR/$dir/.git" ]]; then
-        echo "    Cloning external skill pack: $dir..."
-        rm -rf "$EXT_DIR/$dir"
-        git clone --depth 1 "$url" "$EXT_DIR/$dir" || echo "    ⚠️  Failed to clone $dir (continuing — re-run later)"
-    fi
-}
-mkdir -p "$EXT_DIR"
-clone_external_pack "anthropics" "https://github.com/anthropics/skills.git"
-clone_external_pack "rezvani-claude-skills" "https://github.com/alirezarezvani/claude-skills.git"
+# External skill packs live as git submodules (skills/_external/*). A plain
+# clone leaves them as empty directories, which breaks skills that depend on
+# them (e.g. the humanizer gate). Init is idempotent and safe to re-run.
+echo "    Initializing external skill packs (git submodules)..."
+git -C "$TEAM_LIB_DIR" submodule update --init --recursive \
+    || echo "    ⚠️  Submodule init failed — re-run later: git -C $TEAM_LIB_DIR submodule update --init --recursive"
 
 # ============================================================================
 # SKILL DEPENDENCIES (npm packages)
@@ -127,6 +96,33 @@ else
 fi
 
 # ============================================================================
+# INTEGRATION DEPENDENCIES (npm packages; + headless Chromium for excalidraw-cli)
+# ============================================================================
+
+echo ""
+echo "---> Installing integration dependencies"
+if command -v npm &> /dev/null; then
+    # maxdepth 2 so we match integrations/<name>/package.json, never nested node_modules
+    find "${TEAM_LIB_DIR}/integrations" -maxdepth 2 -name "package.json" -type f 2>/dev/null | while read pkg; do
+        int_dir=$(dirname "$pkg")
+        int_name=$(basename "$int_dir")
+        echo "    Installing npm packages for $int_name..."
+        (cd "$int_dir" && npm install --silent 2>/dev/null) || echo "    ⚠️  npm install failed for $int_name"
+    done
+    # excalidraw-cli renders Mermaid→Excalidraw via a real browser, so it needs a
+    # one-time Chromium download that `npm install` does not fetch (~180MB).
+    excal_dir="${TEAM_LIB_DIR}/integrations/excalidraw-cli"
+    if [ -d "$excal_dir" ]; then
+        echo "    Installing Chromium for excalidraw-cli (one-time, ~180MB)..."
+        (cd "$excal_dir" && npx playwright install chromium 2>/dev/null) \
+            || echo "    ⚠️  Chromium install failed — run later: cd $excal_dir && npx playwright install chromium"
+    fi
+    echo "    ✅ Integration dependencies installed."
+else
+    echo "    ⚠️  npm not found. Some integrations require Node.js dependencies."
+fi
+
+# ============================================================================
 # DIRECTORY STRUCTURE (Functional Topology)
 # ============================================================================
 
@@ -136,20 +132,9 @@ ensure_dir "${WORKSPACE_ROOT}/personal/scratch"
 ensure_dir "${WORKSPACE_ROOT}/personal/preferences"
 ensure_dir "${WORKSPACE_ROOT}/personal/secrets"
 
-# Layer 1: Pvragon Library - directories are created by git clone above
-# Only ensure subdirs if somehow missing (shouldn't happen with valid clone)
-ensure_dir "${WORKSPACE_ROOT}/team-lib/directives"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/context/global"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/context/indexed"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/personas"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/skills"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/skills/_external"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/skills/_external/anthropics"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/skills/_external/rezvani-claude-skills"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/executions"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/harnesses"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/registry"
-ensure_dir "${WORKSPACE_ROOT}/team-lib/logs"
+# Layer 1: Team Library — all content comes from the git clone above.
+# Do NOT scaffold team-lib subdirectories here: creating empty dirs (especially
+# under skills/_external/) masks a broken clone or uninitialized submodules.
 
 # Layer 2: Private Library (Private Repo - personal overlay)
 ensure_dir "${WORKSPACE_ROOT}/my-lib/archive"
@@ -166,19 +151,16 @@ ensure_dir "${WORKSPACE_ROOT}/my-lib/registry"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/logs"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/.tmp"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/.tmp/_archive"
-ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables/_archive"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables"
+ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables/_archive"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/logs"
 
 # Layer 3: Workbench
 ensure_dir "${WORKSPACE_ROOT}/projects"
 
-# Cross-cutting: agent identity & memory (see agents/example-agent in the
-# reference repo for the pattern — copy it to start your own agent)
+# Cross-cutting: agent identity & memory. Populated by the choose-name
+# ceremony on the agent's first session (see ONBOARDING.md, final phase).
 ensure_dir "${WORKSPACE_ROOT}/agents"
-
-# Admin scripts
-ensure_dir "${WORKSPACE_ROOT}/team-lib/_admin"
 
 # ============================================================================
 # GIT IDENTITY (required before any commit can succeed)
@@ -196,7 +178,7 @@ if [[ -z "$(git config --global user.name 2>/dev/null || true)" ]]; then
     echo "    ✅ Git identity set."
 fi
 
-# Convention: new repos start on 'main' (fresh git defaults to 'master')
+# Team convention: new repos start on 'main' (fresh git defaults to 'master')
 if [[ -z "$(git config --global init.defaultBranch 2>/dev/null || true)" ]]; then
     git config --global init.defaultBranch main
 fi
@@ -443,19 +425,23 @@ User: $(whoami)
 
 # Secrets template — the canonical env file every execution script sources.
 # ONBOARDING.md's \"Get your keys\" section explains where each value comes from.
-ensure_file "${WORKSPACE_ROOT}/personal/secrets/.env.template" "# AI Workspace — secrets file
+ensure_file "${WORKSPACE_ROOT}/personal/secrets/.env.template" "# Pvragon AI Workspace — secrets file
 # Copy real values in place of the placeholders. This file is the template;
 # the live copy is .env in this same directory. NEVER commit either one,
 # and never paste values into chat with an agent.
 
 # ── Team-shared (ask your team lead — one value provisioned for/by the team) ──
-# BASEROW_MCP_TOKEN=        # Baserow MCP access (optional — see _admin/toolchain.yaml)
+BASEROW_MCP_TOKEN=          # Baserow MCP database access (required)
+CLICKUP_WORKSPACE_ID=       # shared team constant — same for everyone
+PULSE_CHANNEL_ID=           # shared team constant — same for everyone
 
 # ── Per-user (generate your own from each service's settings page) ──
-GOOGLE_WORKSPACE_EMAIL=     # your own work address
+GOOGLE_WORKSPACE_EMAIL=     # your own @pvragon.com address
+# CLICKUP_API_TOKEN=        # ClickUp → Settings → Apps → API Token (pk_...)
 # ANTHROPIC_API_KEY=        # only for direct API scripting; Claude Code has its own login
 
-# ── Project/role-specific — add when a project needs them ──
+# ── Project/role-specific — DO NOT request these until a project needs them ──
+# Added when you're assigned to the relevant project (Acme Health, etc.).
 # Ask the project lead; never copy another person's values.
 "
 if [[ ! -f "${WORKSPACE_ROOT}/personal/secrets/.env" ]]; then
@@ -463,75 +449,9 @@ if [[ ! -f "${WORKSPACE_ROOT}/personal/secrets/.env" ]]; then
     echo "Created file: ${WORKSPACE_ROOT}/personal/secrets/.env (fill in your keys)"
 fi
 
-# Team Lib README (Matches Documentation)
-ensure_file "${WORKSPACE_ROOT}/team-lib/README.md" "# Pvragon AI Library
-
-**The standardized operating system for agentic development.**
-
-This repository is the **Layer 1 (Shared)** foundation of the Pvragon AI Workspace. It provides the shared tooling, context, and directives that enable consistent, high-quality agent performance across the team.
-
----
-
-## 🚀 Quick Start
-
-### [**→ Start Here: Getting Started Guide**](GETTING_STARTED.md)
-*Follow this guide to set up your environment from zero to fully functional.*
-
-### [**→ Operating Manual: Workspace Reference**](context/indexed/workspace-reference.md)
-*The definitive guide to the workspace topology, layers, and usage rules.*
-
----
-
-## 🏗️ Functional Stack
-
-A high-level overview of the standard library components:
-
-| Layer | Directory | Purpose |
-|-------|-----------|---------|
-| **Directives** | \`directives/\` | High-level instructions and behavioral rules (SOPs) |
-| **Context** | \`context/\` | Team knowledge base (Global + Indexed packs) |
-| **Personas** | \`personas/\` | Team-approved agent identities |
-| **Skills** | \`skills/\` | Shared capability modules and tools |
-| **Executions** | \`executions/\` | Deterministic scripts for reliable automation |
-| **Harnesses** | \`harnesses/\` | Test frameworks and evaluation suites |
-| **Registry** | \`registry/\` | Manifests cataloging available resources |
-| **Logs** | \`logs/\` | Team execution audits |
-
-## 📂 Directory Structure
-
-\`\`\`
-team-lib/
-├── _admin/             # Bootstrap, validation, and setup scripts
-├── directives/         # Behavioral rules (SOPs)
-├── context/            # Knowledge base
-│   ├── global/         # Always-on context
-│   └── indexed/        # On-demand context packs
-├── personas/           # Agent configurations
-├── skills/             # Capability modules (Tools)
-├── executions/         # Scripts (Actions)
-├── harnesses/          # Testing frameworks
-├── registry/           # Resource manifests (YAML)
-└── logs/               # Execution logs
-\`\`\`
-
-## ⚖️ Governance & Standards
-
-**This library is governed by strict quality controls.**
-Before contributing, you **must** read the [**Team Library Governance Directive**](directives/team-library-governance.md).
-
-**Key Rules:**
-1.  **No Personal Code:** If it has your name or hardcoded home path, it doesn't belong here.
-2.  **Pull Request Required:** Direct pushes to \`main\` are forbidden.
-3.  **Strict Naming:** \`kebab-case\` for files, \`snake_case\` for python.
-
-## 🤝 How to Contribute
-
-1.  **Create** resources in the appropriate directory (e.g., new SOP in \`directives/\`).
-2.  **Register** new resources in the relevant \`registry/\` manifest.
-3.  **Test** using \`harnesses/\` before deployment.
-4.  **Submit** a Pull Request for review.
-"
-
+# NOTE: team-lib content (README, index files) comes from the clone — the repo
+# is the single source of truth. Scaffolding team-lib content here caused the
+# embedded copies to drift from the real ones; removed 2026-07-16.
 # Projects Index
 ensure_file "${WORKSPACE_ROOT}/projects/index.md" "# projects
 

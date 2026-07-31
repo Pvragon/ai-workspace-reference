@@ -7,7 +7,7 @@
 #          (and directives/agent-mailbox.md). Wire it to cron at whatever cadence you want.
 # version: 1.0.0
 # created: 2026-07-22
-# maintainer: pvragon
+# maintainer: your-agent
 # ---
 set -u
 

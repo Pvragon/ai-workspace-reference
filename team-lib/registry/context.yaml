@@ -1,5 +1,5 @@
 # summary: Team indexed context registry. Lists on-demand context files in team-lib/context/indexed/.
-# Context Registry
+# Context Registry (pvragon team)
 # ------------------------------------------
 # This manifest catalogs on-demand context files.
 #
@@ -15,7 +15,7 @@
 context:
   workspace-reference:
     path: "context/indexed/workspace-reference.md"
-    description: "Canonical architectural reference for the AI Workspace: 4-layer hierarchy, directory conventions, functional stack, agent identity system, registry strategy, governance, and project docs structure."
+    description: "Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory conventions, functional stack, agent identity system, registry strategy, governance, and project docs structure."
     tags: [workspace, architecture, conventions, reference, agent-identity]
 
   project-docs-standard:
@@ -48,8 +48,28 @@ context:
     description: "Nick Saraev's DOE (Directive-Orchestration-Execution) framework for reliable AI agent systems: 3-layer architecture, self-annealing, error compounding math, and implementation patterns."
     tags: [doe, framework, theory, architecture]
 
+  memory-system:
+    path: "context/indexed/memory-system.md"
+    description: "Build-and-operate spec for the agent memory system shipped in team-lib: the five memory tiers (T0-T4), the two-strength retrieval policy with its exact formula and all constants, the frontmatter schema every consumer relies on, the nightly sleep cycle, the four PreToolUse hooks, the three-command install, concurrency properties, and a failure-mode table. Read this to build, install or debug it; the narrative explanation lives at prez.prgn.ai/pvragon/260730-agent-memory-architecture."
+    tags: [memory, retrieval, decay, scheduler, hooks, agent-infrastructure, install]
+
+  pvragon-capability-hierarchy:
+    path: "context/indexed/pvragon-capability-hierarchy.md"
+    description: "Pvragon's 5-layer capability hierarchy: Harness → Directive → Skill → Execution → Plumbing. Extends DOE with explicit layers for iterative goal pursuit, reusable skills, and raw service connectivity."
+    tags: [architecture, doe, framework, hierarchy, skills, executions]
+
+  pvragon-google-drive-index:
+    path: "context/indexed/pvragon-google-drive-index.md"
+    description: "Google Drive index for pvragon.com: all 9 Shared Drives with IDs, root-level folder maps, subfolder filing guide, My Drive root folders, routing rules, and key document IDs."
+    tags: [google-drive, index, file-management]
+
 subdirectories:
+  companies:
+    path: "context/indexed/companies/"
+    description: "Company-scoped context: brand identity, tokens, templates, business overviews, and assets. Each company has brand-guidelines.md, brand-tokens.json (generated), company.json, brand/templates/ (composed), and brand/assets/."
+    tags: [companies, brand, identity, context, design-tokens]
+
   templates:
     path: "context/indexed/templates/"
-    description: "Reference templates for AGENTS.md / CLAUDE.md files across the workspace"
+    description: "Reference templates for AGENTS.md / CLAUDE.md / GEMINI.md files across the workspace"
     tags: [templates, agents, configuration]

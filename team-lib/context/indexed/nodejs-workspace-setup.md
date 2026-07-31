@@ -20,7 +20,7 @@ When using globally installed npm packages (`npm install -g package-name`):
 
 Running `npm install -g docx` installs to:
 ```
-/home/username/.nvm/versions/node/vXX.XX.X/lib/node_modules/docx
+/home/<you>/.nvm/versions/node/<version>/lib/node_modules/docx
 ```
 
 But `require('docx')` only searches:

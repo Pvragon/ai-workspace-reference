@@ -91,7 +91,7 @@ agent_rules:
       - "my-lib/runtime/.cache"      # Protects library-level cache
     prefer_write_under:
       - ".antigravity/runs"                      # Root-level session outputs
-      - "my-lib/runtime/intermediates"
+      - "my-lib/runtime/.tmp"
       - "my-lib/runtime/deliverables"
 
 memory:

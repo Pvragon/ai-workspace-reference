@@ -2,10 +2,10 @@
 name: skill-autoresearch
 description: "Iterative improvement loop for skills — launches executor agents that follow a skill procedure, scores output quantitatively, fixes issues, and repeats until stop criteria are met. Inspired by Karpathy's autoresearch pattern applied to agent skill procedures."
 summary: "Meta-skill that stress-tests and improves other skills through an automated loop: create test scenario → executor agent follows skill in worktree → score confusion + output quality → fix skill files → repeat until convergence."
-version: 1.0.0
+version: 1.1.0
 template: skill-definition
 created: 2026-03-16
-last_updated: 2026-03-16
+last_updated: 2026-07-30
 maintainer: pvragon
 dependencies: []
 tags: [meta-skill, quality, testing, autoresearch, self-improvement]
@@ -169,7 +169,29 @@ For each iteration:
 
 Use the Agent tool with:
 - `isolation: "worktree"` — so changes don't affect the main workspace
-- `mode: "auto"` — so the executor can create files and run scripts
+- `run_in_background: false` — **required**, see the delivery contract below
+- **no `name:`** — **required**, see the delivery contract below
+
+> **🔑 Delivery contract — this loop is uniquely exposed (added 2026-07-30).**
+> Subagents run in the **background by default**, and a background teammate's plain final text is
+> **not delivered to the orchestrator** — it goes to the mailbox. Everything this skill consumes
+> in 4b (execution result, confusion log, issues, assessment) is *return text*. If it isn't
+> delivered, the iteration produces **nothing**, and because the executor runs in a `worktree`
+> that is auto-removed when unchanged, there is no artifact left to recover it from. The whole
+> iteration is silently lost.
+>
+> 1. **Pass `run_in_background: false`.**
+> 2. **Do NOT pass `name:`.** A named agent is addressable for continuation via `SendMessage`, so
+>    it never terminates and return-delivers — it idles instead. Measured 2026-07-30 on
+>    `session-debrief`: adding `name:` alone dropped report delivery from 3-of-3 to 1-of-3.
+> 3. **Require the report on disk anyway — belt and braces.** Pass the executor an explicit
+>    `report_path` that is **OUTSIDE the worktree** (the worktree is disposable; a report written
+>    inside it can vanish with it). The prompt template below makes writing that file the
+>    executor's mandatory final action, so a lost return message costs you nothing.
+>
+> `mode:` is deprecated and ignored by the Agent tool — it was previously listed here as
+> `mode: "auto"`. Worktree isolation already grants the executor file/script access, so nothing
+> is lost by dropping it.
 
 **Executor prompt template** (copy and customize):
 
@@ -219,11 +241,26 @@ Step 1: Clarity X/10
 - What worked well
 - What is still confusing
 - Suggestions for improvement
+
+## MANDATORY FINAL STEP
+
+Write everything above — sections 1 through 4, in full — to [report_path] before you
+return. Use an absolute path OUTSIDE your worktree; the worktree is disposable and may
+be removed the moment you exit.
+
+Do this even though you are also returning it as text. Your return text may never reach
+the orchestrator, and if it doesn't, this file is the only record that this iteration
+ever ran. Write the file first, then return the same content as your final message.
 ```
 
 #### 4b. Score the results
 
-After the executor returns, compute scores against stop criteria:
+**Read `[report_path]` from disk and score from that** — do not score from the executor's return
+message, even when one arrives. The file is written before the agent returns, so it is available
+whether or not delivery worked, and it is identical in content. If the file is missing, the
+iteration genuinely did not complete: re-run it rather than scoring a partial return.
+
+With the report in hand, compute scores against stop criteria:
 
 | Metric | Score | Pass? |
 |--------|-------|-------|

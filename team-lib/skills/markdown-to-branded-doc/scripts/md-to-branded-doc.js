@@ -14,18 +14,20 @@
  *
  * Examples:
  *   node md-to-branded-doc.js doc.md doc.docx --brand pvragon --type doc-report --format docx
- *   node md-to-branded-doc.js doc.md plan.json --brand acme-corp --type doc-legal --format gdoc
+ *   node md-to-branded-doc.js doc.md plan.json --brand acme-health --type doc-legal --format gdoc
  *   node md-to-branded-doc.js doc.md doc.docx  # defaults: pvragon, doc-report, docx
  */
 
 const fs = require('fs');
+const path = require('path');
 const { loadBrandedTemplate, listAvailableBrands, listAvailableTypes, DEFAULT_BRAND, DEFAULT_TYPE } = require('./lib/brand-loader');
 const { parseMarkdown } = require('./lib/parser');
+const { preprocessMermaid } = require('./lib/mermaid-preprocess');
 const { renderDocx } = require('./render-branded-docx');
 const { renderGdoc } = require('./render-branded-gdoc');
 const { renderGslides } = require('./render-branded-gslides');
 
-function main() {
+async function main() {
     const args = process.argv.slice(2);
 
     if (args.length < 2) {
@@ -40,6 +42,9 @@ function main() {
     let brandName = DEFAULT_BRAND;
     let docType = DEFAULT_TYPE;
     let format = 'docx';
+    let renderMetadataTable = false;
+    let mermaidExcalidraw = true;   // default-on: ```mermaid fences -> Excalidraw images
+    let mermaidFormat = null;       // override; else per-target default
 
     for (let i = 2; i < args.length; i++) {
         if (args[i] === '--brand' && args[i + 1]) {
@@ -48,6 +53,12 @@ function main() {
             docType = args[++i];
         } else if (args[i] === '--format' && args[i + 1]) {
             format = args[++i].toLowerCase();
+        } else if (args[i] === '--render-metadata-table') {
+            renderMetadataTable = true;
+        } else if (args[i] === '--no-excalidraw' || args[i] === '--no-mermaid-render') {
+            mermaidExcalidraw = false;   // opt out: leave mermaid fences as raw text
+        } else if (args[i] === '--mermaid-format' && args[i + 1]) {
+            mermaidFormat = args[++i].toLowerCase();
         } else if (args[i] === '--list-brands') {
             console.log('Available brands:', listAvailableBrands().join(', '));
             process.exit(0);
@@ -72,9 +83,29 @@ function main() {
     // Load pre-composed branded template
     const template = loadBrandedTemplate(brandName, docType);
 
+    // Read markdown, then convert any ```mermaid fences to Excalidraw images
+    // (default-on; --no-excalidraw opts out). raster (png) embeds in every
+    // target; svg is offered for vector targets that support it.
+    let mdContent = fs.readFileSync(inputPath, 'utf8');
+    const diagramFormat = mermaidFormat || 'png';
+    // Stable assets dir next to the output — the gdoc flow executes the plan in a
+    // SEPARATE later process, so diagram files must persist (a temp dir would not).
+    const outBase = path.basename(outputPath).replace(/\.[^.]+$/, '');
+    const assetsDir = path.join(path.dirname(path.resolve(outputPath)), `${outBase}-diagrams`);
+    const pre = await preprocessMermaid(mdContent, {
+        enabled: mermaidExcalidraw,
+        format: diagramFormat,
+        assetsDir,
+    });
+    mdContent = pre.md;
+    if (pre.count) {
+        console.log(pre.skipped
+            ? `Mermaid: ${pre.count} fence(s) left raw (--no-excalidraw)`
+            : `Mermaid: rendered ${pre.count} diagram(s) -> Excalidraw ${diagramFormat}`);
+    }
+
     // Parse markdown to IR
-    const mdContent = fs.readFileSync(inputPath, 'utf8');
-    const ir = parseMarkdown(mdContent);
+    const ir = parseMarkdown(mdContent, { renderMetadataTable });
 
     const brandLabel = template.composedFrom?.brand || brandName;
     console.log(`Input: ${inputPath}`);
@@ -83,6 +114,14 @@ function main() {
     console.log(`Type: ${docType}`);
     console.log(`Blocks: ${ir.blocks.length}`);
     console.log('');
+
+    // Body-image embedding is implemented for docx and gdoc. gslides is not yet
+    // wired — surface it loudly rather than silently dropping diagrams.
+    if (pre.count && !pre.skipped && format === 'gslides') {
+        console.warn(`  ⚠ ${pre.count} Excalidraw diagram(s) rendered to ${pre.assetsDir}, but the`);
+        console.warn(`    gslides renderer does not embed body images yet — they will NOT appear in the output.`);
+        console.warn(`    (docx + gdoc embed them today; gslides body-image support is a follow-up.)`);
+    }
 
     // Dispatch to renderer
     if (format === 'docx') {
@@ -119,8 +158,11 @@ function printUsage() {
     console.log('');
     console.log('Examples:');
     console.log('  node md-to-branded-doc.js doc.md doc.docx');
-    console.log('  node md-to-branded-doc.js doc.md doc.docx --brand acme-corp --type doc-legal');
+    console.log('  node md-to-branded-doc.js doc.md doc.docx --brand acme-health --type doc-legal');
     console.log('  node md-to-branded-doc.js doc.md plan.json --brand pvragon --type doc-report --format gdoc');
 }
 
-main();
+main().catch(err => {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+});

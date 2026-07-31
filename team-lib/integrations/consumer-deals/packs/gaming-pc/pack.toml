@@ -1,0 +1,47 @@
+# gaming-pc — reference domain pack (deals value --pack gaming-pc).
+# Illustrative calibration; the generate-deals-pack skill produces real, dated
+# value tables. See PACK_SPEC.md.
+
+[meta]
+domain = "gaming-pc"
+version = "0.1.0"
+calibrated_on = "2026-06-24"
+perishable_after = "60d"           # recalibrate value.csv past this
+value_sources = ["illustrative — replace via generate-deals-pack skill"]
+
+# in-domain gate: a "gaming pc" sweep also drags in monitors / controllers /
+# desks / parts. A listing must look like a system AND not match the exclude list,
+# else it's flagged out_of_domain and left unvalued (never dropped).
+[domain]
+# Must look like a whole system...
+include = '\b(pc|desktop|tower|rig|computer)s?\b'
+# ...and NOT be one of these hard non-towers. NOTE: component nouns (ram, ssd, gpu,
+# motherboard) are deliberately NOT excluded — towers list their specs in the title.
+# That lets a bare GPU/RAM listing slip through; the LLM gate in the generator skill
+# refines this. Keep exclude to things that are unambiguously not a tower.
+exclude = '\b(controllers?|monitors?|keyboards?|mice|mouse|headsets?|earbuds?|webcams?|speakers?|chairs?|desks?|laptops?|notebooks?|macbooks?|chromebooks?|imac|all[- ]?in[- ]?one|aio|coolers?|\bfans?\b|cables?|adapters?|games?|game lot|lot of|barbie|\bvr\b|\bmat\b|mousepads?|microphones?|\bmic\b|backpacks?|sleeves?|stickers?|skins?)\b'
+
+[extract]
+text_sources = ["title", "description", "image_text"]
+prefer_source = "title"            # the headline part beats body mentions
+# guardrail: drop clauses with these phrases so we don't extract aspirational/
+# compatibility mentions ("upgrade to RTX 4090", "compatible with...")
+skip_phrases = ["upgrade to", "compatible with", "supports", "enough power for",
+                "room for", "can add", "ready for"]
+
+[extract.regex]
+gpu = '\b(?:rtx|gtx|rx)\s?\d{3,4}\s?(?:ti|super|xt)?\b'
+cpu = '\b(?:ryzen\s?[3579]\s?\d{3,4}\s?x?|i[3579][- ]?\d{4,5}\s?k?f?)\b'
+ram_gb = '\b(\d{1,3})\s?gb(?:\s?ddr\d)?\s?(?:ram|memory)\b'
+storage_gb = '\b(\d{3,4})\s?gb\s?(?:ssd|nvme|hdd)\b'
+
+[scoring]
+# deal_score >= this (price <= ~45% of estimated value) => verify_tier flag.
+# A verify_tier listing is HIGH-REWARD / HIGH-VERIFY — never auto-dropped.
+verify_tier_threshold = 0.55
+
+[attributes]
+gpu = { drives_value = true }
+cpu = { drives_value = true }
+ram_gb = { drives_value = false }
+storage_gb = { drives_value = false }

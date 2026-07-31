@@ -1,11 +1,18 @@
 #!/bin/bash
 # validate.sh — Comprehensive health check for the Pvragon AI Workspace.
-# Verifies directory structure (Functional Topology) and Git repository connections.
+# Verifies directory structure (Functional Topology), git repository
+# connections, toolchain, and secrets scaffolding.
+#
+# Failure philosophy:
+#   FAIL = structural problems setup should have prevented (missing dirs/repos)
+#   WARN = provisionable-after-setup items (CLI tools, tokens) — actionable,
+#          but they must not crash a fresh install's final validation step.
 
 set -e
 
 WORKSPACE_ROOT="$HOME/ai-workspace"
 FAILURES=0
+WARNINGS=0
 
 # npm-type tools install to the user-level prefix (see configure_toolchain.sh);
 # make sure this shell can see them even if ~/.bashrc hasn't been re-sourced.
@@ -17,9 +24,12 @@ RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
+# NOTE: use FAILURES=$((FAILURES+1)), never ((FAILURES++)) — the latter
+# returns exit status 1 when the pre-increment value is 0, which kills the
+# whole script under `set -e` at the FIRST failed check.
 log_pass() { echo -e "${GREEN}✅ PASS:${NC} $1"; }
 log_fail() { echo -e "${RED}❌ FAIL:${NC} $1"; FAILURES=$((FAILURES+1)); }
-log_warn() { echo -e "${YELLOW}⚠️  WARN:${NC} $1"; }
+log_warn() { echo -e "${YELLOW}⚠️  WARN:${NC} $1"; WARNINGS=$((WARNINGS+1)); }
 log_info() { echo "ℹ️  $1"; }
 
 check_dir() {
@@ -47,7 +57,7 @@ check_mcp_server() {
     if [[ -f "$HOME/.claude.json" ]] && jq -e ".mcpServers.\"$name\"" "$HOME/.claude.json" &>/dev/null; then
         log_pass "MCP server: $name"
     else
-        log_fail "MCP server missing: $name"
+        log_warn "MCP server not configured: $name (run _admin/configure_toolchain.sh)"
     fi
 }
 
@@ -61,21 +71,19 @@ check_git_repo() {
         return
     fi
 
-    # Check remote origin
-    local actual_remote=$(git -C "$path" remote get-url origin 2>/dev/null || echo "none")
+    local actual_remote
+    actual_remote=$(git -C "$path" remote get-url origin 2>/dev/null || echo "none")
 
     if [[ -z "$expected_remote" ]]; then
         # Generic check: any remote is fine (your fork, your own repo, etc.)
         if [[ "$actual_remote" != "none" ]]; then
             log_pass "$dir is a git repository (remote: $actual_remote)"
         else
-            log_warn "$dir has no git remote configured — add one for backup"
+            log_warn "$dir has no git remote configured — add one for backup (gh repo create)"
         fi
         return
     fi
 
-    # Normalize URLs for comparison (remove .git suffix, handle ssh vs https)
-    # Simple check: does it contain the repo name?
     if [[ "$actual_remote" == *"$expected_remote"* ]]; then
         log_pass "$dir connected to $expected_remote"
     else
@@ -95,6 +103,14 @@ check_dir "personal/scratch"
 check_dir "personal/secrets"
 if [[ -f "$WORKSPACE_ROOT/personal/secrets/.env" ]]; then
     log_pass "Found personal/secrets/.env"
+    # Warn on required-but-empty keys (see .env.template for the full list)
+    for key in BASEROW_MCP_TOKEN; do
+        if grep -qE "^${key}=.+" "$WORKSPACE_ROOT/personal/secrets/.env" 2>/dev/null; then
+            log_pass "Secret set: $key"
+        else
+            log_warn "Secret not set: $key (edit personal/secrets/.env — see .env.template)"
+        fi
+    done
 else
     log_warn "Missing personal/secrets/.env — copy from .env.template and fill in your keys"
 fi
@@ -104,7 +120,7 @@ echo "----------------------------------------"
 # 2. Layer 1: Team Lib
 echo "Checking Layer 1: Team Lib..."
 check_dir "team-lib"
-check_git_repo "team-lib"   # any remote is valid — your fork of ai-workspace-reference or your own team repo
+check_git_repo "team-lib" "pvragon-ai-library"
 
 # Subdirectories
 check_dir "team-lib/_admin"
@@ -118,10 +134,15 @@ check_dir "team-lib/personas"
 check_dir "team-lib/registry"
 check_dir "team-lib/skills"
 check_dir "team-lib/skills/_external"
-check_dir "team-lib/skills/_external/anthropics"
-check_git_repo "team-lib/skills/_external/anthropics" "anthropics/skills"
-check_dir "team-lib/skills/_external/rezvani-claude-skills"
-check_git_repo "team-lib/skills/_external/rezvani-claude-skills" "alirezarezvani/claude-skills"
+
+# External skill packs (git submodules — empty dirs mean init never ran)
+for pack in anthropics rezvani-claude-skills blader-humanizer; do
+    if [[ -e "$WORKSPACE_ROOT/team-lib/skills/_external/$pack/.git" ]]; then
+        log_pass "External skill pack initialized: $pack"
+    else
+        log_fail "External skill pack empty: $pack — run: git -C ~/ai-workspace/team-lib submodule update --init --recursive"
+    fi
+done
 
 # Governance Directive
 if [[ -f "$WORKSPACE_ROOT/team-lib/directives/team-library-governance.md" ]]; then
@@ -135,7 +156,7 @@ echo "----------------------------------------"
 # 3. Layer 2: My Lib
 echo "Checking Layer 2: My Lib..."
 check_dir "my-lib"
-check_git_repo "my-lib"   # any remote is valid — your own private repo
+check_git_repo "my-lib"   # generic: any remote OK, none = warn
 
 # Subdirectories
 check_dir "my-lib/archive"
@@ -157,7 +178,7 @@ check_dir "my-lib/skills"
 
 echo "----------------------------------------"
 
-# 4. Layer 3: Projects
+# 4. Layer 3: Projects + agents
 echo "Checking Layer 3: Projects..."
 check_dir "projects"
 check_dir "agents"
@@ -166,26 +187,26 @@ echo "----------------------------------------"
 
 # 5. Toolchain
 echo "Checking Toolchain..."
-check_cli_tool "gh" "gh --version" "install: sudo apt-get install -y gh"
-check_cli_tool "gws" "gws --version" "optional, Google Workspace integration: npm install -g @googleworkspace/cli"
-check_cli_tool "claude" "claude --version" "agent CLI: npm install -g @anthropic-ai/claude-code"
-check_cli_tool "restish" "restish --version" "optional, REST-API integrations: https://rest.sh"
+check_cli_tool "gh" "gh --version" "sudo apt-get install -y gh, then: gh auth login"
+check_cli_tool "gws" "gws --version" "npm install -g @googleworkspace/cli, then: gws auth login"
+check_cli_tool "claude" "claude --version" "npm install -g @anthropic-ai/claude-code"
+check_cli_tool "restish" "restish --version" "used by ClickUp API workflows; install when needed"
 if [[ -f "$HOME/.claude.json" ]]; then
-    # Baserow is optional (see toolchain.yaml) — informational only
-    if jq -e '.mcpServers."baserow"' "$HOME/.claude.json" &>/dev/null; then
-        log_pass "MCP server: baserow (optional)"
-    else
-        log_info "Optional MCP server not configured: baserow"
-    fi
+    # Required MCP servers (keep in sync with toolchain.yaml required: true)
+    check_mcp_server "clickup"
+    check_mcp_server "baserow"
 else
     log_info "~/.claude.json not found — skipping MCP validation"
 fi
 echo "----------------------------------------"
 
-if [[ $FAILURES -eq 0 ]]; then
+if [[ $FAILURES -eq 0 && $WARNINGS -eq 0 ]]; then
     echo -e "${GREEN}✨ All checks passed! Workspace is valid.${NC}"
     exit 0
+elif [[ $FAILURES -eq 0 ]]; then
+    echo -e "${YELLOW}✅ Structure valid — $WARNINGS warning(s) above are post-setup to-dos.${NC}"
+    exit 0
 else
-    echo -e "${RED}⚠️  Validation failed with $FAILURES errors.${NC}"
+    echo -e "${RED}⚠️  Validation failed with $FAILURES error(s) and $WARNINGS warning(s).${NC}"
     exit 1
 fi

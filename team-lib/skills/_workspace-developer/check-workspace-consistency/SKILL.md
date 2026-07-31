@@ -32,7 +32,7 @@ Run this validation **after any change** to:
 | `_admin/setup_workspace.sh` | `ensure_dir` calls match all directories |
 | `_admin/validate.sh` | `check_dir` calls match setup script |
 | `context/indexed/workspace-reference.md` | Section 5 directory map + section 4.x descriptions |
-| `_admin/GETTING_STARTED.md` | Folder references, setup instructions |
+| `ONBOARDING.md` (canonical; `GETTING_STARTED.md` is a stub) | Folder references, setup instructions |
 | `README.md` | Directory structure diagram |
 
 ### Tier 2: Registry & Manifest Files (Check for path references)
@@ -104,7 +104,7 @@ Open and manually inspect each Tier 1 file:
 
 - [ ] `workspace-reference.md` section 5 matches setup_dirs.txt
 - [ ] `workspace-reference.md` section 4.x descriptions cover all directories
-- [ ] `GETTING_STARTED.md` folder references are current
+- [ ] `ONBOARDING.md` folder references are current
 - [ ] `README.md` structure diagram is current
 
 **Fix any discrepancies before proceeding.**
@@ -152,6 +152,6 @@ After ANY structural change, confirm:
 - [ ] `workspace-manifest.yaml` updated (if new subdirectory)
 - [ ] Relevant `index.md` updated
 - [ ] `README.md` updated (if structure diagram exists)
-- [ ] `GETTING_STARTED.md` reviewed
+- [ ] `ONBOARDING.md` reviewed
 - [ ] All three verification passes completed
 - [ ] `validate.sh` passes

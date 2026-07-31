@@ -24,6 +24,15 @@
 
 integrations:
 
+  - name: agent-mailbox
+    description: "Git-backed CROSS-MACHINE agent-to-agent mailbox. Directed async messages between agents on different hosts/tenants (e.g. Rowan on the operator's WSL ↔ Vesper on Trever's Windows), addressed by stable agent name, transported over a shared private git repo (Pvragon/agent-mailbox). One immutable file per message (rebase never conflicts); read-state kept local + uncommitted per machine. The cross-machine sibling of my-lib session_activity.py's machine-local mailbox. Code lives here (rides team-lib sync); message data lives in the separate Pvragon/agent-mailbox repo so churn never pollutes team-lib. send/inbox/thread/ack/pull + --self-test. Periodic checking: mailbox_triage.sh (cheap poll → Claude triage session only on unread mail) + mailbox_triage_prompt.md (send-routine / hold-sensitive / escalate-uncertain policy); wire to cron. SOP: directives/agent-mailbox.md."
+    path: integrations/agent-mailbox/INTEGRATION.md
+    type: cli
+    capabilities: [agent-to-agent-messaging, cross-machine-coordination, async-mailbox]
+    dependencies: [git, python3]
+    tags: [multi-agent, coordination, mailbox, git, cross-machine, agent-to-agent]
+    version: "0.1.0"
+
   - name: apps-script
     description: "Google Apps Script remote execution via clasp CLI. Full DocumentApp, SpreadsheetApp, DriveApp, GmailApp, CalendarApp, SlidesApp, FormApp access — covers capabilities the REST APIs cannot reach."
     path: integrations/apps-script/INTEGRATION.md
@@ -42,6 +51,15 @@ integrations:
     tags: [google, google-workspace, cli, drive, docs, sheets, gmail, calendar]
     version: "1.0.0"
 
+  - name: gws-cli-oauth-setup
+    description: "OAuth setup walkthrough for gws CLI — Pvragon Workspace path (contact Farhan), personal Google account path (DIY), parallel side-by-side configs, and recovery from the 7-day refresh-token gotcha."
+    path: integrations/gws-cli/OAUTH_SETUP.md
+    type: onboarding-guide
+    capabilities: [oauth-setup, gcp-project-setup, consent-screen-config, multi-account-config]
+    dependencies: ["@googleworkspace/cli"]
+    tags: [google, google-workspace, oauth, onboarding, gcp, consent-screen, refresh-token]
+    version: "1.0.0"
+
   - name: clickup-cli
     description: "ClickUp CLI integration via Restish — full v2 + v3 API coverage including task comments with @mentions and Chat messaging."
     path: integrations/clickup-cli/INTEGRATION.md
@@ -51,11 +69,47 @@ integrations:
     tags: [clickup, cli, restish, openapi, chat, mentions, task-comments]
     version: "1.0.0"
 
-  - name: agent-mailbox
-    description: "Git-backed CROSS-MACHINE agent-to-agent mailbox. Directed async messages between agents on different hosts/tenants, addressed by stable agent name, transported over a shared git repo. One immutable file per message (rebase never conflicts); read-state kept local + uncommitted per machine. send/inbox/thread/ack/pull + --self-test. Includes mailbox_triage.sh: a cheap poll that spawns a Claude triage session only on unread mail (send-routine / hold-sensitive / escalate-uncertain policy in mailbox_triage_prompt.md). SOP: directives/agent-mailbox.md."
-    path: integrations/agent-mailbox/INTEGRATION.md
+  - name: namecheap-cli
+    description: "Namecheap CLI (command `namecheap`) — full-coverage (59/59 documented methods) CLI + importable Python client for the Namecheap XML API: domains (register/renew/check/contacts/locks), DNS (safe add/rm/export/import wrapping the all-or-nothing setHosts), child nameservers, transfers, SSL lifecycle, users/pricing/balances, address book, domain privacy, plus raw `api` passthrough. Zero dependencies; billable/destructive ops confirmation-gated; sandbox support. Restish does NOT fit (XML RPC, no OpenAPI). Public repo: github.com/Pvragon/namecheap-cli (MIT). Live-verified against sandbox (writes incl. domain purchase) and production (reads) 2026-07-17."
+    path: integrations/namecheap-cli/INTEGRATION.md
     type: cli
-    capabilities: [agent-coordination, cross-machine, messaging, git-transport, triage]
-    dependencies: [git]
-    tags: [multi-agent, mailbox, git, cross-machine, agent-to-agent, cron]
+    capabilities: [namecheap, domains, dns-management, domain-registration, domain-renewal, ssl-certificates, domain-transfers, domain-privacy, glue-records, email-forwarding, pricing, sandbox-testing, api-passthrough]
+    dependencies: [python3]
+    tags: [namecheap, dns, domains, registrar, cli, xml-api, ssl, public-repo]
     version: "1.0.0"
+
+  - name: consumer-deals
+    description: "Marketplace deal-mining CLI (command `deals`) — scrapes a used marketplace into a normalized local CSV catalog; downstream enrich/value/score layers run on top. OfferUp adapter first, behind an adapter seam (eBay/FB/Craigslist later). Two-stage scrape (feed sweep → per-listing detail) because OfferUp Core fields incl. price drops are detail-only; captures previous_price/price_drop, distance (localized via userdata JWT), posted_at, condition, is_firm. No defaults in code (central config via `deals init`); device token self-minted (no Playwright). Read/analysis only — never messages sellers. Steps 1-4 shipped 2026-06-22; value/vision/sqlite pending."
+    path: integrations/consumer-deals/INTEGRATION.md
+    type: cli
+    capabilities: [marketplace-scraping, offerup, deal-mining, price-drop-detection, normalized-catalog, csv-export, catalog-diff, watch-primitive, detail-cache, rate-limit-resilience, domain-packs, valuation-scoring]
+    dependencies: [python3]
+    tags: [offerup, marketplace, scraping, deals, cli, graphql, csv, price-drop, diff, watch]
+    version: "0.4.0"
+
+  - name: ai-digest
+    description: "Novelty-scored AI content digest CLI (command `digest`). Phase 1 YouTube (built 2026-06-29): yt-dlp lists new channel uploads, youtube-transcript-api pulls captions, Gemini 2.5-flash scores each transcript 0-10 on a three-baseline novelty rubric (intra-poll / rolling-corpus / common-knowledge) against a SQLite seen-set + history, threshold-splits, and gws-emails a digest grouped by source with an auditable reject list. Also `digest learn` (hourly cron): summarizes each NEW video in curated playlists — one per-video learnings email, no novelty filtering — with a searchable `[learn].subject_tag` prefix (default `AI Summary:`; search `subject:\"AI Summary\"`). Also `digest primer` (cron M/W/F 11:00): concept-level <=5 min primer — extracts IDEAS per transcript, buckets them into a closed topic taxonomy, clusters within buckets, links to a persistent SQLite concept ledger, then ranks on two separate axes (CONVERGING = many independent creators; EARLY = one high-authority creator first, so early single-source insight is not buried by a diversity score). Reads only the on-disk transcript store, so it makes zero YouTube calls. Source-agnostic core; blogs/Medium/X are future adapters. Config-driven (channels/threshold/recipient via `digest init`), no defaults in code. Read-only ingestion; only outbound action is the digest email."
+    path: integrations/ai-digest/INTEGRATION.md
+    type: cli
+    capabilities: [ai-news-digest, youtube-ingestion, transcript-fetch, novelty-scoring, llm-as-judge, rolling-corpus-dedupe, reject-list-audit, email-delivery, source-agnostic-adapters, playlist-learnings-summaries, concept-ledger, trend-ranking, rapid-primer]
+    dependencies: [python3, yt-dlp, youtube-transcript-api, gws]
+    tags: [ai, digest, youtube, novelty, gemini, llm-judge, cron, cli, playlist, learnings, concept-ledger, primer]
+    version: "0.5.0"
+
+  - name: waystar-cli
+    description: "Generic, account-agnostic Waystar/zirMed claims-clearinghouse CLI + library — purpose-built HMAC-SHA1 signing client (Restish does NOT fit: signed RPC, XML/PDF, no OpenAPI). Covers claim history XML, EOB/remittance PDF+XML, EOB-by-RemitID (zirmedremitid), and embedded claim-form/POTF PDFs. Pure transport layer; supply your own WAYSTAR_CUST_ID/HMAC_KEY. Acme Health's waystar-store-refresh skill is one consumer."
+    path: integrations/waystar-cli/INTEGRATION.md
+    type: cli
+    capabilities: [waystar, claims-clearinghouse, claim-history, eob-remittance, hmac-signing, 837-835, billing]
+    dependencies: [python3, requests]
+    tags: [waystar, zirmed, cli, hmac, rpc, eob, 835, claims, billing]
+    version: "1.1.0"
+
+  - name: excalidraw-cli
+    description: "Generic headless Excalidraw render CLI (command `excalidraw`) and drop-in MCP replacement. `excalidraw render` takes Excalidraw element/scene JSON — the SAME dialect the Excalidraw MCP's create_view accepts (labels, palette fills, bound arrows, `delete` pseudo-elements applied, `cameraUpdate`/`restoreCheckpoint` stripped) — and `excalidraw mermaid` takes Mermaid text; both write .excalidraw + .svg + .png, plus .html (opt-in `-f html`: a responsive, centered, transparent-by-default inline-SVG <figure> for hand-composed HTML presentations / self-contained pages; --dark for light strokes on dark decks). Runs @excalidraw in headless Chromium (convertToExcalidrawElements + exportToSvg/exportToBlob + parseMermaidToExcalidraw); mmdc is NOT a substitute for the mermaid path (wrong visual style). Does not replace the MCP's inline animated draw-in-chat. Batch mode renders many jobs in one browser launch; exposes renderScene()/renderMermaid()/renderJobs() + svgToHtmlFigure() for chaining from doc-gen."
+    path: integrations/excalidraw-cli/INTEGRATION.md
+    type: cli
+    capabilities: [excalidraw-render, mcp-replacement, scene-json-render, mermaid-to-excalidraw, svg-export, png-export, html-figure-embed, excalidraw-scene, doc-injection, headless-browser, batch-convert]
+    dependencies: [node, playwright, "@excalidraw/excalidraw", "@excalidraw/mermaid-to-excalidraw", esbuild]
+    tags: [excalidraw, mcp-replacement, mermaid, diagram, flowchart, svg, png, html, cli, playwright, docs]
+    version: "0.3.0"

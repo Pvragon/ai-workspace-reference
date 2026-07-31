@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-digest"
+version = "0.1.0"
+description = "Scheduled, novelty-scored digest of AI content (YouTube first; blogs/Medium/X to follow). LLM-as-judge against a rolling corpus, with an auditable reject list."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Pvragon / your-agent" }]
+keywords = ["ai", "digest", "youtube", "novelty", "llm-judge", "cli"]
+dependencies = [
+    "tomli >= 1.2 ; python_version < '3.11'",
+    "yt-dlp >= 2024.1",
+    "youtube-transcript-api >= 1.0",
+    "curl_cffi >= 0.7",   # browser-impersonation backend so yt-dlp can mint PO tokens
+    # Gemini is called over plain REST (urllib) — no SDK dependency.
+]
+
+[project.optional-dependencies]
+dev = ["pytest >= 7.0"]
+
+[project.scripts]
+digest = "ai_digest.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ai_digest*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -318,6 +318,28 @@ After the parser has run, update the Template Metadata section at the bottom of 
 | `meta.missingRequired` | Comma-separated list from parser, or `none` if all required tokens are present |
 | `meta.missingOptional` | Comma-separated list from parser, or `none` if all optional tokens are present |
 
+### Step 11: Generate brand guidelines PDF (optional)
+
+If a Quick Sheet PDF or similar one-page brand summary exists, generate a comprehensive multi-page brand guidelines PDF that extends it with all resolved tokens:
+
+```bash
+node team-lib/skills/create-brand-guidelines/scripts/generate-brand-guidelines-pdf.js \
+  --tokens team-lib/context/indexed/companies/{brand-name}/brand/brand-tokens.json \
+  --quicksheet path/to/quicksheet.pdf \
+  --output team-lib/context/indexed/companies/{brand-name}/brand/{brand-name}-brand-guidelines.pdf
+```
+
+The generated PDF includes:
+- **Page 1**: Original Quick Sheet (embedded as-is)
+- **Pages 2-3**: Full color system — core palette, extended palette with brand-specified tints/shades, text/background/border/link colors, status colors, heading hierarchy, computed derivative swatches
+- **Page 4**: Typography samples with heading hierarchy demo, voice & tone
+- **Page 5**: Company information, content presentation preferences (all content types)
+- **Pages 6-7**: Accessibility validation results, token provenance summary (inferred/derived/default), coverage summary
+
+The script uses `pdf-lib` (standard fonts only — Helvetica/Courier substituted for brand fonts, noted in output). All color swatches render with actual hex values and auto-contrast text labels.
+
+If no Quick Sheet exists, skip this step — the brand-guidelines.md and brand-tokens.json are the authoritative artifacts.
+
 ### Checkpoint
 
 - [ ] brand-guidelines.md saved to `companies/{brand-name}/brand/`
@@ -327,6 +349,7 @@ After the parser has run, update the Template Metadata section at the bottom of 
 - [ ] Contrast failures explained (if any)
 - [ ] User informed of any missing required tokens
 - [ ] Template Metadata section updated with parser results
+- [ ] Brand guidelines PDF generated (if Quick Sheet available)
 - [ ] Handoff states which checks ran and any limitations honestly — list unresolved conflicts, `(observed)`/`(proposed)`/`(inferred)` values awaiting approval, and checks that did NOT run
 
 **Follow-on:** to produce human-facing visual brand documentation from the tokens, run `generate-brand-guide-site` — it renders brand-tokens.json + the narrative sections of this file into a self-contained brand-guide.html.

@@ -14,9 +14,9 @@ maintainer: pvragon
 
 ## 1. Golden Rule: No Personal Code
 *   **Concept:** `team-lib` is Shared Infrastructure.
-*   **Rule:** If a script or resource is specific to a single user (e.g., hardcoded paths, user-specific APIs, "username-test"), it **MUST NOT** be in `team-lib`.
+*   **Rule:** If a script or resource is specific to a single user (e.g., hardcoded paths, user-specific APIs, "your-username-test"), it **MUST NOT** be in `team-lib`.
 *   **Check:**
-    *   No filenames with user prefixes (e.g., `username-scraper.py`).
+    *   No filenames with user prefixes (e.g., `your-username-scraper.py`).
     *   No hardcoded paths to `/home/<user>/...` (Use `$WORKSPACE_ROOT`).
     *   No personal secrets or tokens.
 

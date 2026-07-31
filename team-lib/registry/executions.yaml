@@ -15,6 +15,18 @@
 # ------------------------------------------
 
 executions:
+
+  version_gate:
+    path: "executions/version_gate.py"
+    description: "PreToolUse hook on `git push` that keeps frontmatter versions honest. For every versioned file whose BODY changed in the commits about to be pushed without its `version:` changing, it bumps the patch level, stamps last_updated, syncs any registry entry recording the same version, and commits that as a chore(version) commit so the push carries it. Resolves the standing tension between AGENTS.md Op#10 (commit early and often) and the frontmatter versioning rule by putting the version at the PUBLISH boundary rather than every commit: a commit is a private checkpoint, a version is a published identity. Escalate or skip per-push with [minor]/[major]/[no-version] in any commit message in the range. Never blocks — any error defers silently so a push is never lost. Origin: 62% version compliance measured across 90 days (91 commits / 57 bumps), 26% on the most-iterated skill."
+    tags: [hook, claude-code, versioning, frontmatter, registry, drift, publish-boundary]
+    version: "1.0.1"
+  layer_drift_scan:
+    path: "executions/layer_drift_scan.py"
+    description: "Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by comparing CONTENT HASHES, not version numbers — three shared skills once carried identical versions with different content. Walks registry/mirror.yaml; honours two-sided `mirror: divergent` declarations; also checks that every registry entry resolves on disk. Read-only. Run nightly by dream_cycle.py."
+    tags: [drift, governance, currency, graduation, linter]
+    version: "1.1.0"
+
   publish_github_release:
     path: "executions/publish_github_release.py"
     description: "Creates an annotated git tag and publishes a GitHub release with release notes."
@@ -29,12 +41,172 @@ executions:
 
   list_shared_drives:
     path: "executions/list_shared_drives.py"
-    description: "Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials from the Google Workspace MCP server."
+    description: "Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials. Email comes from GOOGLE_WORKSPACE_EMAIL or --email; no operator address is baked in. Used by the update-drive-index skill."
     tags: [google-drive, listing, oauth]
-    version: "1.0.0"
+    version: "1.1.0"
 
   setup_pane_colors:
     path: "executions/setup_pane_colors.py"
     description: "Installs the Claude Code tmux pane-color notification system. Pane background changes while Claude is working, reverts when waiting for input."
     tags: [tmux, claude-code, hooks, notifications]
+    version: "1.0.0"
+
+  # --- Memory system (graduated from my-lib 2026-07-30) ---
+  agent_paths:
+    path: "executions/agent_paths.py"
+    description: "Resolves the agent's on-disk home and every memory subdirectory (memory, short-term, dream-journal, meditations, lenses, runtime/state). Single source of truth imported by every memory-system script — this is what makes the system portable to any agent name on any machine. Resolution: $PVRAGON_AGENT_HOME -> personal/config/agent.json -> $PVRAGON_AGENT -> auto-detect the single agents/*/identity.md. Raises rather than guessing when ambiguous."
+    tags: [memory, paths, agent, portability, config]
+    version: "1.0.0"
+
+  update_memory_access:
+    path: "executions/update_memory_access.py"
+    description: "PreToolUse hook implementing the two-strength memory model (Bjork). On Read/Edit/Write/MultiEdit of a T2 topic file it always refreshes last_accessed, but only counts a SPACED reinforcement (access_count++ and stability *= 1.6) when >=20h since last_reinforced — so cramming cannot inflate storage strength. Side-effect only: flock-serialised, atomic write, always exits 0 so it can never block a tool call."
+    tags: [memory, hook, retrieval, decay, spacing, reinforcement]
+    version: "1.0.0"
+
+  rerank_memory_index:
+    path: "executions/rerank_memory_index.py"
+    description: "Single writer of MEMORY.md. Scores every T2 topic file by (access_count+1)*exp(-days/stability)+0.6*importance and regenerates the index into a char-budgeted Hot band (auto-loaded, 12K), a New band (2.5K, born within 14 days, newest-first), and a Cold band (4K), rolling the low-relevance tail into MEMORY-archive.md. Nothing is deleted — only index visibility shifts. Row text comes from each file's `summary:` frontmatter, so the index is a PURE FUNCTION of the corpus and hand-edits to MEMORY.md are discarded; the only read of prior output is tombstones for files that no longer exist. The New band exists because a newly written memory scores 1.00 and ranked ~#125 of 612, i.e. it was born into the archive and could never be read, so could never be reinforced."
+    tags: [memory, ranking, index, decay, roll-off, birth-grace]
+    version: "2.1.0"
+
+  backfill_memory_created:
+    path: "executions/backfill_memory_created.py"
+    description: "One-shot migration: gives every T2 topic file a trustworthy `created:` from its git birth commit (followed through renames), which the New band keys on. Existing frontmatter always wins. Preserves mtime on write, because files with no `last_accessed` score off mtime. Use --dry-run/--sample before --apply."
+    tags: [memory, migration, frontmatter, backfill]
+    version: "1.0.0"
+
+  migrate_summary_into_file:
+    path: "executions/migrate_summary_into_file.py"
+    description: "One-shot migration moving the hand-curated recall summary out of MEMORY.md / MEMORY-archive.md index rows into each memory file's own `summary:` frontmatter — what makes the index a pure function of the corpus and deletes the archive-merge failure mode. Reads curated rows from BOTH index files, round-trips every file in memory first, and ABORTS the whole run if any file would not read back identically. Preserves mtime. Run once per corpus; a fresh install does not need it."
+    tags: [memory, migration, frontmatter, summary, one-shot]
+    version: "1.0.0"
+
+  normalize_memory_type:
+    path: "executions/normalize_memory_type.py"
+    description: "One-shot migration collapsing the three ways a T2 file declared its kind (top-level `type:`, `type:` nested under `metadata:`, and `template:`) into a single authoritative top-level `type:` matching the filename prefix. Value-dependent: `template:` holding a memory kind is dropped as a redundant alias, but `template:` holding a real document-template name (business-context, project-lifecycle, ...) is PRESERVED — the two are different axes and a wholesale collapse destroys the latter. No script reads either field, so the generated index must be byte-identical afterwards; that is the acceptance test."
+    tags: [memory, migration, frontmatter, convention, one-shot]
+    version: "1.0.0"
+
+  test_memory_ranking:
+    path: "executions/test_memory_ranking.py"
+    description: "Regression suite for the ranking pipeline, run against a SYNTHETIC fixture corpus in a temp dir — never the live one. Pins determinism, total tie-break, budget caps, curated summaries surviving regeneration (including archived rows), nothing-lost, born-visible, the spacing gate, malformed-frontmatter degradation, and pin/superseded overrides. Set MEMORY_EXEC_DIR to run it against another revision to confirm a test actually fails on the bug it claims to catch."
+    tags: [memory, tests, regression, ranking]
+    version: "1.0.0"
+
+  dream_cycle:
+    path: "executions/dream_cycle.py"
+    description: "Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank — then CUES the one daily metacognitive wake via a state file without spending tokens. Live-session-aware: skips mutating passes if a memory file changed in the last 10 minutes."
+    tags: [memory, scheduler, cron, sleep-cycle, maintenance]
+    version: "1.0.0"
+
+  dream_select:
+    path: "executions/dream_select.py"
+    description: "Deterministic meditation-object selector. Scores each object by cadence_weight * min(days_since_last_sat,21)/21, hard-excludes the most recently sat object, and enforces an awareness-shelf floor so instrumentally useful objects cannot crowd out the useless-but-true ones. --record stamps last_sat/sit_count after a real sit."
+    tags: [memory, meditation, rotation, sleep-cycle]
+    version: "1.0.0"
+
+  dream_journal:
+    path: "executions/dream_journal.py"
+    description: "Dream-journal residue store for reflective wakes. write() appends a dated first-person residue entry; recent() returns the newest N for cold-start loading; decay() archives old entries (never deletes). Residue is the experiential layer — what shifted, what stayed unresolved — distinct from factual T2 memory."
+    tags: [memory, residue, journal, continuity, sleep-cycle]
+    version: "1.0.0"
+
+  consolidation_scan:
+    path: "executions/consolidation_scan.py"
+    description: "Deterministic detector for the consolidation wake (T1->T2 abstraction). Reports ungraduated short-term residue older than 7 days and weak/stale T2 traces. Detection only — the graduation act (abstract the durable pattern, then archive the residue) is the LLM's job in /dream consolidate."
+    tags: [memory, consolidation, detection, sleep-cycle]
+    version: "1.0.0"
+
+  memory_self_check:
+    path: "executions/memory_self_check.py"
+    description: "Deterministic memory-hygiene linter. Detects index rows pointing at missing files, orphaned topic files, dead [[wikilinks]], near-duplicate topic files, frontmatter gaps, and stale short-term. --fix-safe applies only unambiguous fixes, capped per run; anything requiring judgment is escalated."
+    tags: [memory, linter, hygiene, maintenance]
+    version: "1.0.0"
+
+  inject_lens:
+    path: "executions/inject_lens.py"
+    description: "PreToolUse hook implementing the T3 situational-lens layer. Walks the agent's lenses/*.md, parses self-declared triggers (tool_match + optional path_pattern), and injects matching lens bodies via stderr — deduped so each lens fires at most once per session. Adding a situational rule is pure content work, no code change."
+    tags: [memory, hook, lens, t3, context-injection]
+    version: "1.0.0"
+
+  allow_memory_writes:
+    path: "executions/allow_memory_writes.py"
+    description: "PreToolUse hook that auto-allows Edit/Write/MultiEdit to agent memory and handoff paths so memory capture and session debrief never trigger a permission prompt, independent of permission mode or cwd. Returns an 'allow' decision that short-circuits the permission pipeline; defers silently otherwise so it never over-broadens."
+    tags: [memory, hook, permissions, capture]
+    version: "1.0.0"
+
+  regen_current_state:
+    path: "executions/regen_current_state.py"
+    description: "Single writer of current-state.md. Deterministically renders the workstream sections from cs_section/cs_headline flags across all T2 project files, under flock + atomic rename, so parallel sessions emit identical bytes and cannot clobber each other."
+    tags: [memory, current-state, concurrency, render]
+    version: "1.0.0"
+
+  sweep_workstreams:
+    path: "executions/sweep_workstreams.py"
+    description: "Workstream lifecycle sweep over T2 project memories. Pathway 1 evaluates machine-checkable close_signals (ClickUp/GitHub/filesystem/grep) against live state and auto-archives on a hit — thread-independent. Pathway 2 age-outs stale current-state items into backlog stubs."
+    tags: [memory, workstream, lifecycle, sweep, automation]
+    version: "1.0.0"
+
+  bootstrap_memory:
+    path: "executions/bootstrap_memory.py"
+    description: "One-time migration making an existing or brand-new agent memory directory ready for the retrieval policy. Creates the tier directories, backfills policy frontmatter using each file's MTIME (never 'now', which would flatten day-one ranking), seeds a starter meditation library and lens template, migrates a legacy scheduler state file, and generates the first index. Dry-run by default; idempotent."
+    tags: [memory, install, bootstrap, migration]
+    version: "1.0.0"
+
+  install_memory_hooks:
+    path: "executions/install_memory_hooks.py"
+    description: "Wires the memory system into the harness: registers the four PreToolUse hooks in settings.json and installs the two nightly crontab lines (03:47 deterministic tick, 03:52 reflective wake). Idempotent, dry-run by default, backs up settings.json, never touches unrelated hook entries. --uninstall reverses it."
+    tags: [memory, install, hooks, cron, settings]
+    version: "1.0.0"
+
+  verify_memory_install:
+    path: "executions/verify_memory_install.py"
+    description: "End-to-end self-test proving the memory POLICY is wired, not merely that files exist. Exercises the real hook against a throwaway topic file to confirm reinforcement fires, the 20h spacing gate holds, non-reinforcing tools are no-ops, curation counts, and hooks exit 0 when the agent is unresolvable. Exits non-zero on any hard failure — a disconnected hook is otherwise invisible."
+    tags: [memory, install, verification, self-test]
+    version: "1.0.0"
+
+  # --- Session/workspace tooling (graduated from my-lib 2026-07-30) ---
+  # Unblocks session-debrief graduation: the skill calls all of these.
+
+  clean_zone_identifiers:
+    path: "executions/clean_zone_identifiers.sh"
+    description: "Finds and removes WSL Zone.Identifier alternate-data-stream files (*:Zone.Identifier) across a workspace root. Defaults to ~/ai-workspace. Supports --dry-run. Called by session-debrief postflight."
+    tags: [cleanup, wsl, workspace-hygiene, session-debrief]
+    version: "1.0.0"
+
+  extract_session_transcripts:
+    path: "executions/extract_session_transcripts.py"
+    description: "Streams Claude Code session JSONL files from ~/.claude/projects/*/ and emits filtered markdown transcripts to agents/your-agent/transcripts/. Keeps user prompts + assistant text + tool-call breadcrumbs; drops tool params/results, system reminders, thinking, base64. Idempotent (mtime-based skip). Names files by session-name (prepends YYMMDD if missing). Stdlib-only, no LLM. ~97-98% size reduction on tool-heavy sessions."
+    tags: [memory, transcripts, claude-code, archival, t1-episodic]
+    version: "1.0.0"
+
+  dump_system_state:
+    path: "executions/dump_system_state.py"
+    description: "Dumps deterministic snapshots of live infrastructure state to agents/your-agent/system-state/ for git-backed backup and drift detection. Captures crontab, Claude Code hooks, public settings (secrets stripped via key-pattern redaction), and MCP server config. Stdlib-only, idempotent (only stages diffs when infrastructure drifted). Pairs with my-lib/context/indexed/active-systems.md (manual overview). Runs as postflight step 0c."
+    tags: [infrastructure, backup, automation, system-state, drift-detection]
+    version: "1.0.0"
+
+  archive_old_transcripts:
+    path: "executions/archive_old_transcripts.sh"
+    description: "Moves Claude Code session JSONLs AND the per-session artifact dirs (tool-results/, subagents/, workflows/, logs/) older than N days (default 14) out of ~/.claude/projects/ into ~/.claude/projects-archive/ (move-not-delete, structure preserved) so the statusline's ccusage cost meter can't re-parse a multi-GB corpus, balloon RAM, and thrash swap → WSL freeze. The artifact dirs were added 2026-07-30 after measuring 1.20 GB of un-archived residue (mostly oversized tool-output spill files, up to 64 MB each) against 0.55 GB of managed JSONL; scoped to those dirs deliberately, because the project dir itself holds live state — sessions-index.json, which /resume reads. Self-throttles to <=once/24h via a stamp file. Idempotent, same-fs renames, --dry-run/--force. Called by session-debrief postflight and the nightly dream_cycle tick."
+    tags: [cleanup, wsl, workspace-hygiene, session-debrief, ccusage, tool-results]
+    version: "1.0.1"
+
+  extract_touched_files:
+    path: "executions/extract_touched_files.py"
+    description: "Reads a Claude Code session JSONL (plus subagent JSONLs), extracts unique file_path values from Edit/Write/MultiEdit/NotebookEdit tool calls, classifies by repo (mylib / agents / other), filters to currently-existing files. Used by postflight to auto-derive --mylib-files / --agents-files."
+    tags: [debrief, postflight, jsonl, automation, file-tracking]
+    version: "1.1.0"
+
+  session_snapshots:
+    path: "executions/session_snapshots.py"
+    description: "Snapshot the open Claude/tmux session fleet and rebuild it after a reboot. store: capture every live claude session (sessionId+cwd+tmux label) to ~/.claude/session-snapshots/YYMMDD-HHMM[-tag]-sessions.json; --auto (nightly cron) and --tag NAME (e.g. debrief) each prune within their OWN retention bucket, so frequent debrief snapshots never evict the nightly ones. resume: open one Windows-Terminal window per stored session that RE-ATTACHES to the still-live tmux session (closed window, no reboot) or RESUMES from disk (claude --resume <id> -n <name>) post-reboot, tmux label = Claude name, in original cwd; --dry-run/--force/--include-current. RECONCILE (on by default, --no-reconcile opts out): unions the snapshot with sessions whose transcript was written AFTER it was taken, because no snapshot is current when you need it — /handoff rotates generations all day. Snapshot supplies the OPEN signal (unrecoverable post-mortem: mtime shows activity, not openness); transcripts supply freshness (the PID-keyed ~/.claude/sessions/<pid>.json name records get overwritten as PIDs recycle after reboot). Filters: headless/cron runs lack a sessions/<pid>.json record and are excluded; superseded generations dropped (one-Mahjong-1 loses to -5). Guarantees nothing MISSING, not nothing extra — dry-run and prune. list: enumerate snapshots. Builds on list_claude_sessions.run(). Backs /store-sessions + /resume-sessions. Nightly via cron (store --auto) + every session-debrief preflight (store --tag debrief)."
+    tags: [tmux, claude-code, session, snapshot, resume, reboot-recovery, wsl]
+    version: "1.0.0"
+
+  list_claude_sessions:
+    path: "executions/list_claude_sessions.py"
+    description: "List currently-open Claude Code sessions joining BOTH identifiers: the tmux name (mylib-<pid>) and the Claude name (/rename or -n value from ~/.claude/sessions/<claude-pid>.json), plus worktree, status, sessionId. Liveness = live tmux client + WSL Relay(...) ancestry (survives the 'tmux outlives the closed window' leak that attached=1 doesn't), so OPEN vs PHANTOM vs ORPHAN are distinguished and window-closed orphans flagged for /reap-tmux. Read-only; --json for chaining (run() returns the dicts). Backs the /list-sessions skill."
+    tags: [tmux, claude-code, session, inventory, wsl, observability]
     version: "1.0.0"

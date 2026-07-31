@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "consumer-deals"
+version = "0.5.0"
+description = "Marketplace deal-mining CLI — scrape used-marketplace listings into a normalized local catalog (OfferUp adapter first)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Pvragon / your-agent" }]
+keywords = ["offerup", "marketplace", "scraping", "deals", "cli"]
+dependencies = [
+    # stdlib-only core (urllib). tomllib is stdlib on 3.11+; fall back to tomli below.
+    "tomli >= 1.2 ; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+# Only needed for the Playwright auth-capture fallback (not required for OfferUp).
+browser = ["playwright >= 1.40"]
+dev = ["pytest >= 7.0"]
+
+[project.scripts]
+deals = "deals.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["deals*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

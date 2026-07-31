@@ -67,15 +67,15 @@ Memory in this workspace is layered along **two independent axes**. Both are use
 | Tier | Lifetime | Examples | Mechanism |
 |------|----------|----------|-----------|
 | **Durable** | Persistent, versioned | Indexed context files (`*/context/indexed/`), identity.md, situational lenses, team-lib global context | Git-backed, registry-driven, progressive disclosure — loaded on-demand via index lookup |
-| **Curated** | Cross-session, actively maintained | Agent memory topic files (MEMORY.md index), lessons-learned | Agent memory system — survives across conversations. Curated at debrief; ranked and rolled off by the two-strength retrieval policy. **Nothing is deleted** — only index visibility shifts |
+| **Curated** | Cross-session, actively maintained | Agent memory topic files (MEMORY.md index), lessons-learned | Agent memory system — survives across conversations. Curated at debrief; ranked and rolled off by the two-strength policy (`rerank_memory_index.py`). **Nothing is deleted** — only index visibility shifts |
 | **Initiative** | Within-initiative | `.tmp/` working files, project plans, intermediate deliverables, current-state.md | Filesystem — cleared when the initiative completes |
-| **Session** | Single conversation | Everything actively loaded in the agent's context window | Volatile — lost when the session ends. Prefer deliberate session rotation (debrief + handoff, re-establishing from disk) over auto-compaction, which is lossy and rebuilds the prompt cache at a premium |
+| **Session** | Single conversation | Everything actively loaded in the agent's context window | Volatile — lost when the session ends. Auto-compaction is **disabled by policy** (it rebuilds the prompt cache at ~1.25x input rate); sessions are rotated deliberately via `/session-debrief` + `/handoff`, re-establishing from disk |
 
 #### Axis B — Memory Type (added 2026-04-30, neuroscience-grounded)
 
-Borrowed from human memory research and validated against prior art (Generative Agents 2023; MemGPT/Letta). Full architecture: the agent's memory architecture topic file (e.g. `agents/<your-agent>/memory/project_memory-architecture-layers.md`).
+Borrowed from human memory research and validated against prior art (Generative Agents 2023; MemGPT/Letta). Full architecture notes live in the maintaining agent's memory (topic: memory-architecture-layers).
 
-| Tier | Brain analogue | Function | Where (example implementation) |
+| Tier | Brain analogue | Function | Where (current Rowan implementation) |
 |------|----------------|----------|--------------------------------------|
 | **T0 Working** | Phonological loop / visuospatial sketchpad | Active attention, current task | In-session conversation context |
 | **T1 Short-term retrievable (episodic)** | Hippocampal episodic memory | Recent specific events, with provenance ("when did I learn X?") | `agents/<agent>/memory/short-term/YYMMDD-facts.md` + `YYMMDD-residue.md`; verbatim transcripts in `agents/<agent>/transcripts/` |
@@ -83,15 +83,16 @@ Borrowed from human memory research and validated against prior art (Generative 
 | **T3 Situational lens** | Domain-specific schemas | Lens-strength rules with **narrow trigger conditions**; activated at the moment they apply | `agents/<agent>/lenses/<topic>.md` with self-declared triggers; injected via PreToolUse hook (`inject_lens.py`) when matching tool fires |
 | **T4 Core / always-on lens** | Schemas, scripts, worldview | The LENS for everything — shapes interpretation of every input | `CLAUDE.md`, `AGENTS.md`, `identity.md`, skill base prompts |
 
-**Retrieval policy (substrate-agnostic).** Which T2 memories are *accessible* is governed by a
-two-strength model (Bjork & Bjork 1992): `score = (access_count + 1) * exp(-days_since_last_access /
-stability) + 0.6 * importance`, where `stability` is a per-file decay time-constant that **grows with
-spaced reinforcement** (14d base → 365d cap, x1.6 per reinforcement, gated so same-day re-reads don't
-count). A read or edit of a topic file reinforces it via a PreToolUse hook; a reranker regenerates the
-memory index into a character-budgeted **Hot** band (auto-loaded) plus a **Cold** band, rolling the
-low-relevance tail into an archive index. Files are never deleted — only index visibility shifts. A
-nightly maintenance cycle runs the deterministic grooming and cues one reflective wake (meditation +
-episodic→semantic consolidation).
+**Retrieval policy (added 2026-07-12, substrate-agnostic).** Which T2 memories are *accessible* is
+governed by a two-strength model (Bjork & Bjork 1992): `score = (access_count + 1) *
+exp(-days_since_last_access / stability) + 0.6 * importance`, where `stability` is a per-file decay
+time-constant that **grows with spaced reinforcement** (14d base → 365d cap, x1.6 per reinforcement
+gated at 20h so cramming doesn't count). A `Read`/`Edit`/`Write` of a topic file reinforces it
+(`update_memory_access.py`, PreToolUse hook); `rerank_memory_index.py` regenerates MEMORY.md into a
+char-budgeted **Hot** band (auto-loaded) + **Cold** band, rolling the low-relevance tail to
+`MEMORY-archive.md`. A nightly **dream cycle** (`dream_cycle.py`, 03:47 cron) runs the deterministic
+grooming and cues one reflective wake (`/dream` — meditation + T1→T2 consolidation). Full design:
+`my-lib/backlog/260712-memory-system-framework.md`.
 
 **Key property:** T2 is *abstraction, not summary* — semantic facts persist after every contributing episodic memory has aged out. T1, T2, T3, T4 fail independently (the neurodegeneration argument), so they live in separate file trees with separate update disciplines.
 
@@ -101,7 +102,9 @@ episodic→semantic consolidation).
 
 #### How the two axes compose
 
-A T1 episodic fact in `memory/short-term/` is **long-term** on Axis A (git-backed, never deleted) but **episodic** on Axis B (date-keyed, with provenance). A T3 lens in AGENTS.md is **long-term** on Axis A *and* **core** on Axis B. A current session's working memory is **session** on Axis A and **T0** on Axis B. The two axes answer different questions: Axis A answers "how long does this last?"; Axis B answers "what kind of memory is this?"
+A T1 episodic fact in `memory/short-term/` is **long-term** on Axis A (git-backed, never deleted) but **episodic** on Axis B (date-keyed, with provenance). A T3 lens in AGENTS.md is **long-term** on Axis A *and* **core** on Axis B. A current session's working memory is **session** on Axis A and **T0** on Axis B. The two axes answer different questions: Axis A answers "how long does this last?"; Axis B answers "what kind of memory is this?" They **cross rather than stack** — every memory has a coordinate on both.
+
+Axis A deliberately says nothing about *kind*: a lens and a static context file are both **Durable**, and T1 and T2 are both **Curated**, because on this axis they have identical lifetimes. Everything about episodic-vs-semantic, and about what promotion costs, lives on Axis B.
 
 **Design principles** (apply to both axes):
 
@@ -174,7 +177,7 @@ This layer enables the "AI-assisted second brain" pattern: your personal notes, 
 
 The **shared operating system** for agentic work. Everything here is canonical and team-owned.
 
-* **Source:** your team-library repo (bootstrapped from `ai-workspace-reference`).
+* **Source:** `pvragon-ai-library` repo.
 * **Protocol:** Do not push experimental code here. All changes require a Pull Request.
 * **Directives, personas, skills, executions** — Shared automation primitives
 * **Harnesses** — Standardized orchestration patterns
@@ -187,7 +190,7 @@ Changes here affect all team members. Treat it like a shared library: stable, do
 
 Your **personal extensions** to the shared library. Same structure as `team-lib/`, but privately versioned.
 
-* **Source:** Your personal repo (e.g., `<your-username>/private-ai-library`).
+* **Source:** Your personal repo (e.g., `your-username/private-ai-library`).
 * **Protocol:** **Push here while working.** Use this space to develop and test new automations.
 * **Graduation:** Once mature, move to `team-lib` via PR.
 * Override or extend team-provided automations
@@ -219,15 +222,41 @@ A **cross-cutting concern** that sits alongside the four layers, not within them
 
 ```text
 agents/
-└── example-agent/          ← Private repo per agent
-    ├── identity.md          ← Name, pronouns, defaults
+└── <agent-name>/           ← Private repo per agent (e.g. your-agent)
+    ├── identity.md          ← Name, pronouns, defaults. ALSO the marker that
+    │                          identifies a directory as an agent home.
     ├── memory/              ← Consolidated topic memories
     │   ├── MEMORY.md        ← Index (auto-loaded on cold-start)
+    │   ├── current-state.md ← Derived index over T2 project files
+    │   ├── short-term/      ← T1 episodic: YYMMDD-facts.md + YYMMDD-residue.md
+    │   ├── dream-journal/   ← Residue from reflective wakes
     │   └── *.md             ← Individual topic files
+    ├── handoffs/            ← Session-rotation briefs (/handoff writes,
+    │   └── .pending-enrichment/   /session-debrief reads back to append its addendum)
+    ├── lenses/              ← T3 situational lenses, hook-injected on trigger match
+    ├── meditations/         ← Contemplation-object library
+    ├── reflections/         ← Reflective-wake output
+    ├── transcripts/         ← Extracted session transcripts (~97% smaller than JSONL)
+    ├── system-state/        ← Auto-dumped snapshots: crontab, hooks, settings, MCP
+    ├── runtime/state/       ← Scheduler/hook scratch; inside the home so it travels
     └── adapters/
         └── claude/          ← Vendor-specific symlink adapter
             └── link.sh      ← Creates/refreshes symlinks
 ```
+
+> **Resolve these paths, never hardcode them.** `team-lib/executions/agent_paths.py` is the single
+> source of truth: `agent_home()`, `memory_dir()`, `shortterm_dir()`, `journal_dir()`,
+> `lenses_dir()`, `meditations_dir()`, `handoffs_dir()`, `state_dir()`. It locates the agent home by
+> the `identity.md` marker and **raises rather than guessing** when zero or several candidates
+> exist, because writing one agent's memory into another's is unrecoverable. It exists because
+> eleven scripts had each hardcoded one agent's directory — fine on one machine, fatal for reuse.
+> Skills that cannot import Python read the same values from its CLI
+> (`python3 agent_paths.py [--json]`).
+>
+> This tree drifted badly once: it listed three children while the home actually had eleven, so
+> `handoffs/`, `lenses/`, `transcripts/` and `system-state/` were load-bearing but undocumented
+> (corrected 2026-07-30). If you add a directory here, add it to `agent_paths.py` too — the
+> resolver is executable and therefore the copy that cannot silently rot.
 
 **Key design decisions:**
 
@@ -245,7 +274,7 @@ agents/
 ```text
 ~/ai-workspace/
 ├── agents/                   # Cross-cutting — agent identity & memory
-│   └── example-agent/        # Private repo per agent
+│   └── <agent-name>/         # Private repo per agent
 │       ├── identity.md
 │       ├── memory/            # Consolidated memories (symlinked from vendor dirs)
 │       └── adapters/claude/   # Vendor-specific symlink adapter

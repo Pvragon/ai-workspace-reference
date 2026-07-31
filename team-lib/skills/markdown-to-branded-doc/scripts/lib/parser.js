@@ -22,6 +22,12 @@ const yaml = require('js-yaml');
  * Parse markdown content into a DocumentIR.
  *
  * @param {string} mdContent - Raw markdown string (may include YAML frontmatter)
+ * @param {object} [options] - Parse options
+ * @param {boolean} [options.renderMetadataTable=false] - Render YAML frontmatter
+ *   as a metadata table block. Default OFF — most agent-authored markdown carries
+ *   internal workspace frontmatter (template, version, maintainer, etc.) that should
+ *   not appear in the rendered document. Opt in via this flag OR by setting
+ *   `_render_metadata_table: true` in the frontmatter itself.
  * @returns {DocumentIR}
  *
  * DocumentIR shape:
@@ -31,7 +37,7 @@ const yaml = require('js-yaml');
  *   blocks: Block[]
  * }
  */
-function parseMarkdown(mdContent) {
+function parseMarkdown(mdContent, options = {}) {
     // Extract frontmatter
     let metadata = null;
     const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
@@ -44,6 +50,16 @@ function parseMarkdown(mdContent) {
             console.warn('Failed to parse frontmatter:', e.message);
         }
     }
+
+    // Metadata-table rendering is OPT-IN. Default off avoids rendering internal
+    // workspace bookkeeping (template/version/maintainer/created/last_updated)
+    // as a table at the top of the document. Strip the marker field before
+    // exposing metadata downstream so it doesn't show up as a row if rendered.
+    const optInFromFrontmatter = metadata && metadata._render_metadata_table === true;
+    if (metadata && '_render_metadata_table' in metadata) {
+        delete metadata._render_metadata_table;
+    }
+    const renderMetadata = options.renderMetadataTable === true || optInFromFrontmatter;
 
     const tokens = marked.lexer(mdContent);
     const blocks = [];
@@ -58,7 +74,7 @@ function parseMarkdown(mdContent) {
 
     // Helper: insert metadata table block at current position
     const tryInsertMetadata = () => {
-        if (metadata && !metadataInserted) {
+        if (metadata && renderMetadata && !metadataInserted) {
             blocks.push({ type: 'spacer', after: 120 });
             blocks.push(buildMetadataTable(metadata));
             blocks.push({ type: 'spacer', after: 240 });
@@ -117,8 +133,23 @@ function parseMarkdown(mdContent) {
             }
 
             case 'paragraph': {
+                // Standalone image (![alt](src)) → image block
+                if (token.tokens && token.tokens.length === 1 && token.tokens[0].type === 'image') {
+                    const img = token.tokens[0];
+                    reachedContent = true;
+                    tryInsertMetadata();
+                    blocks.push({ type: 'image', src: img.href, alt: img.text || '' });
+                    lastWasHeading1 = false;
+                    break;
+                }
                 if (!reachedContent && !isFirstHeading) {
-                    // Pre-content zone → subtitle paragraphs
+                    // Pre-content zone (after the H1 title, before the first H2/table/list).
+                    // Short lines here are genuine subtitles/date lines; a full intro
+                    // PARAGRAPH is body text, not a subtitle. Gate on length so only a
+                    // "few words" line takes subtitle styling — otherwise render as normal
+                    // body (fixed 2026-07-12: first intro paragraph was rendering in
+                    // subtitle font). SUBTITLE_MAX_WORDS is deliberately tight.
+                    const SUBTITLE_MAX_WORDS = 12;
                     const lines = token.text.split('\n');
                     lines.forEach(line => {
                         const inlineTokens = marked.lexer(line);
@@ -126,7 +157,14 @@ function parseMarkdown(mdContent) {
                             ? inlineTokens[0] : { text: line, tokens: [] };
 
                         const spans = parseInlineTokens(subToken.tokens || []);
-                        const variant = classifySubtitle(line, subToken.tokens);
+                        const wordCount = line.trim().split(/\s+/).filter(Boolean).length;
+                        // Italic date lines (`*July 12, 2026*`) stay subtitles regardless of
+                        // length via classifySubtitle; prose paragraphs fall through to body.
+                        const isDateLine = subToken.tokens && subToken.tokens.length === 1
+                            && subToken.tokens[0].type === 'em';
+                        const variant = (wordCount <= SUBTITLE_MAX_WORDS || isDateLine)
+                            ? classifySubtitle(line, subToken.tokens)
+                            : 'normal';
 
                         blocks.push({
                             type: 'paragraph',
@@ -172,6 +210,53 @@ function parseMarkdown(mdContent) {
                 break;
             }
 
+            case 'blockquote': {
+                // Render blockquote children (paragraphs / lists) as a callout: tag them
+                // `quoted` so the docx renderer can indent them and add a left rule.
+                const children = token.tokens || [];
+                let first = true;
+                for (const child of children) {
+                    if (child.type === 'paragraph') {
+                        (child.text || '').split('\n').forEach(line => {
+                            const it = marked.lexer(line);
+                            const sub = (it[0] && it[0].tokens) ? it[0] : { tokens: [] };
+                            blocks.push({
+                                type: 'paragraph',
+                                spans: parseInlineTokens(sub.tokens || []),
+                                text: line, variant: 'normal',
+                                quoted: true, quotedFirst: first
+                            });
+                            first = false;
+                        });
+                    } else if (child.type === 'list') {
+                        // Flatten a list inside a blockquote into quoted paragraphs with a
+                        // literal marker. Do NOT emit a real list block: its numbering
+                        // reference would not be registered, so docx writes an unresolved
+                        // <w:numId w:val="{...}"/> placeholder — which is not an integer and
+                        // makes Word reject the whole file.
+                        let idx = child.ordered ? (child.start || 1) : 0;
+                        for (const item of (child.items || [])) {
+                            const marker = child.ordered ? `${idx++}. ` : '• ';
+                            const itemText = (item.text || '').replace(/\s*\n\s*/g, ' ').trim();
+                            const it = marked.lexer(itemText);
+                            const sub = (it[0] && it[0].tokens) ? it[0] : { tokens: [] };
+                            const spans = [{ type: 'bold', text: marker, isLabel: false },
+                                ...parseInlineTokens(sub.tokens || [])];
+                            blocks.push({
+                                type: 'paragraph',
+                                spans,
+                                text: marker + itemText, variant: 'normal',
+                                quoted: true, quotedFirst: first
+                            });
+                            first = false;
+                        }
+                    }
+                }
+                reachedContent = true;
+                lastWasHeading1 = false;
+                break;
+            }
+
             case 'table': {
                 blocks.push({
                     type: 'table',
@@ -197,8 +282,8 @@ function parseMarkdown(mdContent) {
         }
     }
 
-    // Fallback: insert metadata at end if never inserted
-    if (metadata && !metadataInserted) {
+    // Fallback: insert metadata at end if never inserted (gated by renderMetadata)
+    if (metadata && renderMetadata && !metadataInserted) {
         tryInsertMetadata();
     }
 
@@ -256,19 +341,28 @@ function buildListBlock(token, listId, level = 0) {
             });
         }
 
-        let spans;
+        let rawSpans;
         if (contentTokens.length > 0) {
-            spans = parseInlineTokens(contentTokens);
+            rawSpans = parseInlineTokens(contentTokens);
         } else if (item.text) {
-            spans = parseInlineText(item.text);
+            rawSpans = parseInlineText(item.text);
         } else {
-            spans = [{ type: 'text', text: '' }];
+            rawSpans = [{ type: 'text', text: '' }];
         }
+
+        // Split spans at `\n\n` boundaries (loose-list continuation paragraphs).
+        // Markdown allows a list item to have additional indented paragraphs
+        // after a blank line; in the IR these come through as text spans
+        // containing `\n\n`. If we leave them inside the item, they render as
+        // additional bulleted lines (one empty + one with the continuation
+        // text). Split them out so the renderer can place them as plain
+        // (non-bulleted) paragraphs after any sub-lists.
+        const { spans, continuations } = splitSpansAtParagraphBreaks(rawSpans);
 
         const subListBlocks = subLists.map(sl => buildListBlock(sl, listId, level + 1));
         const isLast = index === token.items.length - 1;
 
-        return { spans, subLists: subListBlocks, isLast };
+        return { spans, subLists: subListBlocks, continuations, isLast };
     });
 
     return {
@@ -277,6 +371,43 @@ function buildListBlock(token, listId, level = 0) {
         listId: listId || (token.ordered ? 'numbered-list' : 'bullet-list'),
         level,
         items
+    };
+}
+
+/**
+ * Split a span array at `\n\n` text-span boundaries. Returns the primary span
+ * group (before the first break) and an array of continuation span groups
+ * (one per additional paragraph). Single `\n` inside a text span is collapsed
+ * to a space — these are mid-paragraph soft wraps, not paragraph breaks.
+ */
+function splitSpansAtParagraphBreaks(spans) {
+    const primary = [];
+    const continuations = [];
+    let current = primary;
+
+    for (const span of spans) {
+        if (span.type === 'text' && /\n\n/.test(span.text)) {
+            const parts = span.text.split(/\n\n+/);
+            // Part 0 → current bucket (with single newlines collapsed to spaces)
+            const head = parts[0].replace(/\n/g, ' ');
+            if (head) current.push({ ...span, text: head });
+            for (let i = 1; i < parts.length; i++) {
+                current = [];
+                continuations.push(current);
+                const tail = parts[i].replace(/\n/g, ' ');
+                if (tail) current.push({ ...span, text: tail });
+            }
+        } else if (span.type === 'text' && /\n/.test(span.text)) {
+            // Single newlines inside a span are soft wraps — collapse to space
+            current.push({ ...span, text: span.text.replace(/\n/g, ' ') });
+        } else {
+            current.push(span);
+        }
+    }
+
+    return {
+        spans: primary,
+        continuations: continuations.map(spanList => ({ spans: spanList }))
     };
 }
 

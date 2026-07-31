@@ -15,8 +15,31 @@ const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, Header
     PageNumber, ImageRun, LevelFormat, ExternalHyperlink, InternalHyperlink,
     BookmarkStart, BookmarkEnd } = require('docx');
 const { imageSize: sizeOf } = require('image-size');
+const JSZip = require('jszip');
 
 let bookmarkIdCounter = 1;
+
+/**
+ * Make every drawing's <wp:docPr id> globally unique across the package.
+ * docx generates these ids per part, so a header logo and a body image both get
+ * id="1" — a duplicate Word rejects ("experienced an error trying to open the
+ * file"). Renumber them sequentially across document.xml + headers + footers.
+ */
+async function dedupeDrawingIds(buffer) {
+    const zip = await JSZip.loadAsync(buffer);
+    const targets = Object.keys(zip.files).filter(
+        (n) => /word\/(document|header\d*|footer\d*)\.xml$/.test(n)
+    );
+    if (!targets.length) return buffer;
+    let counter = 1;
+    for (const name of targets) {
+        let xml = await zip.file(name).async('string');
+        if (!/<wp:docPr /.test(xml)) continue;
+        xml = xml.replace(/(<wp:docPr )id="\d+"/g, (m, p1) => `${p1}id="${counter++}"`);
+        zip.file(name, xml);
+    }
+    return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+}
 
 // ============================================================================
 // MAIN RENDER FUNCTION
@@ -69,12 +92,19 @@ async function renderDocx(ir, template, outputPath) {
             case 'spacer':
                 elements.push(new Paragraph({ text: "", spacing: { after: block.after } }));
                 break;
+
+            case 'image': {
+                const imgEl = renderImage(block, template);
+                if (imgEl) elements.push(imgEl);
+                break;
+            }
         }
     }
 
     const doc = createDocument(elements, template, ir.metadata, ir.orderedListCount, LINE_SPACING);
 
-    const buffer = await Packer.toBuffer(doc);
+    let buffer = await Packer.toBuffer(doc);
+    buffer = await dedupeDrawingIds(buffer);
     fs.writeFileSync(outputPath, buffer);
     console.log(`Successfully generated ${outputPath}`);
     console.log(`Brand: ${template.composedFrom?.brand || 'unknown'}`);
@@ -124,9 +154,13 @@ function renderHeading(block, template, LINE_SPACING) {
 
     config.heading = headingLevel;
     config.children = [
-        new BookmarkStart({ id: bid, name: block.anchorId }),
+        // docx v9 API is positional: BookmarkStart(id: string, linkId: number),
+        // BookmarkEnd(linkId: number). Passing an options object stringifies to
+        // "[object Object]" — and w:bookmarkEnd/@id must be an integer, so Word
+        // rejects the whole file. (anchorId is the bookmark name; bid the numeric id.)
+        new BookmarkStart(block.anchorId, bid),
         new TextRun({ text: block.text }),
-        new BookmarkEnd({ id: bid })
+        new BookmarkEnd(bid)
     ];
 
     return new Paragraph(config);
@@ -189,6 +223,16 @@ function renderParagraph(block, template, LINE_SPACING) {
         }
     }
 
+    if (block.quoted) {
+        const qc = (template.themeColors && (template.themeColors.primary || template.themeColors.accent1)) || '00B74F';
+        return new Paragraph({
+            indent: { left: 360 },
+            border: { left: { color: qc, style: BorderStyle.SINGLE, size: 18, space: 8 } },
+            spacing: { line: LINE_SPACING, before: block.quotedFirst ? 140 : 0, after: 40 },
+            children: renderSpans(block.spans, template)
+        });
+    }
+
     return new Paragraph({
         spacing: { line: LINE_SPACING },
         children: renderSpans(block.spans, template)
@@ -198,6 +242,7 @@ function renderParagraph(block, template, LINE_SPACING) {
 function renderList(block, template, LINE_SPACING) {
     const paragraphs = [];
     const ref = block.listId;
+    const qc = (template.themeColors && (template.themeColors.primary || template.themeColors.accent1)) || '00B74F';
 
     block.items.forEach((item, index) => {
         const spacing = { before: 120, line: LINE_SPACING };
@@ -205,11 +250,15 @@ function renderList(block, template, LINE_SPACING) {
             spacing.after = 240;
         }
 
-        paragraphs.push(new Paragraph({
+        const itemProps = {
             numbering: { reference: ref, level: block.level },
             spacing,
             children: renderSpans(item.spans, template)
-        }));
+        };
+        if (block.quoted) {
+            itemProps.border = { left: { color: qc, style: BorderStyle.SINGLE, size: 18, space: 8 } };
+        }
+        paragraphs.push(new Paragraph(itemProps));
 
         // Recursively render sublists
         item.subLists.forEach(subList => {
@@ -227,7 +276,9 @@ function renderTable(block, template) {
 
     // Calculate column widths
     const totalWidth = 9360;
-    const minColWidth = 1000;
+    // Clamp the per-column minimum so wide tables (many columns) can't exceed the page
+    // width and produce a negative remainder. Narrow tables keep the 1000-twip minimum.
+    const minColWidth = Math.min(1000, Math.floor(totalWidth / Math.max(headerCells.length, 1)));
 
     const colMaxLengths = headerCells.map((header, colIdx) => {
         let maxLen = header.length;
@@ -246,11 +297,17 @@ function renderTable(block, template) {
         return Math.max(proportionalWidth, minColWidth);
     });
 
-    const currentTotal = columnWidths.reduce((a, b) => a + b, 0);
+    // If the min-width bumps pushed the table past the page width (many columns),
+    // scale every column down proportionally to fit. Guard a small absolute floor.
+    let currentTotal = columnWidths.reduce((a, b) => a + b, 0);
+    if (currentTotal > totalWidth) {
+        columnWidths = columnWidths.map(w => Math.max(Math.floor(w * totalWidth / currentTotal), 200));
+        currentTotal = columnWidths.reduce((a, b) => a + b, 0);
+    }
     const diff = totalWidth - currentTotal;
     if (diff !== 0 && columnWidths.length > 0) {
         const maxIdx = columnWidths.indexOf(Math.max(...columnWidths));
-        columnWidths[maxIdx] += diff;
+        columnWidths[maxIdx] += diff;  // diff is now >= 0 (or negligibly small); maxIdx stays positive
     }
 
     const borderColor = tableConfig.borders?.color || 'CCCCCC';
@@ -343,6 +400,7 @@ function renderMetadataTable(block, template) {
 
     return new Table({
         width: { size: 9360, type: WidthType.DXA },
+        columnWidths: [3000, 6360],
         rows: tableRows,
         margins: { top: 100, bottom: 100, left: 180, right: 180 }
     });
@@ -357,6 +415,42 @@ function renderHorizontalRule(template) {
         },
         children: []
     });
+}
+
+/**
+ * Render a body image block (e.g. a pre-rendered diagram). Scales to fit the
+ * page content box: caps width at ~6.3in and height at ~8.6in, preserving the
+ * native aspect ratio. Centered. Missing files are skipped with a warning.
+ */
+function renderImage(block, template) {
+    const src = block.src;
+    if (!src || !fs.existsSync(src)) {
+        console.warn(`Warning: image not found, skipping: ${src}`);
+        return null;
+    }
+    const MAX_W = 605;   // px ~ 6.3in content width at 96dpi
+    const MAX_H = 826;   // px ~ 8.6in content height
+    try {
+        const data = fs.readFileSync(src);
+        const dim = sizeOf(data);
+        let w = dim.width, h = dim.height;
+        const scale = Math.min(MAX_W / w, MAX_H / h, 1);
+        w = Math.round(w * scale); h = Math.round(h * scale);
+        let imgType = dim.type === 'jpg' ? 'jpeg' : dim.type;
+        return new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 160, after: 160 },
+            children: [new ImageRun({
+                type: imgType,
+                data,
+                transformation: { width: w, height: h },
+                altText: { title: block.alt || 'Diagram', description: block.alt || '', name: 'Diagram' }
+            })]
+        });
+    } catch (err) {
+        console.warn(`Warning: could not render image ${src}: ${err.message}`);
+        return null;
+    }
 }
 
 // ============================================================================

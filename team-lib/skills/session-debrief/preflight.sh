@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.0
-# summary: "Deterministic pre-flight for session-debrief: collects git changes, checks registry consistency, detects sync needs, flags stale state. Outputs structured JSON."
+# version: 1.2.0
+# summary: "Deterministic pre-flight for session-debrief: collects git changes, checks registry consistency, detects sync needs, flags stale state, pre-stages today's T1 facts/residue files, head-starts background transcript+state-dump jobs. Outputs structured JSON."
 # created: 2026-03-31
-# last_updated: 2026-03-31
+# last_updated: 2026-07-30
 # maintainer: pvragon
 # ---
 #
@@ -31,6 +31,21 @@ eval "$(bash "$DISCOVER")"
 
 MYLIB="${1:-$WS_REPO_ROOT}"
 TEAMLIB="$WS_TEAM_LIB"
+
+# Resolve a script across BOTH layers, personal first. Mirrors postflight's
+# helper. Needed because shared tooling graduates to team-lib over time, and a
+# hardcoded "$MYLIB/executions/..." silently no-ops the moment it does.
+resolve_script() {
+  local relpath="$1"
+  for root in "$MYLIB" "$TEAMLIB"; do
+    [[ -z "$root" ]] && continue
+    if [[ -x "$root/$relpath" ]]; then
+      echo "$root/$relpath"
+      return 0
+    fi
+  done
+  return 1
+}
 AGENTS_REPO="$WS_AGENT_REPO"
 MEMORY_DIR="$AGENTS_REPO/memory"
 
@@ -226,7 +241,45 @@ fi
 # ============================================================
 # 5. SESSION INFO — Timestamps and metadata
 # ============================================================
-session_start=$(git log --oneline --format='%ci' -1 2>/dev/null | cut -d' ' -f2 | cut -d: -f1-2 || echo "unknown")
+# Session start comes from THIS session's own transcript, not from git.
+#
+# It used to be `git log -1` — the timestamp of the most RECENT commit. Since a debrief
+# almost always runs just after committing, that reported the session as starting seconds
+# ago: on 2026-07-30 it claimed 15:47->15:49, a two-minute window, for a session that
+# shipped 20+ commits across four repos. Anything downstream reasoning about session
+# duration from that field was reading noise.
+#
+# $CLAUDE_CODE_SESSION_ID identifies our own JSONL unambiguously, even with a dozen
+# concurrent sessions — no guessing by mtime, which picks whichever peer wrote last.
+session_start="unknown"
+_proj_dir="$HOME/.claude/projects/$(pwd | sed 's#/#-#g')"
+_sid="${CLAUDE_CODE_SESSION_ID:-}"
+if [[ -n "$_sid" && -f "$_proj_dir/$_sid.jsonl" ]]; then
+  session_start=$(python3 -c '
+import json, sys
+from datetime import datetime
+# JSONL timestamps are UTC ("...Z"); session_end is LOCAL (date +%H:%M). Comparing them
+# raw produced a start AFTER the end (20:05 -> 16:22). Convert to local before printing.
+try:
+    with open(sys.argv[1]) as f:
+        for line in f:
+            try: rec = json.loads(line)
+            except Exception: continue
+            ts = rec.get("timestamp")
+            if ts:
+                dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone()
+                print(dt.strftime("%H:%M")); break
+except Exception:
+    pass
+' "$_proj_dir/$_sid.jsonl" 2>/dev/null || echo "unknown")
+fi
+# Fall back to the oldest commit made today — still a proxy, but an OLDEST one, so it
+# errs toward over-reporting the window rather than collapsing it to nothing.
+if [[ -z "$session_start" || "$session_start" == "unknown" ]]; then
+  session_start=$(git log --format='%ci' --since="$(date +%Y-%m-%d) 00:00" 2>/dev/null \
+    | tail -1 | cut -d' ' -f2 | cut -d: -f1-2)
+  [[ -z "$session_start" ]] && session_start="unknown"
+fi
 session_end=$(date +%H:%M)
 today=$(date +%Y-%m-%d)
 
@@ -249,19 +302,118 @@ if [[ -f "$MEMORY_DIR/MEMORY.md" ]]; then
     fi
   done < <(grep -oP '\[.*?\]\(\K[^)]+' "$MEMORY_DIR/MEMORY.md" 2>/dev/null || true)
 
-  # .md files in memory dir not referenced in MEMORY.md (excluding MEMORY.md itself)
+  # .md files in memory dir not referenced in EITHER index (MEMORY.md OR the
+  # rolled-off MEMORY-archive.md). Both index files are excluded from the scan.
   while IFS= read -r mem_file; do
     [[ -z "$mem_file" ]] && continue
     basename_file=$(basename "$mem_file")
-    [[ "$basename_file" == "MEMORY.md" ]] && continue
-    if ! grep -qF "$basename_file" "$MEMORY_DIR/MEMORY.md" 2>/dev/null; then
+    [[ "$basename_file" == "MEMORY.md" || "$basename_file" == "MEMORY-archive.md" ]] && continue
+    if ! grep -qF "$basename_file" "$MEMORY_DIR/MEMORY.md" 2>/dev/null \
+       && ! grep -qF "$basename_file" "$MEMORY_DIR/MEMORY-archive.md" 2>/dev/null; then
       memory_issues="${memory_issues:+$memory_issues,}{\"type\":\"unindexed\",\"detail\":$(json_escape "$basename_file")}"
     fi
   done < <(find "$MEMORY_DIR" -maxdepth 1 -name "*.md" 2>/dev/null || true)
 fi
 
 # ============================================================
-# 7. SESSION MARKER — unique token the LLM can pass to postflight
+# 7. PRE-STAGE T1 FILES — today's facts + residue scaffolds
+# ============================================================
+# Saves the LLM a tool call per debrief: today's `short-term/YYMMDD-{facts,residue}.md`
+# files exist with frontmatter; the LLM just appends content during memory capture.
+# Idempotent: skip if already created (multi-session day).
+SHORT_TERM_DIR="$MEMORY_DIR/short-term"
+mkdir -p "$SHORT_TERM_DIR" 2>/dev/null || true
+
+YYMMDD=$(date +%y%m%d)
+YYYY_MM_DD=$(date +%Y-%m-%d)
+T1_FACTS_PATH="memory/short-term/${YYMMDD}-facts.md"
+T1_RESIDUE_PATH="memory/short-term/${YYMMDD}-residue.md"
+T1_FACTS_ABS="$MEMORY_DIR/short-term/${YYMMDD}-facts.md"
+T1_RESIDUE_ABS="$MEMORY_DIR/short-term/${YYMMDD}-residue.md"
+
+t1_facts_created="false"
+t1_residue_created="false"
+
+if [[ ! -f "$T1_FACTS_ABS" ]]; then
+  cat > "$T1_FACTS_ABS" <<EOF
+---
+name: ${YYMMDD}-facts
+description: T1 episodic facts captured at session-debrief on ${YYYY_MM_DD}. One block per session within the day. Sibling to ${YYMMDD}-residue.md (texture/pickup-state).
+type: facts
+date: ${YYYY_MM_DD}
+version: 1.0.0
+---
+
+# Facts — ${YYYY_MM_DD}
+
+T1 episodic facts. One block per session.
+
+EOF
+  t1_facts_created="true"
+fi
+
+if [[ ! -f "$T1_RESIDUE_ABS" ]]; then
+  cat > "$T1_RESIDUE_ABS" <<EOF
+---
+name: ${YYMMDD}-residue
+description: Per-session texture/pickup-state residue blocks for ${YYYY_MM_DD}. Append per session. Sibling to ${YYMMDD}-facts.md.
+type: residue
+date: ${YYYY_MM_DD}
+version: 1.0.0
+---
+
+# Residue — ${YYYY_MM_DD}
+
+Per-session texture / pickup-state. Anchors *where things were trending* on this date. Append for each session.
+
+EOF
+  t1_residue_created="true"
+fi
+
+# ============================================================
+# 8. BACKGROUND HEAD-START — transcripts + system-state dump
+# ============================================================
+# Kick off deterministic postflight work (transcript extraction, system-state dump)
+# in the background while the LLM does Phase 2 work. Postflight will re-run them
+# (idempotent skip-by-mtime) — the head start just means most of the work is done
+# by the time postflight reaches step 0b/0c. Saves ~5-15s wall-clock.
+EXTRACT_TRANSCRIPTS=$(resolve_script "executions/extract_session_transcripts.py" || true)
+DUMP_STATE=$(resolve_script "executions/dump_system_state.py" || true)
+
+BG_LOG_DIR="$MYLIB/runtime/logs"
+mkdir -p "$BG_LOG_DIR" 2>/dev/null || true
+
+[[ -n "$EXTRACT_TRANSCRIPTS" ]] || echo "WARNING: extract_session_transcripts.py not found in my-lib or team-lib" >&2
+if [[ -x "$EXTRACT_TRANSCRIPTS" ]]; then
+  nohup python3 "$EXTRACT_TRANSCRIPTS" >> "$BG_LOG_DIR/preflight_bg_transcripts.log" 2>&1 </dev/null &
+  disown 2>/dev/null || true
+fi
+
+[[ -n "$DUMP_STATE" ]] || echo "WARNING: dump_system_state.py not found in my-lib or team-lib" >&2
+if [[ -x "$DUMP_STATE" ]]; then
+  nohup python3 "$DUMP_STATE" --quiet >> "$BG_LOG_DIR/preflight_bg_state.log" 2>&1 </dev/null &
+  disown 2>/dev/null || true
+fi
+
+# Fleet snapshot (added 2026-07-24). Debrief time is exactly when a workstream
+# rotates generation via /handoff, which is what silently staleness-rots the
+# nightly midnight snapshot: on 2026-07-24 a WSL/VS Code restart found the 00:00
+# snapshot pointing at waystar -13 and mahjong-constituents -4 while -14 and -5
+# were the live windows. Snapshotting here keeps a same-day record of which
+# sessions were actually OPEN — a signal that does NOT survive on disk and cannot
+# be reconstructed from the JSONL logs afterward (mtime shows *activity*, not
+# openness, so open-but-idle windows are indistinguishable from closed ones).
+# --tag debrief prunes in its own bucket, so it never evicts the nightly snapshots.
+SNAPSHOT_FLEET=$(resolve_script "executions/session_snapshots.py" || true)
+[[ -n "$SNAPSHOT_FLEET" ]] || echo "WARNING: session_snapshots.py not found in my-lib or team-lib" >&2
+if [[ -f "$SNAPSHOT_FLEET" ]]; then
+  nohup python3 "$SNAPSHOT_FLEET" store --tag debrief --keep 40 \
+    >> "$BG_LOG_DIR/preflight_bg_snapshot.log" 2>&1 </dev/null &
+  disown 2>/dev/null || true
+fi
+
+# ============================================================
+# 9. SESSION MARKER — unique token the LLM can pass to postflight
 # ============================================================
 # Rationale: $HOME/.claude/history.jsonl is shared across all concurrent
 # Claude Code sessions in a workspace, so /rename events from other sessions
@@ -292,6 +444,19 @@ cat <<REPORT
   "registry_issues": [${registry_issues}],
   "sync_needed": [${sync_items}],
   "stale_flags": [${stale_flags}],
-  "memory_issues": [${memory_issues}]
+  "memory_issues": [${memory_issues}],
+  "t1_files_staged": {
+    "facts_path": "$T1_FACTS_ABS",
+    "residue_path": "$T1_RESIDUE_ABS",
+    "memory_dir_canonical": "$MEMORY_DIR",
+    "facts_created_now": $t1_facts_created,
+    "residue_created_now": $t1_residue_created,
+    "note": "Paths are CANONICAL absolute paths under the canonical agent memory dir (emitted above as memory_dir_canonical). ALWAYS write memory via these canonical paths. NEVER write via the ~/.claude/projects/<cwd>/memory symlink alias — that path is inside the PROTECTED .claude/ directory, so writes there prompt for permission on EVERY Edit/Write regardless of allow-rules or permission mode (a PreToolUse allow-hook cannot rescue protected-dir writes; verified 2026-06-25). Both files exist with frontmatter; the memory-capture subagent appends content."
+  },
+  "background_jobs": {
+    "transcripts": "head-started; postflight step 0b will mostly skip-as-up-to-date",
+    "system_state": "head-started; postflight step 0c will mostly skip-as-up-to-date",
+    "log_dir": "runtime/logs/"
+  }
 }
 REPORT

@@ -1,0 +1,92 @@
+# External skill library scan state
+# Manually maintained until backlog #36 (external-skill-scanner) is built.
+# Once the scanner exists, this file's schema becomes its canonical output format.
+
+scanner_version: "manual-0.0.2"  # pre-scanner; Layer 1 patterns + Layer 2 LLM semantic review (subagent-based, reviewer-verified)
+network_allowlist:
+  - github.com
+  - raw.githubusercontent.com
+  - api.anthropic.com
+  - claude.ai
+  - npmjs.org
+  - pypi.org
+  - calculator.aws
+  - modelcontextprotocol.io
+  - schemas.microsoft.com
+  - schemas.openxmlformats.org
+  - w3.org
+  - cdnjs.cloudflare.com
+
+sources:
+  - slug: anthropics
+    repo: https://github.com/anthropics/skills
+    trust_tier: 1  # official vendor
+    last_scanned_sha: 69c0b1a0674149f27b61b2635f935524b6add202
+    last_scanned_at: 2026-04-17
+    scanner_version: manual-0.0.2
+    reviewer: the-operator+rowan
+    verdict: PASS
+    findings:
+      - severity: info
+        skill: canvas-design
+        location: SKILL.md:122 (FINAL STEP section)
+        concern: >
+          Skill body contains "The user ALREADY said ..." line that asserts a fictional
+          user critique to trigger a refinement pass on every invocation. Technically a
+          false-premise prompt-injection pattern, but used here for quality control
+          (forces agent to polish its first draft) with no harmful downstream effect.
+          Keep on file as a pattern to recognize — same mechanism in a less-trusted
+          source could be used for real harm.
+        decision: accepted — downgraded WARN→INFO after reviewer verification
+    notes: >
+      16 SKILL.md files adopted + 1 scaffold (template, excluded from wiring).
+      Python subprocess usage in 7 build-tooling scripts (pptx/docx/xlsx/webapp-testing);
+      all use arg-list form (no shell=True). Outbound domains all on allowlist.
+      Layer 2 LLM semantic review: 15 PASS + 1 WARN (canvas-design, downgraded to INFO).
+
+  - slug: rezvani-claude-skills
+    repo: https://github.com/alirezarezvani/claude-skills
+    trust_tier: 2  # reviewed community
+    last_scanned_sha: 22d419e1cd1a7d032a269382a61a7832745e4a60
+    last_scanned_at: 2026-04-17
+    scanner_version: manual-0.0.2
+    reviewer: the-operator+rowan
+    verdict: PASS
+    findings:
+      - severity: info
+        note: >
+          rm -rf ~/.claude/skills/... appears in INSTALLATION.md uninstall instructions.
+          Context is explicit user-initiated uninstall, not hidden skill behavior. Acceptable.
+      - severity: info
+        note: >
+          tech-stack-evaluator/README.md has curl -X POST https://api.anthropic.com/v1/skills
+          with $ANTHROPIC_API_KEY. Legitimate Anthropic API usage example.
+    notes: 42 skills across product-team, engineering-team, marketing-skill, ra-qm-team, c-level-advisor.
+
+  - slug: blader-humanizer
+    repo: https://github.com/blader/humanizer
+    trust_tier: 2  # reviewed community
+    last_scanned_sha: c78047bd4300e5a995d37ae8c7684aa2d53326cd
+    last_scanned_at: 2026-04-17
+    scanner_version: manual-0.0.2
+    reviewer: the-operator+rowan
+    verdict: PASS
+    findings: []
+    notes: >
+      Single SKILL.md, writing-editor only. allowed-tools limited to Read, Write, Edit,
+      Grep, Glob, AskUserQuestion. No Bash, no network, no scripts. Zero executable surface.
+
+# Layer coverage of this manual scan (compare to backlog #36's 4-layer design):
+#   Layer 1 (static patterns):  YES — curl|sh, cred paths, prompt injection markers, destructive ops, env-var creds, network POSTs, subprocess calls, eval/exec
+#   Layer 2 (LLM semantic review): YES — three parallel Explore subagents, each reading every SKILL.md in full; reviewer-verified flagged items
+#   Layer 3 (bundled script AST): PARTIAL — grep-level only, no AST walk
+#   Layer 4 (frontmatter checks): PARTIAL — manual spot-check on blader-humanizer allowed-tools; name-collision check against my-lib
+#
+# Layer 2 outcomes:
+#   anthropics (17 skills reviewed, 16 adopted): 15 PASS + 1 WARN→INFO (canvas-design false-premise refinement pattern, verified benign)
+#   rezvani-claude-skills (42 skills): 42 PASS, zero findings
+#   blader-humanizer (1 skill): PASS, zero findings
+#   Total: 59/59 adopted after review.
+#
+# Remaining gaps: Layer 3 full AST analysis not yet done (would strengthen Python subprocess
+# assessment in anthropics). Priority for the automated scanner (backlog #36).

@@ -19,7 +19,7 @@ Store team-level instructions, behavioral rules, and operational guidelines for 
 - Runtime data or logs
 
 ## File Naming Conventions
-- `<scope>-<name>.md` (e.g., `team-coding-standards.md`, `project-example-guidelines.md`)
+- `<scope>-<name>.md` (e.g., `team-coding-standards.md`, `project-fabrikam-guidelines.md`)
 
 ## How Agents Should Use This Folder
 Agents should load team directives for any pvragon-related task execution.
