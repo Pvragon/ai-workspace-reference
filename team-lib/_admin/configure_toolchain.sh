@@ -126,10 +126,16 @@ install_cli_tools() {
             elif [[ "$install_type" == "npm" ]]; then
                 ensure_npm_user_prefix
                 echo -n "installing..."
-                if eval "$install_cmd" &>/dev/null; then
+                # Keep the output. `&>/dev/null` here reported "install failed" with no
+                # reason at all, which is indistinguishable from a network blip, a bad
+                # prefix, or an engine constraint — and a container run spent a whole
+                # cycle guessing between them (2026-08-01).
+                log="/tmp/toolchain-${tool}.log"
+                if eval "$install_cmd" >"$log" 2>&1; then
                     echo " ✅ installed"
                 else
-                    echo " ❌ install failed (retry by hand: $install_cmd — check network and 'npm config get prefix')"
+                    echo " ❌ install failed — reason below (retry by hand: $install_cmd)"
+                    sed -e 's/^/        /' "$log" | grep -vE '^\s*$' | tail -4
                 fi
             else
                 echo "⚠️  unknown install_type: $install_type"

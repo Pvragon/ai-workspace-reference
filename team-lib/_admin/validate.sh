@@ -74,6 +74,21 @@ check_git_repo() {
     local actual_remote
     actual_remote=$(git -C "$path" remote get-url origin 2>/dev/null || echo "none")
 
+    # expected_remote may be a |-separated set: a workspace can legitimately be
+    # installed from the private team repo OR from the public reference repo, and
+    # hard-coding one of them fails every install of the other.
+    if [[ "$expected_remote" == *"|"* ]]; then
+        local IFS='|' candidate
+        for candidate in $expected_remote; do
+            if [[ "$actual_remote" == *"$candidate"* ]]; then
+                log_pass "$dir connected to $candidate"
+                return
+            fi
+        done
+        log_fail "$dir remote mismatch. Expected one of: $expected_remote, Found: $actual_remote"
+        return
+    fi
+
     if [[ -z "$expected_remote" ]]; then
         # Generic check: any remote is fine (your fork, your own repo, etc.)
         if [[ "$actual_remote" != "none" ]]; then
@@ -120,7 +135,7 @@ echo "----------------------------------------"
 # 2. Layer 1: Team Lib
 echo "Checking Layer 1: Team Lib..."
 check_dir "team-lib"
-check_git_repo "team-lib" "pvragon-ai-library"
+check_git_repo "team-lib" "pvragon-ai-library|ai-workspace-reference"
 
 # Subdirectories
 check_dir "team-lib/_admin"
@@ -135,14 +150,40 @@ check_dir "team-lib/registry"
 check_dir "team-lib/skills"
 check_dir "team-lib/skills/_external"
 
-# External skill packs (git submodules — empty dirs mean init never ran)
-for pack in anthropics rezvani-claude-skills blader-humanizer; do
-    if [[ -e "$WORKSPACE_ROOT/team-lib/skills/_external/$pack/.git" ]]; then
-        log_pass "External skill pack initialized: $pack"
-    else
-        log_fail "External skill pack empty: $pack — run: git -C ~/ai-workspace/team-lib submodule update --init --recursive"
+# External skill packs.
+#
+# The property that matters is CONTENT, not mechanism. This block used to test for a
+# `.git` inside each pack — i.e. "is this a submodule?" — and hard-coded three pack
+# names. Both were wrong: an install from the public reference repo carries the packs as
+# plain directories, so three fully-populated packs were reported empty (measured in
+# public_workspace_container_test.sh, 2026-08-01), and .gitmodules has since grown past
+# the three that were listed here.
+#
+# Severity splits on which kind of install this is, because the answer differs:
+#   .gitmodules present  -> a team install; every declared pack MUST have content (FAIL)
+#   no .gitmodules       -> a published install; packs are out of scope there (WARN)
+EXT_DIR="$WORKSPACE_ROOT/team-lib/skills/_external"
+pack_has_content() { [[ -n "$(find "$1" -name 'SKILL.md' -print -quit 2>/dev/null)" ]]; }
+
+if [[ -f "$WORKSPACE_ROOT/team-lib/.gitmodules" ]]; then
+    declared=$(git -C "$WORKSPACE_ROOT/team-lib" config -f .gitmodules \
+        --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}')
+    if [[ -z "$declared" ]]; then
+        log_warn "team-lib/.gitmodules declares no submodules — nothing to check"
     fi
-done
+    for path in $declared; do
+        pack=$(basename "$path")
+        if pack_has_content "$WORKSPACE_ROOT/team-lib/$path"; then
+            log_pass "External skill pack populated: $pack"
+        else
+            log_fail "External skill pack empty: $pack — run: git -C ~/ai-workspace/team-lib submodule update --init --recursive"
+        fi
+    done
+elif [[ -d "$EXT_DIR" ]] && pack_has_content "$EXT_DIR"; then
+    log_pass "External skill packs present (published install, no submodules)"
+else
+    log_warn "No external skill packs — skills that depend on them (e.g. the humanizer gate) will not resolve"
+fi
 
 # Governance Directive
 if [[ -f "$WORKSPACE_ROOT/team-lib/directives/team-library-governance.md" ]]; then
@@ -236,8 +277,42 @@ fi
 
 echo "----------------------------------------"
 
+# 4c. Skill exposure
+#
+# A library the harness cannot see is not a library. ~/.claude/skills is the only path the
+# harness reads; shared skills reach it as pointers inside the personal layer. Both links
+# were previously created by hand, so this was invisible on any established machine.
+echo "Checking Skill Exposure..."
+if [[ ! -e "$HOME/.claude/skills" ]]; then
+    log_fail "~/.claude/skills does not exist — the agent can invoke NO skills. Run: python3 $WORKSPACE_ROOT/team-lib/executions/link_skills.py"
+else
+    log_pass "Harness skill path present: ~/.claude/skills"
+    visible=$(find -L "$HOME/.claude/skills" -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l)
+    shared=$(find "$WORKSPACE_ROOT/team-lib/skills" -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l)
+    if [[ "$visible" -eq 0 ]]; then
+        log_fail "No skills visible to the harness — run: python3 $WORKSPACE_ROOT/team-lib/executions/link_skills.py"
+    elif [[ "$shared" -gt 0 && "$visible" -lt "$shared" ]]; then
+        log_warn "Only $visible skill(s) visible to the harness; team-lib alone ships $shared — run: python3 $WORKSPACE_ROOT/team-lib/executions/link_skills.py"
+    else
+        log_pass "Skills visible to the harness: $visible"
+    fi
+fi
+
+echo "----------------------------------------"
+
 # 5. Toolchain
 echo "Checking Toolchain..."
+# Node major version gates the two required npm CLIs (claude, gws): both declare
+# engines node>=22, and Ubuntu 24.04's apt ships 18.
+node_major=$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')
+if [[ -z "${node_major:-}" ]]; then
+    log_warn "Node.js not installed — required by claude and gws (re-run _admin/setup_system.sh)"
+elif [[ "$node_major" -lt 22 ]]; then
+    log_warn "Node $(node -v) is below the v22 that claude and gws require — re-run: sudo _admin/setup_system.sh"
+else
+    log_pass "Node.js $(node -v)"
+fi
+
 check_cli_tool "gh" "gh --version" "sudo apt-get install -y gh, then: gh auth login"
 check_cli_tool "gws" "gws --version" "npm install -g @googleworkspace/cli, then: gws auth login"
 check_cli_tool "claude" "claude --version" "npm install -g @anthropic-ai/claude-code"

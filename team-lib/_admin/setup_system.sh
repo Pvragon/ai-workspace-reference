@@ -62,8 +62,43 @@ echo "    ... Python3, Pip, Venv"
 run_cmd "apt-get install -y python3 python3-pip python3-venv python3-yaml"
 
 # Node.js
-echo "    ... Node.js and npm"
-run_cmd "apt-get install -y nodejs npm"
+#
+# Ubuntu 24.04 ships Node 18.19. Both required npm tools — @anthropic-ai/claude-code and
+# @googleworkspace/cli — declare `engines: node >= 22`, so apt's Node leaves the two CLIs
+# this workspace is built around running on an engine their authors do not support.
+#
+# The key is FETCHED and dearmored, never piped into a shell. `curl … | bash` is exactly
+# the dropper shape skills/scan-for-malware exists to eradicate, and an installer that
+# teaches the habit is worse than the version it fixes.
+echo "    ... Node.js 22 and npm"
+node_major=$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')
+if [[ -n "${node_major:-}" && "$node_major" -ge 22 ]]; then
+    echo "        Node $(node -v) already satisfies >= 22"
+elif [[ "$DRY_RUN" == "true" ]]; then
+    echo "[DRY-RUN] add NodeSource repo for Node 22, then apt-get install -y nodejs"
+else
+    nodesource_ok=true
+    apt-get install -y ca-certificates curl gnupg >/dev/null 2>&1 || nodesource_ok=false
+    install -m 0755 -d /etc/apt/keyrings
+    if [[ "$nodesource_ok" == "true" ]] \
+        && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+             | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg 2>/dev/null; then
+        chmod a+r /etc/apt/keyrings/nodesource.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
+            > /etc/apt/sources.list.d/nodesource.list
+        apt-get update -qq
+        apt-get install -y nodejs || nodesource_ok=false
+    else
+        nodesource_ok=false
+    fi
+    if [[ "$nodesource_ok" != "true" ]]; then
+        echo "    ⚠️  NodeSource unavailable — falling back to the distro's Node."
+        echo "        Claude Code and gws require Node >= 22 and may misbehave on it."
+        rm -f /etc/apt/sources.list.d/nodesource.list
+        apt-get update -qq
+        run_cmd "apt-get install -y nodejs npm"
+    fi
+fi
 
 if [[ "$DRY_RUN" == "true" ]]; then
     echo ""

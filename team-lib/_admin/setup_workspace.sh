@@ -639,6 +639,24 @@ else
 fi
 
 # ============================================================================
+# SKILL EXPOSURE
+# ============================================================================
+# The harness finds skills at ~/.claude/skills, which is a symlink to the personal layer;
+# shared skills reach the agent as pointers placed inside it. Nothing created either link —
+# they had accumulated by hand on the machine that invented the convention. A fresh install
+# therefore finished with the whole shared library present and none of it invocable
+# (measured in harnesses/public_workspace_container_test.sh, 2026-08-01).
+
+echo ""
+echo "=== Exposing shared skills to the agent ==="
+LINK_SKILLS="${WORKSPACE_ROOT}/team-lib/executions/link_skills.py"
+if [[ -f "$LINK_SKILLS" ]]; then
+    python3 "$LINK_SKILLS" --quiet || echo "    ⚠️  Skill linking incomplete — re-run later: python3 $LINK_SKILLS"
+else
+    echo "    ⚠️  link_skills.py not found — shared skills will not be invocable."
+fi
+
+# ============================================================================
 # AGENT MEMORY SYSTEM
 # ============================================================================
 # Without this the install is a library, not an agent: no reinforcement hook, no

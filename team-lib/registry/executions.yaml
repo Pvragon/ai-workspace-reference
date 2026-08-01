@@ -27,6 +27,12 @@ executions:
     tags: [publication, public-repo, scrub, generalization, reference]
     version: "1.0.1"
 
+  link_skills:
+    path: "executions/link_skills.py"
+    description: "Exposes the shared skill library to the agent harness: wires ~/.claude/skills to the personal layer and creates a pointer in my-lib/skills for every team-lib skill (external-pack skills as ext-<name>), leaving personal skills of the same name to shadow the shared one. Idempotent; --dry-run reports. Run by setup_workspace.sh — without it a fresh install has a library it cannot invoke."
+    tags: [setup, skills, onboarding, harness, symlinks]
+    version: "1.0.0"
+
   layer_drift_scan:
     path: "executions/layer_drift_scan.py"
     description: "Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by comparing CONTENT HASHES, not version numbers — three shared skills once carried identical versions with different content. Walks registry/mirror.yaml; honours two-sided `mirror: divergent` declarations; also checks that every registry entry resolves on disk. Read-only. Run nightly by dream_cycle.py."

@@ -73,6 +73,78 @@ def _generalize(text: str, rules: list[dict]) -> str:
     return text
 
 
+def _filter_registry(text: str, published: set[str], shared: Path) -> tuple[str, int]:
+    """Drop registry entries whose `path` is not among the published files.
+
+    The registries ARE the agent's tool-resolution index — Operating Principle #1 has it
+    scan them before doing anything. Publication filters files (client trees, the external
+    packs, anything the scrub list blocks) but used to publish the indexes unchanged, so
+    the public artifact advertised 36 capabilities whose files were deliberately withheld.
+    An index that points at nothing is worse than a shorter index.
+
+    Comments above the first key are kept verbatim — they are the schema documentation a
+    reader needs. Entry-level comments do not survive; a generated index is the price of
+    it being true.
+    """
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return text, 0
+    if not isinstance(data, dict):
+        return text, 0
+
+    dropped = 0
+
+    def keep(node) -> bool:
+        """Drop only what publication actually withheld.
+
+        The predicate is deliberately narrow: the entry must name something that EXISTS
+        in the shared layer and is absent from the published tree. Testing membership
+        alone was wrong twice over — workspace.yaml's paths are workspace-relative
+        (`personal`, `my-lib`), and several entries name directories rather than files,
+        so a first cut deleted the layer descriptions and every directory entry. Anything
+        this publisher does not own — a foreign path shape, an entry already dangling at
+        the source — is left exactly as written and stays someone else's finding.
+        """
+        p = node.get("path") if isinstance(node, dict) else None
+        if not isinstance(p, str) or not p:
+            return True
+        rel = p.strip().strip("/")
+        if not rel or not (shared / rel).exists():
+            return True
+        return rel in published
+
+    def walk(node):
+        nonlocal dropped
+        if isinstance(node, dict):
+            for key, value in list(node.items()):
+                if isinstance(value, dict) and not keep(value):
+                    del node[key]
+                    dropped += 1
+                else:
+                    walk(value)
+        elif isinstance(node, list):
+            for item in list(node):
+                if isinstance(item, dict) and not keep(item):
+                    node.remove(item)
+                    dropped += 1
+                else:
+                    walk(item)
+
+    walk(data)
+    if not dropped:
+        return text, 0
+
+    header = []
+    for line in text.splitlines():
+        if line.startswith("#") or not line.strip():
+            header.append(line)
+        else:
+            break
+    body = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=100)
+    return "\n".join(header + [body.rstrip(), ""]), dropped
+
+
 def _blocked(text: str, blocklist: list[tuple[str, str]]) -> list[str]:
     low = text.lower()
     return sorted({f"{g}:{t}" for g, t in blocklist if t.lower() in low})
@@ -136,6 +208,19 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
                 continue
             candidates.append((tree, src, f"{tree}/{rel}", base / tree / rel))
 
+    # Every path that WILL exist in the published tree, in the same team-lib-relative
+    # shape the registries use. Needed before the write loop so a registry can be filtered
+    # against the whole set rather than against whatever has been written so far.
+    published_paths = {name for _t, _s, name, _d in candidates}
+    # Ancestors too: a registry entry may name a directory (context/indexed,
+    # integrations/excalidraw-cli), and a set of files alone would call every one of
+    # those unpublished.
+    for name in list(published_paths):
+        parts = name.split("/")
+        for i in range(1, len(parts)):
+            published_paths.add("/".join(parts[:i]))
+    registry_drops: dict[str, int] = {}
+
     for _tree, src, name, dst in candidates:
         # Text-vs-binary by DECODABILITY, not by suffix: a suffix allowlist
         # silently drops LICENSE, .gitignore and .csv, which are ordinary
@@ -149,6 +234,11 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
             continue
 
         out = _generalize(text, rules)
+
+        if name.startswith("registry/") and name.endswith((".yaml", ".yml")):
+            out, dropped = _filter_registry(out, published_paths, shared)
+            if dropped:
+                registry_drops[name] = dropped
 
         leftover = _blocked(out, blocklist)
         if leftover:
@@ -194,6 +284,7 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
         "refused": refused,
         "pruned": pruned,
         "skipped_binary": skipped,
+        "registry_entries_dropped": registry_drops,
     }
 
 
@@ -217,6 +308,12 @@ def main() -> int:
     print(f"  unchanged       : {len(r['unchanged'])}")
     print(f"  refused (leak)  : {len(r['refused'])}")
     print(f"  pruned          : {len(r['pruned'])}")
+    drops = r.get("registry_entries_dropped") or {}
+    if drops:
+        total = sum(drops.values())
+        print(f"  registry entries dropped (path withheld from publication): {total}")
+        for name, n in sorted(drops.items()):
+            print(f"      {name}: {n}")
     print(f"  skipped (binary): {len(r['skipped_binary'])}")
 
     if r["refused"]:

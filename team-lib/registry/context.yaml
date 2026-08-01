@@ -14,62 +14,92 @@
 
 context:
   workspace-reference:
-    path: "context/indexed/workspace-reference.md"
-    description: "Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory conventions, functional stack, agent identity system, registry strategy, governance, and project docs structure."
-    tags: [workspace, architecture, conventions, reference, agent-identity]
-
+    path: context/indexed/workspace-reference.md
+    description: 'Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory
+      conventions, functional stack, agent identity system, registry strategy, governance, and project
+      docs structure.'
+    tags:
+    - workspace
+    - architecture
+    - conventions
+    - reference
+    - agent-identity
   project-docs-standard:
-    path: "context/indexed/project-docs-standard.md"
-    description: "Standard structure for project docs/ directories: trust boundaries, mutability rules, naming conventions, and scaffolding instructions."
-    tags: [projects, documentation, specs, conventions, structure]
-
+    path: context/indexed/project-docs-standard.md
+    description: 'Standard structure for project docs/ directories: trust boundaries, mutability rules,
+      naming conventions, and scaffolding instructions.'
+    tags:
+    - projects
+    - documentation
+    - specs
+    - conventions
+    - structure
   editor-setup-guide:
-    path: "context/indexed/editor-setup-guide.md"
-    description: "Editor and IDE setup guidance: Obsidian vault configuration, VS Code multi-root workspace setup, and recommended roots."
-    tags: [editor, vscode, obsidian, setup, configuration]
-
+    path: context/indexed/editor-setup-guide.md
+    description: 'Editor and IDE setup guidance: Obsidian vault configuration, VS Code multi-root workspace
+      setup, and recommended roots.'
+    tags:
+    - editor
+    - vscode
+    - obsidian
+    - setup
+    - configuration
   execution-standard:
-    path: "context/indexed/execution-standard.md"
-    description: "Defines the dual-purpose execution script pattern: CLI + importable run() function, comment-block frontmatter requirement, return contract, and chaining rules."
-    tags: [executions, standard, python, scripting]
-
+    path: context/indexed/execution-standard.md
+    description: 'Defines the dual-purpose execution script pattern: CLI + importable run() function,
+      comment-block frontmatter requirement, return contract, and chaining rules.'
+    tags:
+    - executions
+    - standard
+    - python
+    - scripting
   nodejs-workspace-setup:
-    path: "context/indexed/nodejs-workspace-setup.md"
-    description: "Node.js global npm setup: NODE_PATH configuration for global require() support, when to use global vs local install."
-    tags: [nodejs, npm, setup, configuration]
-
+    path: context/indexed/nodejs-workspace-setup.md
+    description: 'Node.js global npm setup: NODE_PATH configuration for global require() support, when
+      to use global vs local install.'
+    tags:
+    - nodejs
+    - npm
+    - setup
+    - configuration
   progressive-disclosure-convention:
-    path: "context/indexed/progressive-disclosure-convention.md"
-    description: "Defines the progressive disclosure convention for agent-consumable files: summary frontmatter field requirements, index aggregation pattern, and summary writing guidelines."
-    tags: [conventions, frontmatter, summary, progressive-disclosure]
-
+    path: context/indexed/progressive-disclosure-convention.md
+    description: 'Defines the progressive disclosure convention for agent-consumable files: summary frontmatter
+      field requirements, index aggregation pattern, and summary writing guidelines.'
+    tags:
+    - conventions
+    - frontmatter
+    - summary
+    - progressive-disclosure
   nick-saraev-doe-framework:
-    path: "context/indexed/nick-saraev-doe-framework.md"
-    description: "Nick Saraev's DOE (Directive-Orchestration-Execution) framework for reliable AI agent systems: 3-layer architecture, self-annealing, error compounding math, and implementation patterns."
-    tags: [doe, framework, theory, architecture]
-
+    path: context/indexed/nick-saraev-doe-framework.md
+    description: 'Nick Saraev''s DOE (Directive-Orchestration-Execution) framework for reliable AI agent
+      systems: 3-layer architecture, self-annealing, error compounding math, and implementation patterns.'
+    tags:
+    - doe
+    - framework
+    - theory
+    - architecture
   memory-system:
-    path: "context/indexed/memory-system.md"
-    description: "Build-and-operate spec for the agent memory system shipped in team-lib: the five memory tiers (T0-T4), the two-strength retrieval policy with its exact formula and all constants, the frontmatter schema every consumer relies on, the nightly sleep cycle, the four PreToolUse hooks, the three-command install, concurrency properties, and a failure-mode table. Read this to build, install or debug it; the narrative explanation lives at prez.prgn.ai/pvragon/260730-agent-memory-architecture."
-    tags: [memory, retrieval, decay, scheduler, hooks, agent-infrastructure, install]
-
-  pvragon-capability-hierarchy:
-    path: "context/indexed/pvragon-capability-hierarchy.md"
-    description: "Pvragon's 5-layer capability hierarchy: Harness → Directive → Skill → Execution → Plumbing. Extends DOE with explicit layers for iterative goal pursuit, reusable skills, and raw service connectivity."
-    tags: [architecture, doe, framework, hierarchy, skills, executions]
-
-  pvragon-google-drive-index:
-    path: "context/indexed/pvragon-google-drive-index.md"
-    description: "Google Drive index for pvragon.com: all 9 Shared Drives with IDs, root-level folder maps, subfolder filing guide, My Drive root folders, routing rules, and key document IDs."
-    tags: [google-drive, index, file-management]
-
+    path: context/indexed/memory-system.md
+    description: 'Build-and-operate spec for the agent memory system shipped in team-lib: the five memory
+      tiers (T0-T4), the two-strength retrieval policy with its exact formula and all constants, the frontmatter
+      schema every consumer relies on, the nightly sleep cycle, the four PreToolUse hooks, the three-command
+      install, concurrency properties, and a failure-mode table. Read this to build, install or debug
+      it; the narrative explanation lives at prez.prgn.ai/pvragon/260730-agent-memory-architecture.'
+    tags:
+    - memory
+    - retrieval
+    - decay
+    - scheduler
+    - hooks
+    - agent-infrastructure
+    - install
 subdirectories:
-  companies:
-    path: "context/indexed/companies/"
-    description: "Company-scoped context: brand identity, tokens, templates, business overviews, and assets. Each company has brand-guidelines.md, brand-tokens.json (generated), company.json, brand/templates/ (composed), and brand/assets/."
-    tags: [companies, brand, identity, context, design-tokens]
-
   templates:
-    path: "context/indexed/templates/"
-    description: "Reference templates for AGENTS.md / CLAUDE.md / GEMINI.md files across the workspace"
-    tags: [templates, agents, configuration]
+    path: context/indexed/templates/
+    description: Reference templates for AGENTS.md / CLAUDE.md / GEMINI.md files across the workspace
+    tags:
+    - templates
+    - agents
+    - configuration
