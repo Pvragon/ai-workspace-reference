@@ -437,10 +437,19 @@ def main():
         sys.exit(0)
 
     msgs = git(repo, "log", "--format=%B", "@{u}..HEAD").lower()
-    if "[no-version]" in msgs:
-        beat("optout", "[no-version] in range")
+
+    # A directive must be a TRAILER — its own line — not any occurrence of the
+    # token anywhere in the prose. As a bare substring, merely WRITING about the
+    # marker triggers it: the commit that fixed a [no-version] bug quoted the token
+    # in its own message and silently opted its own push out of versioning, twice
+    # in a row. A control token that any sentence can fire is not a control token.
+    def directive(tag):
+        return re.search(rf"^\s*\[{tag}\]\s*$", msgs, re.M) is not None
+
+    if directive("no-version"):
+        beat("optout", "[no-version] trailer in range")
         sys.exit(0)
-    level = "major" if "[major]" in msgs else "minor" if "[minor]" in msgs else "patch"
+    level = "major" if directive("major") else "minor" if directive("minor") else "patch"
 
     changed = [f for f in git(repo, "diff", "--name-only", "@{u}..HEAD").splitlines() if f]
     today = git(repo, "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d") or ""
