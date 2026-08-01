@@ -2,10 +2,10 @@
 name: prepare-image-for-print
 description: "Take a low-resolution or damaged photo to a print-ready file — choosing the print size, medium and upscaling tier the source can HONESTLY support, rather than the largest number the software will emit."
 summary: "Method + scripts for print prep. Core rules: required DPI falls out of VIEWING DISTANCE, not a fixed 300 (so big prints often need less than small ones); print media differ enormously in how much they EXPOSE reconstructed detail (canvas forgives, acrylic prosecutes); and soft regions have two causes that must be told apart — dark+soft is compression loss (super-resolution can fill it) while bright+soft is optical defocus (NO upscaler fixes it, and sharpening around it makes it worse). Always report % reconstructed pixels; never present invented detail as recovered."
-version: 1.0.0
+version: 1.0.1
 template: skill-definition
 created: 2026-07-25
-last_updated: 2026-07-25
+last_updated: 2026-08-01
 maintainer: your-agent
 dependencies: [python, pillow, numpy, real-esrgan-ncnn]
 tags: [image, print, upscaling, super-resolution, real-esrgan, photo, framing, dpi]

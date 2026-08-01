@@ -1,9 +1,9 @@
 ---
 template: system-documentation
-version: 1.0.0
+version: 1.0.1
 summary: "Architecture overview for the design-token-driven branded content system. Explains how brand-guidelines.md, brand-tokens.json, content-type templates, and branded templates connect to produce consistent branded output across all content types."
 created: 2026-03-14
-last_updated: 2026-03-14
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "The findings inbox: a pull-only queue of audit observations, with an ambient
 #   statusline segment that escalates on AGE. Decouples the cheap frequent write (nightly
 #   audits) from the gated read (when the operator has space), so findings stop being
 #   announced at the two worst moments — session close and session start."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """findings.py — observations wait here until there is time to work them.

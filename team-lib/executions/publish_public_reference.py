@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Publishes team-lib to the public reference repo as a GENERALIZATION: copies every
 #   included tree, drops what is proprietary, rewrites operator and client identifiers into
 #   placeholders, and REFUSES to write any file that still contains a blocked term afterwards.
@@ -9,7 +9,7 @@
 #   arrangement that cannot survive a routine refresh. Driven entirely by registry/mirror.yaml so
 #   the contract and the tool cannot disagree. Dry-run by default."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """publish_public_reference.py — refresh the public reference repo from team-lib.
@@ -114,6 +114,16 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
     written, unchanged, refused, skipped, pruned = [], [], [], [], []
     expected: set[Path] = set()
 
+    # (tree, source-file, relative-name-for-reporting, destination)
+    candidates: list[tuple[str, Path, str, Path]] = []
+
+    # Root-level files first — they are the entry points a stranger reads, and
+    # they are in no tree, so the rglob walk below can never reach them.
+    for name in pub.get("include_files") or []:
+        src = shared / name
+        if src.is_file():
+            candidates.append(("", src, name, base / name))
+
     for tree in pub.get("include") or []:
         src_root = shared / tree
         if not src_root.is_dir():
@@ -124,38 +134,38 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
             rel = src.relative_to(src_root).as_posix()
             if _excluded(rel, excludes):
                 continue
+            candidates.append((tree, src, f"{tree}/{rel}", base / tree / rel))
 
-            dst = base / tree / rel
+    for _tree, src, name, dst in candidates:
+        # Text-vs-binary by DECODABILITY, not by suffix: a suffix allowlist
+        # silently drops LICENSE, .gitignore and .csv, which are ordinary
+        # publishable text. Anything that will not decode cannot be scrubbed,
+        # so it is skipped and reported rather than copied blind — an image
+        # can carry a client logo that no content gate would ever see.
+        try:
+            text = src.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            skipped.append(name)
+            continue
 
-            # Text-vs-binary by DECODABILITY, not by suffix: a suffix allowlist
-            # silently drops LICENSE, .gitignore and .csv, which are ordinary
-            # publishable text. Anything that will not decode cannot be scrubbed,
-            # so it is skipped and reported rather than copied blind — an image
-            # can carry a client logo that no content gate would ever see.
-            try:
-                text = src.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                skipped.append(f"{tree}/{rel}")
-                continue
+        out = _generalize(text, rules)
 
-            out = _generalize(text, rules)
+        leftover = _blocked(out, blocklist)
+        if leftover:
+            # Refuse, loudly. Publishing this would leak; silently skipping
+            # it would make the public repo quietly incomplete instead.
+            refused.append({"file": name, "identifiers": leftover[:6]})
+            continue
 
-            leftover = _blocked(out, blocklist)
-            if leftover:
-                # Refuse, loudly. Publishing this would leak; silently skipping
-                # it would make the public repo quietly incomplete instead.
-                refused.append({"file": f"{tree}/{rel}", "identifiers": leftover[:6]})
-                continue
+        expected.add(dst)
+        if dst.is_file() and dst.read_text(encoding="utf-8") == out:
+            unchanged.append(name)
+            continue
 
-            expected.add(dst)
-            if dst.is_file() and dst.read_text(encoding="utf-8") == out:
-                unchanged.append(f"{tree}/{rel}")
-                continue
-
-            written.append(f"{tree}/{rel}")
-            if apply:
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                dst.write_text(out, encoding="utf-8")
+        written.append(name)
+        if apply:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(out, encoding="utf-8")
 
     if prune:
         for tree in pub.get("include") or []:

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # ---
 # template: harness
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Falsifiability harness for layer_drift_scan.py. Builds a synthetic two-layer workspace in
 #   a temp dir and asserts every detector branch BOTH fires when it should and stays silent when it
 #   should — including the case that motivated the scanner (identical version numbers, different
 #   content) and the case that would make it useless (a check that never fires). Run before trusting
 #   a clean scan result."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """test_layer_drift_scan.py — prove the drift detector can actually fail.

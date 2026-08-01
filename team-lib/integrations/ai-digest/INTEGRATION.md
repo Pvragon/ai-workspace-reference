@@ -1,9 +1,9 @@
 ---
 template: integration
-version: 0.5.0
+version: 0.5.1
 summary: "ai-digest CLI (command `digest`) — scheduled novelty-scored digest of AI content. Phase 1 YouTube: yt-dlp lists new uploads, youtube-transcript-api pulls captions, Gemini 2.5-flash scores novelty against a rolling SQLite corpus, gws emails a digest with an auditable reject list. Also `digest learn`: per-video learnings emails for curated playlists."
 created: 2026-06-29
-last_updated: 2026-07-29
+last_updated: 2026-08-01
 maintainer: your-agent
 status: active
 ---

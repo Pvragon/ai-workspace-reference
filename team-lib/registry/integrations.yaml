@@ -49,7 +49,7 @@ integrations:
     capabilities: [google-drive, google-docs, google-sheets, gmail, google-calendar, admin-reports]
     dependencies: ["@googleworkspace/cli", gws-oauth-credentials]
     tags: [google, google-workspace, cli, drive, docs, sheets, gmail, calendar]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: gws-cli-oauth-setup
     description: "OAuth setup walkthrough for gws CLI — Pvragon Workspace path (contact Farhan), personal Google account path (DIY), parallel side-by-side configs, and recovery from the 7-day refresh-token gotcha."
@@ -67,7 +67,7 @@ integrations:
     capabilities: [clickup, task-management, chat-messaging, mentions, api-integration]
     dependencies: [restish]
     tags: [clickup, cli, restish, openapi, chat, mentions, task-comments]
-    version: "1.0.0"
+    version: "1.1.1"
 
   - name: namecheap-cli
     description: "Namecheap CLI (command `namecheap`) — full-coverage (59/59 documented methods) CLI + importable Python client for the Namecheap XML API: domains (register/renew/check/contacts/locks), DNS (safe add/rm/export/import wrapping the all-or-nothing setHosts), child nameservers, transfers, SSL lifecycle, users/pricing/balances, address book, domain privacy, plus raw `api` passthrough. Zero dependencies; billable/destructive ops confirmation-gated; sandbox support. Restish does NOT fit (XML RPC, no OpenAPI). Public repo: github.com/Pvragon/namecheap-cli (MIT). Live-verified against sandbox (writes incl. domain purchase) and production (reads) 2026-07-17."
@@ -94,7 +94,7 @@ integrations:
     capabilities: [ai-news-digest, youtube-ingestion, transcript-fetch, novelty-scoring, llm-as-judge, rolling-corpus-dedupe, reject-list-audit, email-delivery, source-agnostic-adapters, playlist-learnings-summaries, concept-ledger, trend-ranking, rapid-primer]
     dependencies: [python3, yt-dlp, youtube-transcript-api, gws]
     tags: [ai, digest, youtube, novelty, gemini, llm-judge, cron, cli, playlist, learnings, concept-ledger, primer]
-    version: "0.5.0"
+    version: "0.5.1"
 
   - name: waystar-cli
     description: "Generic, account-agnostic Waystar/zirMed claims-clearinghouse CLI + library — purpose-built HMAC-SHA1 signing client (Restish does NOT fit: signed RPC, XML/PDF, no OpenAPI). Covers claim history XML, EOB/remittance PDF+XML, EOB-by-RemitID (zirmedremitid), and embedded claim-form/POTF PDFs. Pure transport layer; supply your own WAYSTAR_CUST_ID/HMAC_KEY. Acme Health's waystar-store-refresh skill is one consumer."

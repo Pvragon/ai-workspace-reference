@@ -1,10 +1,10 @@
 ---
 template: integration
-version: 1.0.0
+version: 1.0.1
 type: cli
 summary: "Google Workspace CLI (@googleworkspace/cli) — covers Drive, Docs, Sheets, Gmail, Calendar, and Admin Reports. Replaces the Google Workspace MCP, which was removed due to singleton session issues, missing Docs formatting tools, and high token consumption."
 created: 2026-03-12
-last_updated: 2026-03-27
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

@@ -2,10 +2,10 @@
 name: brand-site-scaffold
 description: "Stage 0 of build-brand-site. Scaffold a lean, statically-rendered Next.js (App Router) + Tailwind v4 + Untitled UI app, vet the supply chain, and stand up THE reusable seam: a brand-token→@theme generator (build-brand-theme.mjs) that reskins the entire Untitled UI component set from one W3C brand-tokens.json. Carries the OKLCH gamut-mapping, guarded-primary, and surface≠page-ground lessons that adversarial review caught on the ONE Mahjong rebuild."
 summary: "Scaffold + brand bridge. Ships the generator (vendored): reads brand-tokens.json → emits src/styles/brand.css (@theme: OKLCH brand ramp anchored 600=primary, warm neutral ramp, semantic surface/status/link) + src/brand.config.ts. Key gates the generator enforces: brand-600 white-on-solid ≥4.5 (auto-darkens a light primary), gamut-map by chroma-compression not per-channel clamp, surface (bg-primary)=raised near-white NOT the page ground, functional borders ≥3:1. Wire it into predev/prebuild so brand.css can't drift. New brand = swap tokens.json + next/font imports; nothing else."
-version: 1.0.0
+version: 1.0.1
 template: skill-definition
 created: 2026-07-22
-last_updated: 2026-07-22
+last_updated: 2026-08-01
 maintainer: your-agent
 dependencies: [node, pnpm]
 tags: [scaffold, next, tailwind, untitled-ui, brand-tokens, oklch, theme, supply-chain]

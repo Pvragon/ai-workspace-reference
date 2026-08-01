@@ -1,9 +1,9 @@
 ---
 template: directive
-version: 1.3.0
+version: 1.3.1
 summary: "End-to-end workspace release workflow: validation, git commits, CHANGELOG updates, release notes, and GitHub release creation. Follow when cutting a new workspace release."
 created: 2026-01-26
-last_updated: 2026-02-07
+last_updated: 2026-08-01
 maintainer: pvragon
 tags: [release, git, workspace-validation, deployment, github-releases]
 ---

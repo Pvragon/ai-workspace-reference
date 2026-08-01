@@ -1,9 +1,9 @@
 ---
 template: workspace-reference
-version: 1.11.0
+version: 1.11.1
 summary: "Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory conventions, functional stack (including integrations/ for CLIs, MCPs, and remote execution interfaces), agent identity system, registry strategy, governance, project docs structure, live-infrastructure documentation pattern, and T3/T4 memory split (situational hook-triggered lens vs always-on baked-in lens). v1.10.0 (2026-06-11): personal/ is now a private per-user repo and the Obsidian vault root (notes-shaped content only); added projects/personal monorepo for personal-domain micro-projects with ideation→build→standalone lifecycle."
 created: 2026-01-15
-last_updated: 2026-07-30
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

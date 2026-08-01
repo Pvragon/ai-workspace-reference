@@ -2,9 +2,9 @@
 name: send-pulse
 description: "Send an on-demand manual pulse to the ClickUp Pulse channel and optionally register thread-to-task mappings."
 summary: "Posts a concise work pulse to the Pulse channel. Can also register the current Claude thread as linked to a ClickUp task for downstream activity correlation."
-version: 2.1.0
+version: 2.1.1
 created: 2026-03-25
-last_updated: 2026-03-26
+last_updated: 2026-08-01
 maintainer: pvragon
 related:
   - executions/pulse_activity_poster.py  # cron: posts to task activity threads

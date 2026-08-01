@@ -2,10 +2,10 @@
 name: build-brand-site
 description: "Orchestrator for building a multi-page branded marketing SITE (not a single page) on the app-framework path — Next.js (App Router) + Tailwind v4 + Untitled UI + a brand-token→@theme generator, statically rendered, deployed to Vercel. Runs the proven staged methodology (scaffold → components → chrome → sitemap → templates → pages → cohesion → deploy/extract), each stage its own subskill with a hard adversarial-review gate, so any next brand's site is faster and better, not re-derived. Encodes the method proven on the ONE Mahjong onemahjong.org rebuild."
 summary: "The parent workflow for a reusable multi-brand site pipeline. New brand = swap brand-tokens.json + fonts; zero component edits. Dispatches to 8 per-stage subskills (brand-site-scaffold/components/chrome/map/templates/pages/cohesion-review/deploy). Each stage builds in isolation → INDEPENDENT adversarial review → gate → assemble. Core invariants: the brand bridge (build-brand-theme.mjs) is the only per-brand surface; verify by MATH not eye (WCAG contrast, scrollWidth vs clientWidth); every user-facing piece passes an independent reviewer prompted to find what's WRONG. Use build-branded-web-page instead for a one-off static HTML page."
-version: 1.0.0
+version: 1.0.1
 template: skill-definition
 created: 2026-07-22
-last_updated: 2026-07-22
+last_updated: 2026-08-01
 maintainer: your-agent
 dependencies: [node, pnpm, chromium, python]
 tags: [web, site, next, tailwind, untitled-ui, brand-tokens, multi-brand, accessibility, wcag, vercel, orchestrator]

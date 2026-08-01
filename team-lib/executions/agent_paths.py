@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Single source of truth for where an agent's identity, memory, lenses and meditation
 #   library live. Every memory-system script imports this instead of hardcoding a path, which is
 #   what makes the system portable to any agent name on any machine. Resolution order:
@@ -9,7 +9,7 @@
 #   under ~/ai-workspace/agents/ that contains an identity.md. Raises a clear, actionable error when
 #   it cannot decide, and never guesses between two candidates."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """agent_paths.py — resolve the agent's on-disk home and its memory subdirectories.

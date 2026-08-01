@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Single source of truth for the pre-fan-out load check: available memory, load
 #   average, live peer sessions, and how many concurrent workers are safe. Used by
 #   session-debrief preflight and by the PreToolUse advisory on Agent/Workflow spawns."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: your-agent
 # ---
 """machine_load.py — how many concurrent workers is it safe to spawn right now?

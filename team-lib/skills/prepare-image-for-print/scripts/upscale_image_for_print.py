@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 2.0.0
+# version: 2.0.1
 # summary: Upscale a low-resolution photo into a print-ready file at a target print size and DPI.
 #          Real-ESRGAN super-resolution (GPU, via the ncnn binary) followed by a Lanczos
 #          downsample, exact-aspect cropping, DPI tagging and sRGB embedding for photo labs.
 #          Reports upscale factor and % reconstructed so the honesty of a size is visible.
 # created: 2026-07-25
-# last_updated: 2026-07-25
+# last_updated: 2026-08-01
 # maintainer: your-agent
 # dependencies: [python>=3.9, pillow, real-esrgan-ncnn (optional - see --bootstrap)]
 # tags: [image, print, upscaling, super-resolution, real-esrgan]

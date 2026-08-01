@@ -136,6 +136,32 @@ def main() -> int:
         check("my-lib bumped via -C", version_of(team2 / "skills/thing.md") == "1.2.1",
               f"got {version_of(team2 / 'skills/thing.md')}")
 
+        print("case 5: --reconcile catches a body that moved after its version")
+        # The out-of-harness case: a commit lands and is PUSHED without the hook
+        # ever running, so @{u}..HEAD is empty afterwards and the outgoing range
+        # can no longer reveal it. Only git history still can.
+        recon = root / "reconcile-me"
+        make_repo(recon, "first body")
+        git(recon, "push", "-q")                      # pushed WITHOUT the gate
+        v0 = version_of(recon / "skills/thing.md")
+        f = recon / "skills/thing.md"
+        f.write_text(f.read_text().replace("first body", "second body"), encoding="utf-8")
+        git(recon, "add", "-A")
+        git(recon, "commit", "-qm", "body moves again, still no version bump")
+        git(recon, "push", "-q")
+        r = run(sys.executable, str(GATE), "--reconcile", str(recon), "--dry-run")
+        found = json.loads(r.stdout)["bumped"]
+        check("dry-run reports the stale file", any(b["path"].endswith("thing.md") for b in found),
+              f"got {found}")
+        check("dry-run wrote NOTHING", version_of(f) == v0, f"got {version_of(f)}")
+
+        run(sys.executable, str(GATE), "--reconcile", str(recon))
+        check("apply bumped it", version_of(f) != v0, f"{v0} -> {version_of(f)}")
+        check("apply committed it", "chore(version)" in git(recon, "log", "--format=%s", "-1").stdout)
+
+        r2 = run(sys.executable, str(GATE), "--reconcile", str(recon), "--dry-run")
+        check("second pass is idempotent", json.loads(r2.stdout)["bumped"] == [])
+
         print("case 4: a push with nothing outgoing changes nothing")
         v_before = version_of(team / "skills/thing.md")
         git(team, "push", "-q")

@@ -1,9 +1,9 @@
 ---
 template: skill-definition
-version: 1.0.0
+version: 1.0.1
 summary: "Bootstraps the standard docs/ structure (specs, adrs, reference, archive, .tmp) in new projects. Run when setting up a new project repository."
 created: 2026-02-08
-last_updated: 2026-02-08
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

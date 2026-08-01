@@ -1,9 +1,9 @@
 ---
 template: brand-guidelines
-version: 1.2.0
+version: 1.2.1
 summary: "Brand guidelines template — structured markdown defining all visual, typographic, and behavioral tokens for a brand, with narrative guidance alongside structured data. Source of truth for brand-tokens.json generation. Filled via create-brand-guidelines skill."
 created: 2026-03-14
-last_updated: 2026-03-16
+last_updated: 2026-08-01
 maintainer: pvragon
 schema: brand-guidelines-v1
 ---

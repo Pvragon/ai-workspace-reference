@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Installs the agent memory system end to end: bootstrap the memory data, register the
 #   harness hooks, install the nightly cron, then prove the wiring with verify_memory_install.py.
 #   Idempotent and safe to re-run. Handles the case setup cannot avoid — a workspace that has no
 #   named agent yet — by wiring the agent-independent half and exiting 2 (DEFERRED) rather than
 #   reporting success, so a half-install is never mistaken for a finished one."
 # created: 2026-07-31
-# last_updated: 2026-07-31
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 #

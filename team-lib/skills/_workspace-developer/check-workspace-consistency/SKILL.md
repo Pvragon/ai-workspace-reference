@@ -2,9 +2,9 @@
 name: check-workspace-consistency
 description: Rigorously validate all files referencing workspace structure are in sync
 summary: "Three-pass validation protocol ensuring all workspace files (templates, docs, registry) are mutually consistent. Run before releases or after structural changes."
-version: 1.1.0
+version: 1.1.1
 created: 2026-01-23
-last_updated: 2026-01-23
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.0
+# version: 1.2.1
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,
@@ -13,7 +13,7 @@
 #   detection is deterministic and belongs in the nightly tick; RESOLUTION is reasoning and stays
 #   task-triggered."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """layer_drift_scan.py — is the shared layer actually current with the personal layer?
@@ -56,6 +56,7 @@ import fnmatch
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -422,7 +423,11 @@ def _collect_paths(node) -> list[str]:
 def _resolves(rel: str, layer_root: Path) -> bool:
     if rel.startswith(("http://", "https://")) or "*" in rel:
         return True  # URLs and globs are not disk assertions
-    cleaned = rel.lstrip("./")
+    # `rel.lstrip("./")` was the classic Python trap: lstrip removes CHARACTERS,
+    # not a prefix, so any dotfile was mangled — ".gitignore" became "gitignore"
+    # and could never resolve, reporting a present file as a dangling entry.
+    # Latent until root-level files entered the manifest on 2026-08-01.
+    cleaned = rel[2:] if rel.startswith("./") else rel
     for base in (layer_root, layer_root.parent):
         if (base / cleaned).exists():
             return True
@@ -551,6 +556,49 @@ def _portability(spec: dict, shared_root: Path) -> list[dict]:
     return findings
 
 
+def _root_file_classification(spec: dict, shared_root: Path) -> list[dict]:
+    """Every tracked root-level file must be classified: published, or excluded-with-reason.
+
+    `include` lists TREES, so files at the layer root belong to none of them and the
+    publisher's rglob can never reach them. That is not a bug you notice — it is a
+    bug you don't: ONBOARDING.md sat 208 lines divergent for ten days while the scan
+    reported 0 actionable, because a mapping-based check cannot compare what is not
+    in the mapping (the same shape as the `integrations` leak, 2026-07-30).
+
+    So the mapping is made total. An unclassified root file is itself the finding —
+    which is the difference between a rule someone must remember and a rule the tool
+    enforces.
+    """
+    findings: list[dict] = []
+    try:
+        tracked = subprocess.run(
+            ["git", "-C", str(shared_root), "ls-files", "--full-name"],
+            capture_output=True, text=True, timeout=25,
+        ).stdout.splitlines()
+    except Exception:
+        return findings
+
+    root_files = {f for f in tracked if f and "/" not in f}
+    published = set(spec.get("include_files") or [])
+    excluded = {e.get("path") for e in (spec.get("exclude_files") or []) if isinstance(e, dict)}
+
+    for name in sorted(root_files - published - excluded):
+        findings.append(_finding(
+            "root-unclassified", "med", "publication", name,
+            detail="tracked at the layer root but in neither publication.include_files "
+                   "nor publication.exclude_files — it would be silently unpublished",
+        ))
+
+    # An exclusion with no reason is how an exemption list stops meaning anything.
+    for e in (spec.get("exclude_files") or []):
+        if isinstance(e, dict) and not str(e.get("reason") or "").strip():
+            findings.append(_finding(
+                "root-unclassified", "med", "publication", e.get("path", "?"),
+                detail="excluded from publication with no written reason",
+            ))
+    return findings
+
+
 def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]:
     """team-lib -> public reference repo: what is stale, and what would leak.
 
@@ -588,7 +636,7 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
             text = text.replace(rule["from"], rule["to"])
         return text
 
-    findings: list[dict] = []
+    findings: list[dict] = _root_file_classification(spec, shared_root)
     for tree in spec.get("include") or []:
         s_files = _walk(shared_root / tree, excludes)
         p_files = _walk(pub_base / tree, excludes)
@@ -760,12 +808,30 @@ def _metrics(spec: dict, personal_root: Path, shared_root: Path) -> dict:
     out: dict = {}
     ext = spec.get("external_mirror") or {}
     if ext:
-        personal = len(list(personal_root.glob(ext["personal_glob"])))
-        shared = len({
-            p.parent for p in shared_root.glob(ext["shared_glob"])
-        })
+        pointers = list(personal_root.glob(ext["personal_glob"]))
+        shared = len({p.parent for p in shared_root.glob(ext["shared_glob"])})
+
+        # The defect is a personal pointer that does NOT resolve into the shared
+        # layer — that skill exists only for this operator, so a teammate silently
+        # does not get it. Measured 2026-08-01: 26 of 88 resolved into my-lib's own
+        # _external, which two vendored packs had never graduated.
+        #
+        # The old metric subtracted the two counts, which answered a different and
+        # much weaker question. Once the packs graduated it went NEGATIVE (team-lib
+        # vendors more than my-lib links to — entirely normal), printing "lag -10"
+        # as if something were wrong. A number nobody can act on gets "fixed" by
+        # someone eventually; report the invariant instead.
+        try:
+            shared_prefix = shared_root.resolve()
+            unbacked = sum(
+                1 for p in pointers
+                if shared_prefix not in p.resolve().parents
+            )
+        except OSError:
+            unbacked = -1
+
         out["external_mirror"] = {
-            "personal": personal, "shared": shared, "lag": personal - shared,
+            "personal": len(pointers), "shared": shared, "unbacked": unbacked,
         }
     return out
 
@@ -894,6 +960,7 @@ _LABEL = {
     "stale-in-public": "stale in public (published copy no longer matches team-lib)",
     "unpublished": "unpublished (clean and publishable, not in the public repo)",
     "not-standalone": "NOT STANDALONE (shared layer depends on the personal one)",
+    "root-unclassified": "ROOT UNCLASSIFIED (neither published nor excluded-with-reason)",
     "registry-dangling": "REGISTRY      (entry points at nothing)",
     "registry-unreadable": "REGISTRY      (unparseable)",
     "ungraduated": "personal-only (never graduated)",
@@ -911,8 +978,12 @@ def _render(result: dict) -> str:
 
     ext = result.get("metrics", {}).get("external_mirror")
     if ext:
-        lines.append(f"  external skills: {ext['personal']} personal / "
-                     f"{ext['shared']} shared (lag {ext['lag']})")
+        unbacked = ext.get("unbacked", -1)
+        state = ("all backed by the shared layer" if unbacked == 0
+                 else f"** {unbacked} NOT backed by the shared layer **" if unbacked > 0
+                 else "backing unverifiable")
+        lines.append(f"  external skills: {ext['personal']} pointer(s) / "
+                     f"{ext['shared']} available in shared — {state}")
     born = result.get("metrics", {}).get("born_in_shared")
     if born:
         lines.append(f"  born in the shared layer: {born} skill(s)/execution(s) with no "

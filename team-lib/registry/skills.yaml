@@ -34,7 +34,7 @@ skills:
     capabilities: [directive-design, workflow-orchestration, best-practices]
     dependencies: []
     tags: [directive, documentation, workflow, templates, best-practices]
-    version: "1.1.0"
+    version: "1.1.1"
 
   - name: generate-deals-pack
     description: "Generate or recalibrate a consumer-deals domain pack (attribute extraction + value tables + scoring) for any product domain. Scrape-once-cache-iterate-offline so it never hits marketplace rate limits. Pairs with team-lib/integrations/consumer-deals."
@@ -42,7 +42,7 @@ skills:
     capabilities: [deal-mining, domain-pack-generation, valuation-calibration, attribute-extraction]
     dependencies: [consumer-deals]
     tags: [deals, offerup, marketplace, pack, valuation, extraction, rate-limit-safe]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: run-deal-hunt
     description: "One-command marketplace deal hunt — 'find me the best <thing> under $X'. Drives the deals CLI scrape→value→rank end-to-end and writes a ranked deal report with an in-person verify protocol for too-good outliers. Read-only; verify-not-verdict. Executes directive run-deal-hunt."
@@ -58,7 +58,7 @@ skills:
     capabilities: [git-analysis, changelog-generation, smart-history]
     dependencies: [git, python3]
     tags: [release, changelog, git, documentation, automation]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: mobile-overflow-audit
     description: "Audit a Pvragon HTML presentation for content overflow at phone-landscape viewport. Walks every .slide via headless Chromium, measures scrollHeight vs clientHeight, reports per-slide overflow + detected component classes. Exits 1 if any slide overflows beyond threshold (default 5px), so it can gate CI or iterate-fix loops."
@@ -83,7 +83,7 @@ skills:
     capabilities: [multi-page-site, brand-token-theme, staged-methodology, adversarial-gate, skill-composition, multi-brand-reuse]
     dependencies: [node, pnpm, chromium, python]
     tags: [web, site, next, tailwind, untitled-ui, brand-tokens, multi-brand, orchestrator, accessibility, vercel]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: brand-site-scaffold
     description: "Stage 0 of build-brand-site. Scaffold a lean statically-rendered Next.js + Tailwind v4 + Untitled UI app, vet the supply chain, and stand up the reusable brand-token→@theme generator (build-brand-theme.mjs, vendored) that reskins the whole UUI set from one brand-tokens.json. Carries the OKLCH gamut-mapping, guarded-primary (brand-600 white-on-solid ≥4.5), warm-neutral-ramp, and surface≠page-ground lessons; wire the generator into predev/prebuild so brand.css can't drift."
@@ -91,7 +91,7 @@ skills:
     capabilities: [scaffold, brand-token-bridge, oklch-theme, supply-chain-vet]
     dependencies: [node, pnpm]
     tags: [scaffold, next, tailwind, untitled-ui, brand-tokens, oklch, theme]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: brand-site-components
     description: "Stage 1 of build-brand-site. Adopt the Untitled UI component set and brand-tune via tokens (not edits), verifying every variant/state by WCAG math. Composes ext-frontend-design + ext-ui-design-system for aesthetic/system. Carries the sharp edges: `untitledui add` overwrites customized deps + drags transitive bloat (add ALL before customizing; git status after each add), functional-border 3:1, ring-as-box-shadow reading, the RSC client-island boundary, Tailwind-v4 literal-class scanning."
@@ -187,7 +187,7 @@ skills:
     capabilities: [branding, brand-documentation, html-generation, design-tokens]
     dependencies: [node]
     tags: [brand, tokens, html, brand-guide, documentation, self-contained]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: skill-autoresearch
     description: "Meta-skill that stress-tests and improves other skills through an automated loop: executor agents follow the skill procedure, score confusion quantitatively, fix issues, repeat until convergence. Based on Karpathy's autoresearch pattern."
@@ -203,7 +203,7 @@ skills:
     capabilities: [project-scaffolding, docs-structure, template-generation]
     dependencies: [python3]
     tags: [scaffolding, project-setup, docs, templates]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: send-pulse
     description: "Send an on-demand manual pulse to the ClickUp Pulse channel. Standardized format: JH Manual Pulse HH:MM PM: <concise summary>. Can also register thread-to-task mappings for automated activity posting."
@@ -211,7 +211,7 @@ skills:
     capabilities: [messaging, clickup, pulse, task-registration]
     dependencies: []
     tags: [pulse, clickup, activity-tracking, manual-update]
-    version: "2.1.0"
+    version: "2.1.1"
 
   - name: check-for-workspace-updates
     description: "Compares local workspace files (AGENTS.md, etc.) against team-lib canonical templates and guides upgrades."
@@ -219,7 +219,7 @@ skills:
     capabilities: [workspace-maintenance, template-comparison, upgrade-guidance]
     dependencies: []
     tags: [workspace, updates, templates, maintenance]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: update-drive-index
     description: "Refreshes the Google Drive index by enumerating all Shared Drives and root-level contents via the Google Drive API."
@@ -227,7 +227,7 @@ skills:
     capabilities: [google-drive, index-refresh, api-enumeration]
     dependencies: [google-drive-mcp]
     tags: [google-drive, index, automation]
-    version: "1.1.0"
+    version: "1.1.1"
 
   # clickup-cli moved to integrations/ (2026-03-20)
 
@@ -891,7 +891,7 @@ skills:
     capabilities: [image-upscaling, super-resolution, print-preparation, detail-diagnostics, dpi-sizing, medium-selection, framing-guidance]
     dependencies: [python, pillow, numpy, real-esrgan-ncnn]
     tags: [image, print, upscaling, real-esrgan, photo, dpi, framing, giclee, restoration]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: publish-to-prez
     description: "Publish an agentically-created self-contained HTML artifact (or branded deck) to prez.prgn.ai — Pvragon's team-owned host for agent-generated HTML (repo Pvragon/presentations, Vercel auto-deploy on push, cleanUrls, per-path password gating). The standard permanent home for HTML output instead of an ephemeral Claude Artifact. Covers file placement + YYMMDD naming, embedding mermaid diagrams as inlined Excalidraw SVG (no runtime), the password/protected-path mechanism (mechanism only — passwords live in Vercel env, never committed), deploy-by-push, and the 401→200 verification. Git = source of truth; the deployed page is a rendered view."
@@ -974,3 +974,252 @@ skills:
     capabilities: [findings, maintenance, inbox, worklist]
     dependencies: [team-lib/executions/findings.py]
     version: "1.0.0"
+
+  # ============================================================
+  # EXTERNAL SKILLS — resume/CV collections (graduated 2026-08-01)
+  # ============================================================
+  # Submodules at skills/_external/. GRADUATED from my-lib on 2026-08-01 so the
+  # ext-* pointers stop lagging: 26 of my-lib's 88 pointers resolved into the
+  # PERSONAL layer, so a teammate installing team-lib silently did not get them.
+  # Supersedes the 2026-04-26 note that kept them personal ("personal use only —
+  # primarily reviewing resumes for family/friends"); they are ordinary public
+  # third-party packs and _external/* is excluded from publication either way.
+  # Audited 2026-04-26 (manual-0.0.2 scanner): zero hits on injection / exfil /
+  # credential / shell-exec patterns. See skills/_external/index.md.
+
+  - name: ext-setup-extract
+    description: "Extract structured information from research papers, PDFs, or code into knowledge base extractions."
+    path: skills/_external/arpeeketi-resume-kit/.claude/skills/setup-extract/SKILL.md
+    capabilities: [paper-extraction, knowledge-base, research-synthesis]
+    dependencies: []
+    tags: [resume, cv, research, extraction, knowledge-base]
+    source: external
+    provider: arpeeketi
+
+  - name: ext-setup-build-kb
+    description: "Synthesize completed extractions into the knowledge base files needed for resume generation."
+    path: skills/_external/arpeeketi-resume-kit/.claude/skills/setup-build-kb/SKILL.md
+    capabilities: [knowledge-base, experience-bundling, taxonomy-build]
+    dependencies: [ext-setup-extract]
+    tags: [resume, cv, knowledge-base, taxonomy]
+    source: external
+    provider: arpeeketi
+
+  - name: ext-make-resume
+    description: "Generate a tailored resume/CV from a job description, using bundle and skills taxonomy."
+    path: skills/_external/arpeeketi-resume-kit/.claude/skills/make-resume/SKILL.md
+    capabilities: [resume-generation, cv-generation, jd-tailoring, latex-output]
+    dependencies: [ext-setup-build-kb]
+    tags: [resume, cv, latex, tailoring, ats]
+    source: external
+    provider: arpeeketi
+
+  - name: ext-make-cl
+    description: "Generate a tailored cover letter from an existing session file and finished resume/CV."
+    path: skills/_external/arpeeketi-resume-kit/.claude/skills/make-cl/SKILL.md
+    capabilities: [cover-letter, jd-tailoring, latex-output]
+    dependencies: [ext-make-resume]
+    tags: [cover-letter, latex, tailoring]
+    source: external
+    provider: arpeeketi
+
+  - name: ext-edit-resume
+    description: "Edit existing resume/CV or cover letter from critique feedback and user suggestions."
+    path: skills/_external/arpeeketi-resume-kit/.claude/skills/edit-resume/SKILL.md
+    capabilities: [resume-editing, cv-editing, critique-application]
+    dependencies: [ext-make-resume]
+    tags: [resume, cv, editing, refinement]
+    source: external
+    provider: arpeeketi
+
+  - name: ext-critique
+    description: "Re-critique existing resume/CV output files against a JD using 5 reader personas across 8 dimensions."
+    path: skills/_external/arpeeketi-resume-kit/.claude/skills/critique/SKILL.md
+    capabilities: [resume-critique, multi-persona-review, scoring]
+    dependencies: [ext-make-resume]
+    tags: [resume, cv, critique, review, scoring, personas]
+    source: external
+    provider: arpeeketi
+
+  # --- Provider: Paramchoudhary (skills/_external/paramchoudhary-resume-skills/) ---
+
+  - name: ext-resume-ats-optimizer
+    description: "Optimize resumes for Applicant Tracking Systems, check ATS compatibility, and analyze keyword match."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-ats-optimizer/SKILL.md
+    capabilities: [ats-optimization, keyword-analysis, resume-screening]
+    dependencies: []
+    tags: [resume, ats, keywords, optimization]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-resume-bullet-writer
+    description: "Transform weak resume bullets into achievement-focused statements with metrics and impact."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-bullet-writer/SKILL.md
+    capabilities: [bullet-writing, achievement-framing, star-format]
+    dependencies: []
+    tags: [resume, bullets, achievements, impact]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-resume-quantifier
+    description: "Find opportunities to add metrics and estimate numbers when exact data unavailable."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-quantifier/SKILL.md
+    capabilities: [metrics-addition, quantification, impact-estimation]
+    dependencies: []
+    tags: [resume, metrics, quantification, numbers]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-resume-formatter
+    description: "Ensure ATS-friendly formatting and create clean scannable resume layouts."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-formatter/SKILL.md
+    capabilities: [resume-formatting, ats-formatting, layout]
+    dependencies: []
+    tags: [resume, formatting, layout, ats]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-resume-section-builder
+    description: "Create targeted resume sections optimized for different experience levels and roles."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-section-builder/SKILL.md
+    capabilities: [section-design, experience-level-tailoring]
+    dependencies: []
+    tags: [resume, sections, structure]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-resume-tailor
+    description: "Customize resume for specific job postings while maintaining truthfulness."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-tailor/SKILL.md
+    capabilities: [resume-tailoring, jd-matching]
+    dependencies: []
+    tags: [resume, tailoring, jd, customization]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-resume-version-manager
+    description: "Track different resume versions, maintain master resume, manage tailored versions."
+    path: skills/_external/paramchoudhary-resume-skills/skills/resume-version-manager/SKILL.md
+    capabilities: [version-tracking, master-resume, variant-management]
+    dependencies: []
+    tags: [resume, versioning, organization]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-job-description-analyzer
+    description: "Analyze job postings, calculate match scores, identify gaps, and create application strategy."
+    path: skills/_external/paramchoudhary-resume-skills/skills/job-description-analyzer/SKILL.md
+    capabilities: [jd-analysis, match-scoring, gap-analysis]
+    dependencies: []
+    tags: [job-description, analysis, match-score, strategy]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-cover-letter-generator
+    description: "Create personalized, compelling cover letters from resume and job description."
+    path: skills/_external/paramchoudhary-resume-skills/skills/cover-letter-generator/SKILL.md
+    capabilities: [cover-letter, personalization, jd-matching]
+    dependencies: []
+    tags: [cover-letter, application, writing]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-linkedin-profile-optimizer
+    description: "Optimize LinkedIn profile for searchability, recruiter visibility, and engagement."
+    path: skills/_external/paramchoudhary-resume-skills/skills/linkedin-profile-optimizer/SKILL.md
+    capabilities: [linkedin-optimization, profile-seo, recruiter-visibility]
+    dependencies: []
+    tags: [linkedin, profile, social, seo]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-portfolio-case-study-writer
+    description: "Transform resume bullets into detailed portfolio case studies."
+    path: skills/_external/paramchoudhary-resume-skills/skills/portfolio-case-study-writer/SKILL.md
+    capabilities: [case-study-writing, portfolio-design]
+    dependencies: []
+    tags: [portfolio, case-study, writing]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-reference-list-builder
+    description: "Format professional references properly and prepare reference materials."
+    path: skills/_external/paramchoudhary-resume-skills/skills/reference-list-builder/SKILL.md
+    capabilities: [reference-formatting, professional-references]
+    dependencies: []
+    tags: [references, application, supporting-documents]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-interview-prep-generator
+    description: "Generate STAR stories, practice questions, and talking points from resume."
+    path: skills/_external/paramchoudhary-resume-skills/skills/interview-prep-generator/SKILL.md
+    capabilities: [interview-prep, star-stories, practice-questions]
+    dependencies: []
+    tags: [interview, prep, star, questions]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-salary-negotiation-prep
+    description: "Research market rates, build negotiation strategy, and create counter-offer scripts."
+    path: skills/_external/paramchoudhary-resume-skills/skills/salary-negotiation-prep/SKILL.md
+    capabilities: [salary-research, negotiation-strategy, counter-offer]
+    dependencies: []
+    tags: [salary, negotiation, compensation]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-offer-comparison-analyzer
+    description: "Compare multiple job offers side-by-side with total compensation analysis."
+    path: skills/_external/paramchoudhary-resume-skills/skills/offer-comparison-analyzer/SKILL.md
+    capabilities: [offer-comparison, total-comp-analysis]
+    dependencies: []
+    tags: [offers, compensation, comparison, decision]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-tech-resume-optimizer
+    description: "Optimize resumes for software engineering, PM, and technical roles."
+    path: skills/_external/paramchoudhary-resume-skills/skills/tech-resume-optimizer/SKILL.md
+    capabilities: [tech-resume, software-engineering-resume]
+    dependencies: []
+    tags: [resume, technical, software-engineering, pm]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-executive-resume-writer
+    description: "Create C-suite and VP level resumes emphasizing strategic leadership."
+    path: skills/_external/paramchoudhary-resume-skills/skills/executive-resume-writer/SKILL.md
+    capabilities: [executive-resume, leadership-framing]
+    dependencies: []
+    tags: [resume, executive, c-suite, leadership]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-academic-cv-builder
+    description: "Format CVs for academic positions with publications, grants, and teaching."
+    path: skills/_external/paramchoudhary-resume-skills/skills/academic-cv-builder/SKILL.md
+    capabilities: [academic-cv, publication-formatting, grant-history]
+    dependencies: []
+    tags: [cv, academic, publications, research]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-creative-portfolio-resume
+    description: "Balance visual design with ATS compatibility for creative roles."
+    path: skills/_external/paramchoudhary-resume-skills/skills/creative-portfolio-resume/SKILL.md
+    capabilities: [creative-resume, visual-design, ats-balance]
+    dependencies: []
+    tags: [resume, creative, design, portfolio]
+    source: external
+    provider: paramchoudhary
+
+  - name: ext-career-changer-translator
+    description: "Translate skills from one industry to another, identify transferable skills."
+    path: skills/_external/paramchoudhary-resume-skills/skills/career-changer-translator/SKILL.md
+    capabilities: [career-transition, skill-translation, transferable-skills]
+    dependencies: []
+    tags: [career-change, transferable-skills, translation]
+    source: external
+    provider: paramchoudhary
+

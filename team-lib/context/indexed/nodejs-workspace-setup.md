@@ -1,9 +1,9 @@
 ---
 template: technical-context
-version: 1.0.1
+version: 1.0.2
 summary: "Node.js global npm setup: NODE_PATH configuration for global require() support, when to use global vs local install. Load when troubleshooting npm or setting up Node.js tooling."
 created: 2026-01-26
-last_updated: 2026-02-18
+last_updated: 2026-08-01
 maintainer: pvragon
 tags: [nodejs, npm, environment-setup, global-packages]
 ---

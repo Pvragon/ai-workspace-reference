@@ -1,10 +1,10 @@
 ---
 template: integration
-version: 1.1.0
+version: 1.1.1
 type: cli
 summary: "ClickUp CLI integration via Restish — covers full v2 + v3 API surface including task comments with @mentions and Chat messaging. Replaces the ClickUp MCP."
 created: 2026-03-19
-last_updated: 2026-03-31
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

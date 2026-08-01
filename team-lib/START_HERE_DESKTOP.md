@@ -1,10 +1,10 @@
 ---
 template: onboarding-guide
-version: 0.1.0
+version: 0.1.1
 summary: "DRAFT. The step-zero card for a total newbie: get Claude Max, open the desktop app's Code tab, paste one prompt pointing at the repo, and let the agent do the rest. The absolute minimum a non-technical person needs to start; hands off to DESKTOP_APP_SETUP.md (which the agent reads)."
 status: draft
 created: 2026-07-21
-last_updated: 2026-07-21
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

@@ -2,10 +2,10 @@
 name: generate-brand-guide-site
 description: "Render a brand's tokens + guidelines into a polished, self-contained brand-guide.html — visually great documentation generated FROM brand data."
 summary: "Step 3 of the brand stack: consumes brand-tokens.json + the narrative sections of brand-guidelines.md and produces a self-contained, brand-expressing HTML brand guide with color, typography, logo, voice, and applied-example sections. LLM-designed, script-verified: a validator rejects any hex or font not present in the tokens file."
-version: 1.0.0
+version: 1.0.1
 template: skill-definition
 created: 2026-07-13
-last_updated: 2026-07-13
+last_updated: 2026-08-01
 maintainer: pvragon
 dependencies: [node]
 tags: [branding, brand-guide, html, design-tokens, documentation]

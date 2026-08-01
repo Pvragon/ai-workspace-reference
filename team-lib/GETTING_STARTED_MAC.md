@@ -11,6 +11,8 @@ maintainer: pvragon
 
 This file replaces **only Phase 1** of [ONBOARDING.md](./ONBOARDING.md) for Mac users — macOS is already Unix, so there's no WSL to install, but the system-setup script won't help you either: `_admin/setup_system.sh` is **Debian/Ubuntu-only** (it uses `apt-get` and exits immediately on macOS). Install its package list with Homebrew instead, below.
 
+Do Phase 0 (Accounts & Access) from ONBOARDING.md first, then:
+
 ## 1. Xcode Command Line Tools
 
 Open **Terminal** (Cmd+Space → "Terminal") and run:
@@ -39,7 +41,7 @@ brew install git gh python@3.12 node jq ripgrep sqlite tree wget bash
 
 Notes:
 - **No `sudo`** — Homebrew refuses to run as root.
-- **`bash` matters:** macOS ships bash 3.2 (2007); the setup scripts use features that need bash 4+. Homebrew's bash installs alongside the system one and wins via PATH. Verify: `bash --version` shows 5.x.
+- **`bash` matters:** macOS ships bash 3.2 (2007); our setup scripts use features that need bash 4+. Homebrew's bash installs alongside the system one, and the scripts pick it up via `/usr/bin/env bash`... if your PATH prefers Homebrew (`brew` setup step 2 handles this). Verify: `bash --version` shows 5.x.
 
 ## 4. Verify
 
@@ -55,5 +57,5 @@ All five print versions → **✓ Checkpoint passed.**
 
 Rejoin **[ONBOARDING.md at Phase 2](./ONBOARDING.md#phase-2-connect-your-terminal-to-github)** (Connect Your Terminal to GitHub) and follow it to the end. Two Mac adjustments as you go:
 
-- **Phase 3 step 2:** skip `sudo ./temp-setup/team-lib/_admin/setup_system.sh` entirely — you just did its job with brew.
+- **Phase 3 step 2:** skip `sudo ./temp-setup/_admin/setup_system.sh` entirely — you just did its job with brew.
 - **Phase 5 step 4:** your workspace file is at `~/ai-workspace/pvragon-workspace.code-workspace` (no `\\wsl$` path, no WSL extension needed).

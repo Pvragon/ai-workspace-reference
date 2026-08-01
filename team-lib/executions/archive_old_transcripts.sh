@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.1
+# version: 1.0.2
 # summary: "Archives old Claude Code session artifacts: moves ~/.claude/projects/**/*.jsonl AND the per-session artifact dirs (tool-results/, subagents/, workflows/, logs/) older than N days (default 14) into ~/.claude/projects-archive/, preserving structure. Scoped to those dirs on purpose — the project dir itself holds live state (sessions-index.json, which /resume reads), so a blanket non-jsonl sweep would break session listing. Keeps the live corpus small so the statusline's ccusage cost meter can't re-parse a multi-GB pile, balloon RAM, and thrash swap → freeze the box. Throttled to at most once per 24h via a stamp file (fast no-op otherwise), so it's cheap to call from every session-debrief. Idempotent, same-filesystem renames, --dry-run / --force. Skipping is non-fatal."
 # created: 2026-06-11
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 #

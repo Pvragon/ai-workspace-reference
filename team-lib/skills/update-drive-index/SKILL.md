@@ -1,9 +1,9 @@
 ---
 template: skill-definition
-version: 1.1.0
+version: 1.1.1
 summary: "Refreshes the Google Drive index at team-lib/context/indexed/pvragon-google-drive-index.md by enumerating all Shared Drives and their root-level contents via the Google Drive API. Run periodically or when drives/folders are reorganized."
 created: 2026-02-25
-last_updated: 2026-03-03
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

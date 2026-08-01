@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "PreToolUse advisory on `git commit`: prints what is actually staged, and flags
 #   staged files that a live peer session is also working in. Mechanises the
 #   run-git-diff--cached-before-you-commit rule, which failed twice in one week."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """staged_diff_advisory.py — show what is staged, before the commit, unasked.

@@ -1,9 +1,9 @@
 ---
 template: skill-definition
-version: 1.0.0
+version: 1.0.1
 summary: "Generate (or recalibrate) a consumer-deals domain pack — attribute extraction + value tables + scoring — for any new product domain. Scrape-once-cache-iterate-offline so it never hits rate limits."
 created: 2026-06-24
-last_updated: 2026-06-24
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

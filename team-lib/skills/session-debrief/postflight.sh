@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.7.0
+# version: 1.7.1
 # summary: "Deterministic post-flight for session-debrief: cleans Zone.Identifier junk, extracts session transcripts, dumps system state, runs adapters, AUTO-EXTRACTS touched files from JSONL, commits repos, posts pulse debrief. v1.6.0 adds the dream-cycle memory self-maintenance: an incremental groom (memory_self_check.py --fix-safe --limit 15, deterministic frontmatter backfills) + a detection pass surfacing remaining hygiene findings, then the two-strength memory-index rerank. All memory steps non-fatal. v1.4.2 hardens PATH (self-adds ~/.local/bin) so the pulse post (restish) survives degraded non-login shells."
 # created: 2026-03-31
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 #

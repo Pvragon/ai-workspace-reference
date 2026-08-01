@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.3.0
+# version: 1.3.1
 # summary: "Headless driver for the sleep cycle — the durable scheduler's cron target, fired ONCE DAILY (3:47am, the overnight 'sleep' window). Runs the DETERMINISTIC, autonomous, safe passes directly (incremental groom, hygiene detect, consolidation scan, dream-journal decay, memory-index rerank, my-lib/team-lib layer-drift scan, public-layer republication) and CUES the one daily metacognitive wake (meditate / consolidate) by recording what's due in a state file + selecting the next meditation object, without spending LLM tokens. Live-session-aware: skips heavier passes if a memory file was touched in the last BUSY_MINUTES. Design principle: this daily sleep is the ONLY clock-scheduled reasoning; all other wakes/reasoning are project/task-triggered (interactive sessions or explicit /schedule routines), never time-polled. Portable to a dedicated always-on machine later. The LLM wake runs via the /dream skill (interactive now; autonomous on the dedicated machine)."
 # created: 2026-07-12
 # last_updated: 2026-08-01
@@ -252,6 +252,30 @@ def main() -> int:
             _finding("layer-drift", "actionable",
                      f"{drift_actionable} actionable my-lib/team-lib drift finding(s): "
                      + ", ".join(drift_items[:4]))
+
+    # Version reconciliation: the floor under the push gate.
+    #
+    # version_gate is a PreToolUse hook, so it only sees pushes made through this
+    # harness. A push from a plain terminal, another machine, or another agent
+    # ships unversioned — and unlike publication that cannot be repaired from the
+    # outgoing range afterwards, because once pushed `@{u}..HEAD` is empty. Git
+    # history still knows, which is what this asks. Commits, never pushes.
+    for _layer in ("team-lib", "my-lib"):
+        _repo = workspace() / _layer
+        if not (_repo / ".git").exists():
+            continue
+        try:
+            v = json.loads(_run("version_gate.py", "--reconcile", str(_repo)))
+        except Exception:
+            log.append(f"version-reconcile[{_layer}]: (skipped)")
+            continue
+        n = len(v.get("bumped") or [])
+        log.append(f"version-reconcile[{_layer}]: {n} file(s) bumped")
+        if n:
+            _finding("version-reconcile", f"stale-{_layer}",
+                     f"{n} file(s) in {_layer} shipped with a body newer than their "
+                     f"version (pushed outside the harness gate); bumped and committed, "
+                     f"not pushed.")
 
     # Publication: regenerate the public reference layer if it has fallen behind.
     #

@@ -2,9 +2,9 @@
 name: check-for-workspace-updates
 description: Check and upgrade local workspace files against latest team-lib templates
 summary: "Compares local workspace files (AGENTS.md, etc.) against team-lib canonical templates and guides upgrades. Run periodically or after team-lib releases."
-version: 1.0.0
+version: 1.0.1
 created: 2026-01-23
-last_updated: 2026-01-23
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

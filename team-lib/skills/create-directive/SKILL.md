@@ -2,9 +2,9 @@
 name: create-directive
 description: Guidelines for creating effective workflow directives that orchestrate without redundancy
 summary: "Comprehensive guidelines for writing directives: template, anti-patterns, review criteria, and the directive vs skill vs AGENTS.md distinction. Follow when creating or reviewing any directive."
-version: 1.1.0
+version: 1.1.1
 created: 2026-01-26
-last_updated: 2026-01-26
+last_updated: 2026-08-01
 maintainer: pvragon
 tags: [directive, documentation, workflow, best-practices]
 ---

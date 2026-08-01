@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Regression tests for the memory ranking pipeline (rerank_memory_index.py + update_memory_access.py), run against a SYNTHETIC fixture corpus in a temp dir — never the live corpus. Pins the invariants the design actually claims: determinism, total tie-break ordering, budget caps, curated summaries surviving regeneration (including rows sitting in the archive), nothing lost, born-visible, the spacing gate, malformed frontmatter degrading to defaults, and pin/superseded overriding score. Runs under pytest or standalone."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: the-operator
 # ---
 """

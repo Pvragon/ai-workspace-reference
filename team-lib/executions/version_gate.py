@@ -257,9 +257,95 @@ def self_check():
     return 0
 
 
+def reconcile(repo, apply=True):
+    """Bump any versioned file whose body changed since its version last changed.
+
+    The floor under the push hook. The hook only fires on pushes made through this
+    harness; a push from a plain terminal, another machine, or another agent skips
+    versioning entirely — and unlike publication it cannot be fixed from the
+    outgoing range afterwards, because once pushed `@{u}..HEAD` is empty and the
+    evidence of what should have bumped is gone.
+
+    So this asks git instead, which is still authoritative: for each versioned
+    file, find the last commit that changed its `version:` line, then check whether
+    any later commit touched the file. Deliberately NO cached hash state — a
+    checker that reads its own previous output is the anti-pattern that produced
+    two separate bugs in this workspace, and git cannot silently rot.
+
+    Returns a list of (path, old, new). Commits, never pushes.
+    """
+    out = []
+    tracked = git(repo, "ls-files").splitlines()
+    for rel in tracked:
+        ver_re, upd_re = pick(rel)
+        if ver_re is None:
+            continue
+        full = os.path.join(repo, rel)
+        if not os.path.isfile(full):
+            continue
+        try:
+            text = open(full).read()
+        except OSError:
+            continue
+        vm = ver_re.search(text)
+        if not vm:
+            continue  # unversioned file — not in scope
+
+        # Only the MOST RECENT commit touching the file matters, which keeps this
+        # to two git calls per file instead of walking its whole history — the
+        # difference between a nightly pass that finishes and one that times out.
+        #
+        # It is exact for the commit patterns here, not merely a heuristic: the
+        # gate writes version bumps as their own `chore(version)` commit, so the
+        # newest commit touching a file either changed its version line (the
+        # version is current with the body) or did not (the body moved after the
+        # version last did). A hand-edit that changes both in one commit still
+        # shows `+version:` and is correctly read as current.
+        last = git(repo, "log", "-1", "--format=%H", "--", rel)
+        if not last:
+            continue  # untracked or never committed
+        if re.search(r"^\+\s*#?\s*version:", git(repo, "show", last, "--", rel), re.M):
+            continue  # version moved with the body
+
+        old = (int(vm.group(2)), int(vm.group(3)), int(vm.group(4)))
+        new_s = "%d.%d.%d" % bump(old, "patch")
+        text = text[: vm.start()] + f"{vm.group(1)}{new_s}{vm.group(5)}" + text[vm.end():]
+        today = git(repo, "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d") or ""
+        um = upd_re.search(text)
+        if um and today:
+            text = text[: um.start()] + f"{um.group(1)}{today}{um.group(3)}" + text[um.end():]
+        if apply:
+            open(full, "w").write(text)
+            sync_registry(repo, rel, new_s, [])
+        out.append((rel, "%d.%d.%d" % old, new_s))
+
+    if out and apply:
+        git(repo, "add", "--", *[r for r, _, _ in out], "registry")
+        subprocess.run(
+            ["git", "-C", repo, "commit", "-q", "-m",
+             "chore(version): reconcile %d file(s) versioned outside the push gate\n\n"
+             "Auto-applied by version_gate.py --reconcile from the nightly tick. These\n"
+             "shipped with a body newer than their version because the push that\n"
+             "carried them did not go through the harness hook. Not pushed.\n"
+             "[no-version]" % len(out)],
+            capture_output=True, text=True, timeout=25,
+        )
+    return out
+
+
 def main():
     if "--self-check" in sys.argv:
         sys.exit(self_check())
+
+    # Invoked directly by the nightly tick, not as a hook: no stdin to read.
+    if "--reconcile" in sys.argv:
+        i = sys.argv.index("--reconcile")
+        repo = (sys.argv[i + 1] if len(sys.argv) > i + 1
+                and not sys.argv[i + 1].startswith("-") else os.getcwd())
+        rows = reconcile(repo, apply="--dry-run" not in sys.argv)
+        print(json.dumps({"status": "ok", "bumped": [
+            {"path": p, "from": a, "to": b} for p, a, b in rows]}))
+        sys.exit(0)
 
     try:
         data = json.load(sys.stdin)

@@ -2,9 +2,9 @@
 name: generate-release-notes
 description: Automate team release notes by analyzing git history and changelogs.
 summary: "Generates release notes from git history and CHANGELOG.md. Supports --since, --last-run, and --finalize flags. Run during the workspace release process."
-version: 1.0.0
+version: 1.0.1
 created: 2026-01-24
-last_updated: 2026-01-24
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

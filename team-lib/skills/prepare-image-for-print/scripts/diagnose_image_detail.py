@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: Diagnose how much REAL detail a photo carries before you upscale or print it.
 #          Separates optical defocus (bright + soft) from compression loss (dark + soft),
 #          estimates JPEG damage, and tables which print sizes the file can honestly support.
 # created: 2026-07-25
-# last_updated: 2026-07-25
+# last_updated: 2026-08-01
 # maintainer: your-agent
 # dependencies: [python>=3.9, pillow, numpy]
 # tags: [image, print, diagnostics, detail, defocus, jpeg, upscaling]

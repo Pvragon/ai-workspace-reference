@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 2.1.0
+# version: 2.1.1
 # summary: "Memory reranker (two-strength model) — walks all T2 memory topic files, computes score = (access_count+1) * exp(-days_since_last_access / stability), and regenerates MEMORY.md as Hot (auto-loaded, ~3K-token budget, pin:true always included) + New (born within GRACE_DAYS, ordered newest-first) + Cold (one Read away). stability is the per-file adaptive decay time-constant maintained by update_memory_access.py (grows with spaced reinforcement; defaults to 14d). v2.1.0 adds the New band: a brand-new memory scored 1.00 and ranked ~#125 of 612 against ~49 visible slots, so it was born straight into the archive — never indexed, never read, never reinforced, which is a loop the design cannot close. Preserves hand-curated row summaries; superseded files forced to archive. Last step of session-debrief. flock-serialized against the Read hook."
 # created: 2026-07-12
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: the-operator
 # ---
 """

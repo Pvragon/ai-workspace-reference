@@ -1,10 +1,10 @@
 ---
 template: onboarding-guide
-version: 0.1.0
+version: 0.1.1
 summary: "DRAFT. An OPTIONAL alternative onboarding path (Claude Code Desktop / Codex) for people using the public ai-workspace-reference library who'd prefer a desktop app over VS Code + a terminal. Additive — the VS Code + terminal path in ONBOARDING.md stays the default; this forks in at Phase 5 for those who want it."
 status: draft
 created: 2026-07-21
-last_updated: 2026-07-21
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 

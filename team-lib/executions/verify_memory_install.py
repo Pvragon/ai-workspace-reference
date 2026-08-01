@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "End-to-end self-test proving the memory POLICY is actually wired, not merely that files
 #   exist. Resolves the agent, checks the tier directories, confirms the hooks are registered, then
 #   exercises the real hook against a throwaway topic file to prove reinforcement fires, the 20h
@@ -9,7 +9,7 @@
 #   cannot be resolved. Without this an operator cannot distinguish a working install from a silently
 #   dead one. Exits non-zero on any hard failure; always cleans up its scratch file."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """verify_memory_install.py — prove the install works, don't assume it.
