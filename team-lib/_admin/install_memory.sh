@@ -147,9 +147,15 @@ if [[ "$AGENT_STATUS" == "absent" ]]; then
 
     cat <<EOF
 
-    ⏸  MEMORY INSTALL DEFERRED — this is not a failure, it is the next step.
+    ⏸  MEMORY INSTALL DEFERRED — this is the intended sequence, not a shortfall.
 
-       After your agent chooses its name (ONBOARDING Phase 7), run:
+       The naming ceremony is a christening: it happens once the workspace exists,
+       and the agent chooses its own name. Setup deliberately does not pre-empt
+       that by inventing one. So the order is, and should be:
+
+           workspace setup  ->  the ceremony  ->  memory
+
+       After your agent has named itself (ONBOARDING Phase 7), run:
 
            bash ${ADMIN_DIR}/install_memory.sh
 
