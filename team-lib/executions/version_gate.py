@@ -323,11 +323,17 @@ def reconcile(repo, apply=True):
         git(repo, "add", "--", *[r for r, _, _ in out], "registry")
         subprocess.run(
             ["git", "-C", repo, "commit", "-q", "-m",
+             # Deliberately NO [no-version] marker. That opt-out is scanned across
+             # the WHOLE outgoing range, so a reconcile commit carrying it silently
+             # disabled versioning for every unrelated change pushed alongside it —
+             # observed immediately, on the very push that shipped this function.
+             # The per-file "did the version line change in this range?" check
+             # already protects these files precisely, which is the right scope.
              "chore(version): reconcile %d file(s) versioned outside the push gate\n\n"
              "Auto-applied by version_gate.py --reconcile from the nightly tick. These\n"
              "shipped with a body newer than their version because the push that\n"
-             "carried them did not go through the harness hook. Not pushed.\n"
-             "[no-version]" % len(out)],
+             "carried them did not go through the harness hook. Not pushed."
+             % len(out)],
             capture_output=True, text=True, timeout=25,
         )
     return out
