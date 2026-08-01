@@ -304,7 +304,7 @@ echo "----------------------------------------"
 echo "Checking Toolchain..."
 # Node major version gates the two required npm CLIs (claude, gws): both declare
 # engines node>=22, and Ubuntu 24.04's apt ships 18.
-node_major=$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')
+node_major=$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/' || true)
 if [[ -z "${node_major:-}" ]]; then
     log_warn "Node.js not installed — required by claude and gws (re-run _admin/setup_system.sh)"
 elif [[ "$node_major" -lt 22 ]]; then

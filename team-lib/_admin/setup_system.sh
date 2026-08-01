@@ -71,7 +71,10 @@ run_cmd "apt-get install -y python3 python3-pip python3-venv python3-yaml"
 # the dropper shape skills/scan-for-malware exists to eradicate, and an installer that
 # teaches the habit is worse than the version it fixes.
 echo "    ... Node.js 22 and npm"
-node_major=$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')
+# `|| true` is load-bearing: this script runs under `set -o pipefail`, so on a box with no
+# node the pipeline inherits node's 127 even though sed succeeded, and `set -e` kills the
+# install at the exact step meant to fix it. Measured in the container, 2026-08-01.
+node_major=$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/' || true)
 if [[ -n "${node_major:-}" && "$node_major" -ge 22 ]]; then
     echo "        Node $(node -v) already satisfies >= 22"
 elif [[ "$DRY_RUN" == "true" ]]; then

@@ -71,9 +71,17 @@ fi
 # External skill packs live as git submodules (skills/_external/*). A plain
 # clone leaves them as empty directories, which breaks skills that depend on
 # them (e.g. the humanizer gate). Init is idempotent and safe to re-run.
-echo "    Initializing external skill packs (git submodules)..."
-git -C "$TEAM_LIB_DIR" submodule update --init --recursive \
-    || echo "    ⚠️  Submodule init failed — re-run later: git -C $TEAM_LIB_DIR submodule update --init --recursive"
+echo "    Initializing external skill packs..."
+# Submodules for a team install; a direct clone from upstream for anyone who installed
+# from the public reference repo, which does not republish third-party content. One
+# script handles both and reads .gitmodules for the pack list either way.
+FETCH_PACKS="${TEAM_LIB_DIR}/_admin/fetch_external_skill_packs.sh"
+if [[ -f "$FETCH_PACKS" ]]; then
+    bash "$FETCH_PACKS" || echo "    ⚠️  Some packs missing — re-run later: bash $FETCH_PACKS"
+else
+    git -C "$TEAM_LIB_DIR" submodule update --init --recursive \
+        || echo "    ⚠️  Submodule init failed — re-run later: git -C $TEAM_LIB_DIR submodule update --init --recursive"
+fi
 
 # ============================================================================
 # SKILL DEPENDENCIES (npm packages)

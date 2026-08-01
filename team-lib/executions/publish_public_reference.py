@@ -145,6 +145,41 @@ def _filter_registry(text: str, published: set[str], shared: Path) -> tuple[str,
     return "\n".join(header + [body.rstrip(), ""]), dropped
 
 
+def published_rel_paths(pub: dict, shared: Path) -> set[str]:
+    """Every team-lib-relative path publication would emit, plus their ancestor dirs.
+
+    Public because layer_drift_scan needs the identical set to predict what publishing
+    would produce. Two copies of this rule would drift, and the thing they would disagree
+    about is precisely whether a registry entry survives.
+    """
+    excludes = list(pub.get("exclude") or [])
+    names: set[str] = set()
+    for name in pub.get("include_files") or []:
+        if (shared / name).is_file():
+            names.add(name)
+    for tree in pub.get("include") or []:
+        root = shared / tree
+        if not root.is_dir():
+            continue
+        for src in root.rglob("*"):
+            if not src.is_file():
+                continue
+            rel = src.relative_to(root).as_posix()
+            if _excluded(rel, excludes):
+                continue
+            names.add(f"{tree}/{rel}")
+    out = set(names)
+    for name in names:
+        parts = name.split("/")
+        for i in range(1, len(parts)):
+            out.add("/".join(parts[:i]))
+    return out
+
+
+def is_registry(name: str) -> bool:
+    return name.startswith("registry/") and name.endswith((".yaml", ".yml"))
+
+
 def _blocked(text: str, blocklist: list[tuple[str, str]]) -> list[str]:
     low = text.lower()
     return sorted({f"{g}:{t}" for g, t in blocklist if t.lower() in low})
@@ -211,14 +246,8 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
     # Every path that WILL exist in the published tree, in the same team-lib-relative
     # shape the registries use. Needed before the write loop so a registry can be filtered
     # against the whole set rather than against whatever has been written so far.
-    published_paths = {name for _t, _s, name, _d in candidates}
-    # Ancestors too: a registry entry may name a directory (context/indexed,
-    # integrations/excalidraw-cli), and a set of files alone would call every one of
-    # those unpublished.
-    for name in list(published_paths):
-        parts = name.split("/")
-        for i in range(1, len(parts)):
-            published_paths.add("/".join(parts[:i]))
+    # One implementation, shared with layer_drift_scan (see published_rel_paths).
+    published_paths = published_rel_paths(pub, shared)
     registry_drops: dict[str, int] = {}
 
     for _tree, src, name, dst in candidates:
@@ -235,7 +264,7 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
 
         out = _generalize(text, rules)
 
-        if name.startswith("registry/") and name.endswith((".yaml", ".yml")):
+        if is_registry(name):
             out, dropped = _filter_registry(out, published_paths, shared)
             if dropped:
                 registry_drops[name] = dropped

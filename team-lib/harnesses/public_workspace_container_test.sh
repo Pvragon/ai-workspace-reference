@@ -123,10 +123,10 @@ cd ~/public-ref
 # setup_workspace.sh's own git-identity prompt is still exercised below.
 GIT_COMMITTER_NAME="harness" GIT_COMMITTER_EMAIL="harness@example.test" \
     git subtree split --prefix=team-lib -b teamlib-root >/dev/null 2>&1
-git init -q --bare ~/teamlib-origin.git
-git push -q ~/teamlib-origin.git teamlib-root:refs/heads/main 2>/dev/null
-git -C ~/teamlib-origin.git symbolic-ref HEAD refs/heads/main
-check "installer origin built from public bytes" "git -C ~/teamlib-origin.git rev-parse main"
+git init -q --bare ~/pvragon-ai-library.git
+git push -q ~/pvragon-ai-library.git teamlib-root:refs/heads/main 2>/dev/null
+git -C ~/pvragon-ai-library.git symbolic-ref HEAD refs/heads/main
+check "installer origin built from public bytes" "git -C ~/pvragon-ai-library.git rev-parse main"
 cd ~
 
 echo ""
@@ -146,7 +146,7 @@ check "node satisfies claude/gws (>=22)" "test \"\$(node -v | sed -E 's/^v([0-9]
 
 echo ""
 echo "=== [Phase 3.3] setup_workspace.sh — answers fed exactly as ONBOARDING says ==="
-TEAM_REPO_URL="file:///home/guest/teamlib-origin.git" \
+TEAM_REPO_URL="file:///home/guest/pvragon-ai-library.git" \
     bash ~/public-ref/team-lib/_admin/setup_workspace.sh < ~/answers.txt > /tmp/workspace.log 2>&1
 WS_RC=$?
 tail -30 /tmp/workspace.log

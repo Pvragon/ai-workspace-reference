@@ -631,9 +631,23 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
     # stale that way immediately after a clean publish.
     gen_rules = list(spec.get("generalize") or [])
 
-    def _as_published(text: str) -> str:
+    # Generalization is not the only transform any more: the publisher also drops registry
+    # entries whose path it withheld. Predicting publication without that step marked all
+    # four derived registries permanently stale — a gate judging its input instead of the
+    # artifact. Both helpers are IMPORTED from the publisher rather than reimplemented,
+    # because the thing two copies would disagree about is exactly which entries survive.
+    try:
+        from publish_public_reference import (_filter_registry, is_registry,
+                                              published_rel_paths)
+        _pub_paths = published_rel_paths(spec, shared_root)
+    except Exception:                                    # publisher unavailable
+        _filter_registry = is_registry = _pub_paths = None
+
+    def _as_published(text: str, name: str = "") -> str:
         for rule in gen_rules:
             text = text.replace(rule["from"], rule["to"])
+        if _pub_paths is not None and name and is_registry(name):
+            text, _ = _filter_registry(text, _pub_paths, shared_root)
         return text
 
     findings: list[dict] = _root_file_classification(spec, shared_root)
@@ -653,7 +667,7 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
             # Check what publishing would ACTUALLY produce. Testing the raw
             # source reports files as leak-blocking that the publisher would
             # generalize cleanly — e.g. a `maintainer:` field naming the agent.
-            source_hits = _blocked(_as_published(text), blocklist)
+            source_hits = _blocked(_as_published(text, full), blocklist)
             published = rel in p_files
 
             # The ONLY true leak is an identifier in the PUBLISHED copy. Testing
@@ -684,7 +698,7 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
                         hint="published copy is correctly scrubbed; content will "
                              "never match the source, by design",
                     ))
-                elif _norm_pub(_as_published(text)) != _norm_pub(pub_text):
+                elif _norm_pub(_as_published(text, full)) != _norm_pub(pub_text):
                     findings.append(_finding(
                         "stale-in-public", "med", "publication", full,
                         hint="the published copy differs from what publishing this "

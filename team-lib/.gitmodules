@@ -1,0 +1,15 @@
+[submodule "skills/_external/anthropics"]
+	path = skills/_external/anthropics
+	url = https://github.com/anthropics/skills.git
+[submodule "skills/_external/rezvani-claude-skills"]
+	path = skills/_external/rezvani-claude-skills
+	url = https://github.com/alirezarezvani/claude-skills.git
+[submodule "skills/_external/blader-humanizer"]
+	path = skills/_external/blader-humanizer
+	url = https://github.com/blader/humanizer.git
+[submodule "skills/_external/arpeeketi-resume-kit"]
+	path = skills/_external/arpeeketi-resume-kit
+	url = https://github.com/ARPeeketi/claude-resume-kit.git
+[submodule "skills/_external/paramchoudhary-resume-skills"]
+	path = skills/_external/paramchoudhary-resume-skills
+	url = https://github.com/Paramchoudhary/ResumeSkills.git
