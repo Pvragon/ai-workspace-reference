@@ -179,6 +179,45 @@ def sync_registry(repo, rel_path, new_version, report):
         report.append(f"    registry/{fname} synced {m.group(3)} -> {new_version}")
 
 
+def resolve_pushed_repo(cmd, cwd_hint, note=lambda *a: None):
+    """Which repo does this command actually push? Shared by every push-boundary hook.
+
+    A hook sees command TEXT, never the expanded shell, so the target has to be
+    inferred. Two forms have already bitten us, both by silently falling through to
+    the session cwd — which is whatever directory the PREVIOUS command left behind:
+
+      `git -C $VAR push`       -> literal "$VAR"           (2026-07-31)
+      `cd <repo> && git push`  -> the cd is invisible      (2026-08-01)
+
+    The second one made version_gate version the generated public repo while the
+    source layer shipped unversioned. This lives in one place precisely so a second
+    push-boundary hook cannot re-acquire the same bug independently.
+
+    `note` is an optional logging callback (event, detail).
+    """
+    repo = None
+
+    m = re.search(r"git\s+-C\s+(\S+)", cmd)
+    if m:
+        cand = os.path.expanduser(m.group(1))
+        if os.path.isdir(cand):
+            repo = cand
+        else:
+            note("unexpanded-C", m.group(1)[:40])
+
+    if repo is None:
+        cd = re.search(r"(?:^|&&|;|\|)\s*cd\s+(\S+)", cmd)
+        if cd:
+            cand = os.path.expanduser(cd.group(1).strip("'\""))
+            if os.path.isdir(cand):
+                repo = cand
+            else:
+                note("unexpanded-cd", cd.group(1)[:40])
+
+    repo = repo or cwd_hint or os.getcwd()
+    return git(repo, "rev-parse", "--show-toplevel") or repo
+
+
 HEARTBEAT = os.path.expanduser("~/.claude/version-gate.log")
 
 
@@ -238,39 +277,7 @@ def main():
         sys.exit(0)
     beat("push", cmd[:80].replace("\n", " "))
 
-    # Resolve the repo: an explicit -C wins, else the session cwd.
-    # The hook sees the command TEXT, not the expanded shell. `git -C $r push` in a
-    # loop yields the literal "$r", which resolves to nothing and skipped the gate
-    # entirely — observed 2026-07-31 on a three-repo push loop, where the
-    # split-capability check silently did not run. Fall back to the session cwd
-    # whenever the -C argument is not a real directory, rather than giving up.
-    m = re.search(r"git\s+-C\s+(\S+)", cmd)
-    repo = None
-    if m:
-        cand = os.path.expanduser(m.group(1))
-        if os.path.isdir(cand):
-            repo = cand
-        else:
-            beat("unexpanded-C", m.group(1)[:40])
-
-    # `cd <dir> && git push` is the SAME bug class as the unexpanded -C above, and
-    # it is the form people actually type. The hook sees command TEXT, so the `cd`
-    # never happened from its point of view and the session cwd wins — which is
-    # whatever directory the PREVIOUS command left behind, not the repo being
-    # pushed. Observed 2026-08-01: pushing team-lib right after committing in the
-    # public repo made the gate evaluate the PUBLIC repo, bumping versions in a
-    # generated artifact while team-lib itself shipped unversioned.
-    if repo is None:
-        cd = re.search(r"(?:^|&&|;|\|)\s*cd\s+(\S+)", cmd)
-        if cd:
-            cand = os.path.expanduser(cd.group(1).strip("'\""))
-            if os.path.isdir(cand):
-                repo = cand
-            else:
-                beat("unexpanded-cd", cd.group(1)[:40])
-
-    repo = repo or data.get("cwd") or os.getcwd()
-    repo = git(repo, "rev-parse", "--show-toplevel") or repo
+    repo = resolve_pushed_repo(cmd, data.get("cwd"), beat)
     if not repo.startswith(WORKSPACE):
         beat("skip", f"outside workspace: {repo}")
         sys.exit(0)  # not ours to police
