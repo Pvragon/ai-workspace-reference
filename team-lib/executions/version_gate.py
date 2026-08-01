@@ -99,6 +99,10 @@ def bump(v, level):
 
 LAYERS = ("my-lib", "team-lib")
 
+#: The generated public repo, relative to WORKSPACE. Kept in step with
+#: registry/mirror.yaml `layers.public`. Never versioned in place — see main().
+PUBLIC_LAYER = "projects/ai-workspace-reference"
+
 
 def counterpart(repo, rel):
     """Absolute path to this file's opposite-layer twin, or None.
@@ -248,11 +252,40 @@ def main():
             repo = cand
         else:
             beat("unexpanded-C", m.group(1)[:40])
+
+    # `cd <dir> && git push` is the SAME bug class as the unexpanded -C above, and
+    # it is the form people actually type. The hook sees command TEXT, so the `cd`
+    # never happened from its point of view and the session cwd wins — which is
+    # whatever directory the PREVIOUS command left behind, not the repo being
+    # pushed. Observed 2026-08-01: pushing team-lib right after committing in the
+    # public repo made the gate evaluate the PUBLIC repo, bumping versions in a
+    # generated artifact while team-lib itself shipped unversioned.
+    if repo is None:
+        cd = re.search(r"(?:^|&&|;|\|)\s*cd\s+(\S+)", cmd)
+        if cd:
+            cand = os.path.expanduser(cd.group(1).strip("'\""))
+            if os.path.isdir(cand):
+                repo = cand
+            else:
+                beat("unexpanded-cd", cd.group(1)[:40])
+
     repo = repo or data.get("cwd") or os.getcwd()
     repo = git(repo, "rev-parse", "--show-toplevel") or repo
     if not repo.startswith(WORKSPACE):
         beat("skip", f"outside workspace: {repo}")
         sys.exit(0)  # not ours to police
+
+    # A GENERATED artifact must never be versioned here. The public reference repo
+    # is produced by publish_public_reference.py from team-lib, so its versions are
+    # team-lib's versions; bumping them in place makes the derived copy claim a
+    # version its source never had, and the next publish silently reverts it.
+    # Belt and braces with the cd/-C resolution above: that stops us ARRIVING here
+    # by accident, this stops us acting even if we do.
+    if os.path.realpath(repo) == os.path.realpath(os.path.join(WORKSPACE, PUBLIC_LAYER)):
+        beat("skip", "generated artifact — versions come from the source layer")
+        print("[version-gate] SKIPPED — this is the generated public repo. Version it in\n"
+              "               team-lib and re-run publish_public_reference.py.", file=sys.stderr)
+        sys.exit(0)
 
     # A hook runs BEFORE its command. So `git add && git commit && git push` in ONE
     # invocation shows us the state as it was BEFORE the commit — the commit we would

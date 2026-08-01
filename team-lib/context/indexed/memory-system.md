@@ -1,14 +1,14 @@
 ---
 template: business-context
-version: 2.1.0
+version: 2.1.1
 summary: "Build-and-operate spec for the agent memory system shipped in team-lib: the five memory
   tiers, the two-strength retrieval policy with its exact formula and constants, the frontmatter
-  schema every consumer relies on, the nightly sleep cycle, the four hooks, the three-command install, the
+  schema every consumer relies on, the nightly sleep cycle, the four hooks, the one-command install, the
   regression suite that proves the RANKING (not just the wiring) is correct, and the one-shot
   migrations an existing corpus needs. This is the implementation contract — the narrative explanation lives at
   prez.prgn.ai/pvragon/260730-agent-memory-architecture. Read this one to build or debug it."
 created: 2026-07-30
-last_updated: 2026-07-30
+last_updated: 2026-08-01
 maintainer: pvragon
 entity_type: system
 tags: [memory, retrieval, scheduler, hooks, agent-infrastructure]

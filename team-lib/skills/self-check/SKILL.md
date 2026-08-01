@@ -2,9 +2,9 @@
 name: self-check
 description: Run the deterministic memory-hygiene linter (the dream-cycle detector) and report findings — MEMORY.md↔file consistency, orphaned topic files, dead [[wikilinks]], frontmatter gaps, stale short-term. Optionally apply the safe incremental groom. Use when the user asks to check/groom memory health, or before a big memory reorganization.
 summary: "On-demand memory-substrate hygiene check via executions/memory_self_check.py. Detection-only by default; --fix-safe applies deterministic frontmatter backfills. The manual entry point to the self-maintenance 'dream cycle' (backlog/260712-memory-system-framework.md, Scheduler layer)."
-version: 1.0.0
+version: 1.0.1
 created: 2026-07-12
-last_updated: 2026-07-12
+last_updated: 2026-08-01
 maintainer: pvragon
 mirror: divergent
 mirror_reason: >-

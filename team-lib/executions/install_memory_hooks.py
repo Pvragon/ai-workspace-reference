@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.1.0
+# version: 1.1.1
 # summary: "Wires the memory system into the Claude Code harness: registers the four PreToolUse hooks
 #   in settings.json and installs the two crontab lines for the nightly sleep cycle. Idempotent (a
 #   second run is a no-op), dry-run by default, backs settings.json up before writing, and never
 #   touches unrelated hook entries. Separate from bootstrap_memory.py because bootstrapping the DATA
 #   and wiring the HARNESS fail for different reasons and should be diagnosable independently."
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """install_memory_hooks.py — register the hooks and the nightly cron.

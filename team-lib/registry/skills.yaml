@@ -237,7 +237,7 @@ skills:
     capabilities: [onboarding, agent-identity, memory-bootstrap]
     dependencies: []
     tags: [onboarding, identity, ceremony, new-agent]
-    version: "1.1.0"
+    version: "1.1.1"
 
   - name: team-lib-currency
     description: "Audit and repair drift between my-lib and team-lib — the copies a teammate actually installs. Runs layer_drift_scan.py, then supplies the judgment the scan withholds: which direction each divergence goes (graduate as a MOVE, pull back, merge, or declare intentionally divergent on both sides). Detection is scheduled nightly in the dream cycle; resolution is task-triggered and lives here."
@@ -895,7 +895,7 @@ skills:
     capabilities: [memory-consolidation, meditation, reflective-wake, residue-writing, sleep-cycle]
     dependencies: [python3]
     tags: [memory, dream, meditation, consolidation, sleep-cycle, reflection, t1-t2]
-    version: "1.0.0"
+    version: "1.0.1"
 
   - name: self-check
     description: "Run the deterministic memory-hygiene linter and report. Detects index rows pointing at missing files, orphaned topic files, dead wikilinks, near-duplicate memories, frontmatter gaps and stale short-term residue; applies only unambiguous safe fixes and escalates anything needing judgment. The cheap detection half of the memory system's maintenance arm."
@@ -903,7 +903,7 @@ skills:
     capabilities: [memory-hygiene, linting, safe-autofix, index-consistency]
     dependencies: [python3]
     tags: [memory, hygiene, linter, maintenance, self-check]
-    version: "1.0.0"
+    version: "1.0.1"
 
   # --- Multi-agent coordination + session lifecycle (graduated from my-lib 2026-07-30) ---
 

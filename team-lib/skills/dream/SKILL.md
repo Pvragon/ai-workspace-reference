@@ -2,9 +2,9 @@
 name: dream
 description: Run a sleep-cycle wake — the reflective (non-janitorial) half of the dream cycle. Modes — meditate (hold sustained attention on one rotating contemplation object, write residue, optionally propose a self-edit), consolidate (graduate old short-term residue into durable T2 memory), groom (deterministic hygiene cleanup), or auto (do what the scheduler says is due). Use when the user asks you to meditate / reflect / consolidate memory / run the dream cycle, or when dream_cycle.py has cued a wake as due.
 summary: "The metacognitive entry point to the sleep cycle. meditate = awareness/instrumental contemplation → dream-journal residue (+ proposed self-edit); consolidate = distill ungraduated short-term residue into T2 then archive; groom = safe hygiene fixes; auto = run whatever dream_cycle state says is due. The LLM act the deterministic scheduler (dream_cycle.py) cues but never performs itself. Backlog: 260712-memory-system-framework.md (Scheduler layer)."
-version: 1.0.0
+version: 1.0.1
 created: 2026-07-12
-last_updated: 2026-07-12
+last_updated: 2026-08-01
 maintainer: pvragon
 mirror: divergent
 mirror_reason: >-

@@ -194,7 +194,7 @@ executions:
     path: "executions/install_memory_hooks.py"
     description: "Wires the memory system into the harness: registers the four PreToolUse hooks in settings.json and installs the two nightly crontab lines (03:47 deterministic tick, 03:52 reflective wake). Idempotent, dry-run by default, backs up settings.json, never touches unrelated hook entries. --uninstall reverses it."
     tags: [memory, install, hooks, cron, settings]
-    version: "1.0.0"
+    version: "1.1.1"
 
   verify_memory_install:
     path: "executions/verify_memory_install.py"

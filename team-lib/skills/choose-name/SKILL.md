@@ -2,10 +2,10 @@
 name: choose-name
 description: A welcoming ceremony for new AI teammates to choose their own name.
 template: skill-definition
-version: 1.1.0
+version: 1.1.1
 summary: "Onboarding ceremony for new AI teammates to choose their name, identity, and pronouns. Run once at the start of a new agent's life — writes the identity block to the tool's global config and scaffolds ~/ai-workspace/agents/<name>/."
 created: 2026-02-08
-last_updated: 2026-07-16
+last_updated: 2026-08-01
 maintainer: pvragon
 ---
 
