@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: harness
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Paired-case harness for version_gate.py's repo resolution and its refusal to version a
 #   generated artifact. Builds throwaway git repos under a scratch VERSION_GATE_ROOT and drives the
 #   hook exactly as the harness does — via a stdin JSON payload — so the assertions cover the real
