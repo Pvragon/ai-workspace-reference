@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution-script
-# version: 1.0.1
+# version: 1.1.0
 # summary: PreToolUse hook on `git push` that keeps frontmatter versions honest.
 #   For every versioned file whose BODY changed in the commits about to be pushed
 #   without its `version:` changing, it bumps the patch level, stamps
@@ -14,7 +14,7 @@
 #   [no-version], [minor] or [major] in any commit message in the range.
 #   Never blocks: any error defers silently so a push is never lost to this hook.
 # created: 2026-07-30
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 """Keep frontmatter versions honest at the push boundary.

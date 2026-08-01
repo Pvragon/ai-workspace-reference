@@ -77,6 +77,8 @@ def self_check() -> int:
     lines = open(HEARTBEAT).read().splitlines()
     fired = [ln for ln in lines if "\tpublished\t" in ln or "\tnothing\t" in ln]
     print(f"publish-gate: {len(lines)} invocation(s) logged, {len(fired)} on a team-lib push")
+    if not fired:
+        print("  NOTE: registered and firing, but no team-lib push has happened yet.")
     for ln in lines[-5:]:
         print("  " + ln)
     return 0
@@ -95,6 +97,11 @@ def main() -> int:
         return 0
     cmd = (data.get("tool_input") or {}).get("command", "")
     if not re.search(r"\bgit\s+(-C\s+\S+\s+)?push\b", cmd):
+        # Log even the no-op case. Without this, "registered but no pushes yet" and
+        # "never registered at all" produce an identical (empty) log, and
+        # --self-check cannot tell them apart — the liveness question it exists to
+        # answer. version_gate beats `not-a-push` for the same reason.
+        beat("skip", "not-a-push")
         return 0
 
     repo = resolve_pushed_repo(cmd, data.get("cwd"))
