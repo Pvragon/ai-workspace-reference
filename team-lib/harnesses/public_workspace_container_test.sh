@@ -1,7 +1,7 @@
 #!/bin/bash
 # ---
 # template: harness
-# version: 1.0.1
+# version: 1.0.2
 # summary: "Pristine-container proof that the PUBLISHED workspace (ai-workspace-reference)
 #   can be cloned onto a blank box, run through the ONBOARDING it ships, and end with a
 #   working agent. Installs from the published bytes only — no host state, no private repo."
@@ -62,7 +62,13 @@ apt-get update -qq >/dev/null 2>&1 </dev/null
 apt-get install -y -qq sudo git ca-certificates >/dev/null 2>&1 </dev/null
 useradd -m -s /bin/bash guest
 echo 'guest ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/guest
-cp /src/public.bundle /home/guest/public.bundle && chown guest:guest /home/guest/public.bundle
+# Two audiences, two install paths, one harness. Stage public.bundle to test what a stranger
+# gets; stage teamlib.bundle to test what a Pvragon teammate gets (the private repo, whose root
+# IS team-lib, with real submodule gitlinks). Testing only one leaves the other's claim unproven
+# — and they differ in exactly the places that break: external packs, registries, remotes.
+for b in public.bundle teamlib.bundle; do
+    [[ -f "/src/$b" ]] && cp "/src/$b" "/home/guest/$b" && chown guest:guest "/home/guest/$b"
+done
 
 cat > /home/guest/answers.txt <<'ANSWERS'
 Test Guest
@@ -84,13 +90,24 @@ check(){ if eval "$2" >/dev/null 2>&1; then ok "$1"; else bad "$1"; fi; }
 WS=~/ai-workspace
 TL=$WS/team-lib
 
-echo "=== [Phase 3.0] clone the PUBLIC repo, as a stranger would ==="
-git clone -q ~/public.bundle ~/public-ref 2>/dev/null
-check "public repo cloned"               "test -d ~/public-ref/team-lib/_admin"
-check "public repo ships ONBOARDING"     "test -s ~/public-ref/team-lib/ONBOARDING.md"
-check "public repo ships setup_system"   "test -s ~/public-ref/team-lib/_admin/setup_system.sh"
-check "public repo ships setup_workspace" "test -s ~/public-ref/team-lib/_admin/setup_workspace.sh"
-check "public repo ships install_memory" "test -s ~/public-ref/team-lib/_admin/install_memory.sh"
+if [ -f ~/teamlib.bundle ]; then MODE=team; else MODE=public; fi
+echo "=== [Phase 3.0] INSTALL PATH UNDER TEST: $MODE ==="
+
+if [ "$MODE" = "team" ]; then
+    # The teammate's path: the private repo, whose ROOT is team-lib, with real gitlinks.
+    git clone -q --bare ~/teamlib.bundle ~/pvragon-ai-library.git 2>/dev/null
+    git -C ~/pvragon-ai-library.git symbolic-ref HEAD refs/heads/main 2>/dev/null
+    check "team repo cloned"                 "git -C ~/pvragon-ai-library.git rev-parse main"
+    git clone -q ~/pvragon-ai-library.git ~/public-ref-src 2>/dev/null
+    mkdir -p ~/public-ref && rm -rf ~/public-ref/team-lib && mv ~/public-ref-src ~/public-ref/team-lib
+else
+    git clone -q ~/public.bundle ~/public-ref 2>/dev/null
+fi
+check "repo cloned"                      "test -d ~/public-ref/team-lib/_admin"
+check "repo ships ONBOARDING"            "test -s ~/public-ref/team-lib/ONBOARDING.md"
+check "repo ships setup_system"          "test -s ~/public-ref/team-lib/_admin/setup_system.sh"
+check "repo ships setup_workspace"       "test -s ~/public-ref/team-lib/_admin/setup_workspace.sh"
+check "repo ships install_memory"        "test -s ~/public-ref/team-lib/_admin/install_memory.sh"
 
 # The published repo must not carry the operator's real identity. This is the one check
 # that is cheaper here than anywhere else: the whole corpus is on disk, unfiltered.
@@ -101,7 +118,9 @@ check "public repo ships install_memory" "test -s ~/public-ref/team-lib/_admin/i
 # token file is reported as NOT CHECKED and counted as a failure: a scrub check that
 # silently did not run must never read as a scrub check that passed.
 echo "=== [scrub] no operator PII in the published bytes ==="
-if [ -s /src/scrub-tokens.txt ]; then
+if [ "$MODE" = "team" ]; then
+    echo "  (team path: the private repo legitimately carries operator and client identifiers — scrub applies to publication only)"
+elif [ -s /src/scrub-tokens.txt ]; then
     while read -r token; do
         [ -z "$token" ] && continue
         if grep -ril --exclude-dir=.git -- "$token" ~/public-ref >/dev/null 2>&1; then
@@ -116,6 +135,9 @@ fi
 
 echo ""
 echo "=== [Phase 3.0b] derive the installer origin from published bytes only ==="
+if [ "$MODE" = "team" ]; then
+  echo "  (team path: the cloned repo IS the installer origin; no derivation needed)"
+else
 # ONBOARDING clones a repo whose ROOT is team-lib; the public repo nests it one level
 # down. subtree-split reproduces the private repo's shape without inventing content.
 cd ~/public-ref
@@ -127,6 +149,7 @@ git init -q --bare ~/pvragon-ai-library.git
 git push -q ~/pvragon-ai-library.git teamlib-root:refs/heads/main 2>/dev/null
 git -C ~/pvragon-ai-library.git symbolic-ref HEAD refs/heads/main
 check "installer origin built from public bytes" "git -C ~/pvragon-ai-library.git rev-parse main"
+fi
 cd ~
 
 echo ""
