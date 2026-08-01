@@ -84,9 +84,65 @@ def self_check() -> int:
     return 0
 
 
+def publish_now(quiet: bool = False) -> int:
+    """Regenerate the public repo and commit it. Returns files written, -1 on refusal.
+
+    The single implementation, shared by the push hook and the nightly tick. The tick
+    is the safety net the hook cannot be: a push made from a plain terminal, another
+    machine, or any session without this harness fires no hook at all, and the public
+    layer would sit stale until someone noticed.
+    """
+    public = os.path.join(WORKSPACE, PUBLIC_LAYER)
+    if not os.path.isdir(os.path.join(public, ".git")):
+        beat("skip", "public repo not present on this machine")
+        return 0
+
+    r = run(sys.executable, str(PUBLISHER), "--apply")
+    out = (r.stdout or "") + (r.stderr or "")
+
+    # A refusal means the scrub gate caught an identifier that generalization missed.
+    # That is the gate working; surface it loudly rather than burying it in a log.
+    refused = re.search(r"refused \(leak\)\s*:\s*(\d+)", out)
+    if refused and refused.group(1) != "0":
+        beat("refused", f"{refused.group(1)} file(s) blocked by the scrub gate")
+        if not quiet:
+            print("[publish-gate] PUBLICATION REFUSED — a blocked identifier survived\n"
+                  "               generalization. The public repo was NOT updated.\n"
+                  + out[-800:], file=sys.stderr)
+        return -1
+
+    written = re.search(r"written/updated\s*:\s*(\d+)", out)
+    n = int(written.group(1)) if written else 0
+    if n == 0 or not run("git", "-C", public, "status", "--porcelain").stdout.strip():
+        beat("nothing", "public already current")
+        return 0
+
+    run("git", "-C", public, "add", "-A")
+    run("git", "-C", public, "commit", "-q", "-m",
+        f"chore(publish): regenerate from team-lib ({n} file(s))\n\n"
+        "Auto-applied by publish_gate.py. The public repo is a GENERATED artifact —\n"
+        "edit team-lib and let this regenerate it. Not pushed: publishing to the\n"
+        "world stays a human decision.\n[no-version]")
+
+    ahead = run("git", "-C", public, "rev-list", "--count", "@{u}..HEAD").stdout.strip() or "?"
+    beat("published", f"{n} file(s), public now ahead {ahead}")
+    if not quiet:
+        print(f"[publish-gate] public reference regenerated: {n} file(s) updated and\n"
+              f"               committed. NOT pushed — {ahead} commit(s) waiting in\n"
+              f"               {public}", file=sys.stderr)
+    return n
+
+
 def main() -> int:
     if "--self-check" in sys.argv:
         return self_check()
+
+    # Invoked directly (the nightly tick), not as a hook: no stdin to read.
+    if "--run" in sys.argv:
+        n = publish_now(quiet="--quiet" in sys.argv)
+        print(json.dumps({"status": "refused" if n < 0 else "ok",
+                          "written": max(n, 0)}))
+        return 0
 
     try:
         data = json.load(sys.stdin)
@@ -111,46 +167,7 @@ def main() -> int:
         beat("skip", f"not the shared layer: {os.path.basename(repo)}")
         return 0
 
-    public = os.path.join(WORKSPACE, PUBLIC_LAYER)
-    if not os.path.isdir(os.path.join(public, ".git")):
-        beat("skip", "public repo not present on this machine")
-        return 0
-
-    r = run(sys.executable, str(PUBLISHER), "--apply")
-    out = (r.stdout or "") + (r.stderr or "")
-
-    # A refusal means the scrub gate caught an identifier that generalization missed.
-    # That is the gate working; surface it loudly rather than burying it in a log.
-    refused = re.search(r"refused \(leak\)\s*:\s*(\d+)", out)
-    if refused and refused.group(1) != "0":
-        beat("refused", f"{refused.group(1)} file(s) blocked by the scrub gate")
-        print("[publish-gate] PUBLICATION REFUSED — a blocked identifier survived\n"
-              "               generalization. The public repo was NOT updated.\n"
-              + out[-800:], file=sys.stderr)
-        return 0
-
-    written = re.search(r"written/updated\s*:\s*(\d+)", out)
-    n = int(written.group(1)) if written else 0
-    if n == 0:
-        beat("nothing", "public already current")
-        return 0
-
-    if not run("git", "-C", public, "status", "--porcelain").stdout.strip():
-        beat("nothing", "publisher wrote nothing git can see")
-        return 0
-
-    run("git", "-C", public, "add", "-A")
-    run("git", "-C", public, "commit", "-q", "-m",
-        f"chore(publish): regenerate from team-lib ({n} file(s))\n\n"
-        "Auto-applied by publish_gate.py when team-lib was pushed. The public repo is\n"
-        "a GENERATED artifact — edit team-lib and let this regenerate it. Not pushed:\n"
-        "publishing to the world stays a human decision.\n[no-version]")
-
-    ahead = run("git", "-C", public, "rev-list", "--count", "@{u}..HEAD").stdout.strip() or "?"
-    beat("published", f"{n} file(s), public now ahead {ahead}")
-    print(f"[publish-gate] public reference regenerated: {n} file(s) updated and\n"
-          f"               committed. NOT pushed — {ahead} commit(s) waiting in\n"
-          f"               {public}", file=sys.stderr)
+    publish_now()
     return 0
 
 
