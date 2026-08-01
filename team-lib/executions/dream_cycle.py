@@ -253,6 +253,26 @@ def main() -> int:
                      f"{drift_actionable} actionable my-lib/team-lib drift finding(s): "
                      + ", ".join(drift_items[:4]))
 
+    # External pack pins: a stale pin is invisible on this machine.
+    #
+    # The gitlink carries the pin for a team install, so bumping a submodule and forgetting
+    # to re-run the pin writer changes nothing HERE — it only changes what a public
+    # installer fetches, which is a surface nobody on the team ever looks at.
+    try:
+        import subprocess
+        pins = subprocess.run(["bash", str(Path(EXEC).parent / "_admin" / "update_external_pack_pins.sh"),
+                               "--check"], capture_output=True, text=True, timeout=60)
+        if pins.returncode != 0:
+            _finding("publication", "external-pack-pins",
+                     "external skill pack pins in .gitmodules are stale — public installs "
+                     "would fetch a different commit than this machine has: "
+                     + (pins.stdout.strip().splitlines() or ["?"])[-1].strip())
+            log.append("external-pack-pins: STALE")
+        else:
+            log.append("external-pack-pins: current")
+    except Exception:
+        log.append("external-pack-pins: (check skipped)")
+
     # Version reconciliation: the floor under the push gate.
     #
     # version_gate is a PreToolUse hook, so it only sees pushes made through this

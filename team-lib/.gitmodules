@@ -1,15 +1,20 @@
 [submodule "skills/_external/anthropics"]
 	path = skills/_external/anthropics
 	url = https://github.com/anthropics/skills.git
+	commit = 69c0b1a0674149f27b61b2635f935524b6add202
 [submodule "skills/_external/rezvani-claude-skills"]
 	path = skills/_external/rezvani-claude-skills
 	url = https://github.com/alirezarezvani/claude-skills.git
+	commit = 22d419e1cd1a7d032a269382a61a7832745e4a60
 [submodule "skills/_external/blader-humanizer"]
 	path = skills/_external/blader-humanizer
 	url = https://github.com/blader/humanizer.git
+	commit = c78047bd4300e5a995d37ae8c7684aa2d53326cd
 [submodule "skills/_external/arpeeketi-resume-kit"]
 	path = skills/_external/arpeeketi-resume-kit
 	url = https://github.com/ARPeeketi/claude-resume-kit.git
+	commit = 69930e9de21d5595f9b8c9427adc9c51a9fcbc0e
 [submodule "skills/_external/paramchoudhary-resume-skills"]
 	path = skills/_external/paramchoudhary-resume-skills
 	url = https://github.com/Paramchoudhary/ResumeSkills.git
+	commit = 74ae19e7c62b0516d1c298328e5544976c12da5d

@@ -67,16 +67,40 @@ while read -r key path; do
         continue
     fi
 
-    echo "    Fetching $pack from $url..."
+    # Pin to the commit the team tested. Unpinned, this fetches upstream HEAD: measured
+    # 2026-08-01, that gave a container install 526 external skills against this machine's
+    # 88 — a larger, unvetted surface pulled in by a setup script. See
+    # update_external_pack_pins.sh for where the pin comes from.
+    sha=$(git config -f "$GITMODULES" --get "submodule.${name}.commit" 2>/dev/null || true)
+
+    echo "    Fetching $pack from $url${sha:+ @ ${sha:0:12}}..."
     mkdir -p "$(dirname "$target")"
     rm -rf "$target"
-    if git clone --depth 1 --quiet "$url" "$target"; then
+    got=false
+    if [[ -n "$sha" ]]; then
+        if git init -q "$target" \
+           && git -C "$target" remote add origin "$url" \
+           && git -C "$target" fetch -q --depth 1 origin "$sha" \
+           && git -C "$target" checkout -q FETCH_HEAD; then
+            got=true
+        else
+            echo "    ⚠️  $pack: pinned commit unavailable; falling back to upstream HEAD"
+            rm -rf "$target"
+        fi
+    else
+        echo "    ⚠️  $pack: NO PIN in .gitmodules — tracking upstream HEAD. Fix with: bash $ADMIN_DIR/update_external_pack_pins.sh"
+    fi
+    if [[ "$got" != "true" ]]; then
+        git clone --depth 1 --quiet "$url" "$target" && got=true
+    fi
+
+    if [[ "$got" == "true" ]]; then
         # Not a nested repo: the pack is content here, not a tracked submodule, and a
         # stray .git would make the parent repo treat it as an unregistered gitlink.
         rm -rf "${target}/.git"
         fetched=$((fetched+1))
     else
-        echo "    ⚠️  $pack: clone failed — retry later: git clone --depth 1 $url $target"
+        echo "    ⚠️  $pack: fetch failed — retry later: git clone --depth 1 $url $target"
         failed=$((failed+1))
     fi
 done < <(git config -f "$GITMODULES" --get-regexp '^submodule\..*\.path$' 2>/dev/null)
