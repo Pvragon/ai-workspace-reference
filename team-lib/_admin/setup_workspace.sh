@@ -656,6 +656,17 @@ fi
 # (measured in harnesses/public_workspace_container_test.sh, 2026-08-01).
 
 echo ""
+echo "=== Installing the status line ==="
+# findings.py pre-renders a statusline segment on every mutation; without the status line
+# itself that counter is written and never read. Pointer, not copy — see install_statusline.sh.
+STATUSLINE_INSTALL="${WORKSPACE_ROOT}/team-lib/_admin/install_statusline.sh"
+if [[ -f "$STATUSLINE_INSTALL" ]]; then
+    bash "$STATUSLINE_INSTALL" || echo "    ⚠️  Status line not installed — re-run later: bash $STATUSLINE_INSTALL"
+else
+    echo "    ⚠️  install_statusline.sh not found — skipping."
+fi
+
+echo ""
 echo "=== Exposing shared skills to the agent ==="
 LINK_SKILLS="${WORKSPACE_ROOT}/team-lib/executions/link_skills.py"
 if [[ -f "$LINK_SKILLS" ]]; then

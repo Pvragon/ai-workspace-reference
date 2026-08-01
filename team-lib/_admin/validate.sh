@@ -298,6 +298,13 @@ else
     fi
 fi
 
+# 4d. Status line
+if [[ -e "$HOME/.claude/statusline.sh" ]]; then
+    log_pass "Status line installed"
+else
+    log_warn "No status line — context %, rate-limit clocks and the findings count are invisible. Run: bash $WORKSPACE_ROOT/team-lib/_admin/install_statusline.sh"
+fi
+
 echo "----------------------------------------"
 
 # 5. Toolchain
