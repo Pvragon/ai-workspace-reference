@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Reports the CURRENT session's context usage by reading the last usage payload out of
 #   the session JSONL — the same three fields the statusline sums. Exists because the agent cannot
 #   see the context_window payload and its from-conversation-length estimate ran ~40% high, which
@@ -78,25 +78,7 @@ def _last_usage(path: Path) -> dict | None:
     return last
 
 
-def run(session: str | None = None, project: str | None = None) -> dict:
-    """Return the current context usage, or an error dict."""
-    proj = Path(project) if project else _project_dir(Path.cwd())
-    if not proj.is_dir():
-        return {"status": "error", "error": f"no transcript directory: {proj}"}
-
-    if session:
-        path = proj / f"{session}.jsonl"
-        if not path.is_file():
-            return {"status": "error", "error": f"no transcript for session {session}"}
-    else:
-        path = _latest_transcript(proj)
-        if path is None:
-            return {"status": "error", "error": f"no transcripts in {proj}"}
-
-    usage = _last_usage(path)
-    if not usage:
-        return {"status": "error", "error": f"no usage payload in {path.name}"}
-
+def _result(path: Path, usage: dict, exact: bool) -> dict:
     used = (usage.get("input_tokens", 0)
             + usage.get("cache_read_input_tokens", 0)
             + usage.get("cache_creation_input_tokens", 0))
@@ -113,7 +95,75 @@ def run(session: str | None = None, project: str | None = None) -> dict:
         "cache_creation": usage.get("cache_creation_input_tokens", 0),
         "window": window,
         "pct": round(100.0 * used / window, 1),
+        # False when the session was GUESSED. Callers must not present a non-exact
+        # figure as a measurement.
+        "exact": exact,
     }
+
+
+def _find_by_id(session_id: str) -> Path | None:
+    """Locate a session transcript by id across every project directory."""
+    for cand in PROJECTS.glob(f"*/{session_id}.jsonl"):
+        if cand.is_file():
+            return cand
+    return None
+
+
+def run(session: str | None = None, project: str | None = None) -> dict:
+    """Return the current context usage, or an error dict.
+
+    Resolution order, most authoritative first:
+      1. --session
+      2. $CLAUDE_CODE_SESSION_ID — the running session, exact and cwd-independent
+      3. the cwd's project dir, most recent transcript
+      4. the most recently active project anywhere
+
+    3 and 4 are guesses and say so. They have to be: measured 2026-08-01, FOUR transcripts
+    in one project directory shared an mtime to the minute, because concurrent sessions
+    share a repo. "Most recent" picked a peer's session and reported its number as mine.
+    """
+    exact = True
+    if not session and not project:
+        env_id = os.environ.get("CLAUDE_CODE_SESSION_ID", "").strip()
+        if env_id:
+            found = _find_by_id(env_id)
+            if found is not None:
+                usage = _last_usage(found)
+                if usage:
+                    return _result(found, usage, exact=True)
+
+    proj = Path(project) if project else _project_dir(Path.cwd())
+    if not proj.is_dir() and not project:
+        # Run from a directory that is not the session's own project — team-lib, say —
+        # and the cwd-derived path does not exist.
+        #
+        # The first cut silently fell back to the most recently active project and
+        # confidently reported a number for a DIFFERENT session (a peer's, measured
+        # 2026-08-01). That is the exact shape this whole script exists to eliminate: a
+        # probe answering with something plausible when the honest answer is "I do not
+        # know which session you mean". The fallback stays, because it is usually right
+        # and refusing would be useless — but it is now labelled, and every caller sees
+        # `exact: false` rather than a number that looks measured.
+        candidates = [d for d in PROJECTS.glob("*") if d.is_dir() and any(d.glob("*.jsonl"))]
+        if candidates:
+            proj = max(candidates, key=lambda d: max(f.stat().st_mtime for f in d.glob("*.jsonl")))
+            exact = False
+    if not proj.is_dir():
+        return {"status": "error", "error": f"no transcript directory: {proj}"}
+
+    if session:
+        path = proj / f"{session}.jsonl"
+        if not path.is_file():
+            return {"status": "error", "error": f"no transcript for session {session}"}
+    else:
+        path = _latest_transcript(proj)
+        if path is None:
+            return {"status": "error", "error": f"no transcripts in {proj}"}
+
+    usage = _last_usage(path)
+    if not usage:
+        return {"status": "error", "error": f"no usage payload in {path.name}"}
+    return _result(path, usage, exact=exact)
 
 
 def main() -> int:
@@ -130,7 +180,12 @@ def main() -> int:
     if r["status"] != "ok":
         print(f"context_usage: {r['error']}", file=sys.stderr)
         return 1
-    print(f"context: {r['used']:,} tokens ({r['pct']}% of {r['window']:,})")
+    if not r.get("exact", True):
+        print("WARNING: cwd is not a session project dir — this is the most recently "
+              "ACTIVE session, which may be a different one. Pass --session to be sure.",
+              file=sys.stderr)
+    print(f"context: {r['used']:,} tokens ({r['pct']}% of {r['window']:,})"
+          f"{'' if r.get('exact', True) else '   [GUESSED SESSION]'}")
     print(f"  input {r['input_tokens']:,} + cache_read {r['cache_read']:,} "
           f"+ cache_creation {r['cache_creation']:,}")
     print(f"  session {r['session']}")

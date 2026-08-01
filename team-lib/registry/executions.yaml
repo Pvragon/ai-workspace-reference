@@ -31,7 +31,7 @@ executions:
     path: "executions/context_usage.py"
     description: "Reports the current session's context usage by reading the last usage payload from the session JSONL — input_tokens + cache_read_input_tokens + cache_creation_input_tokens, the same three fields ~/.claude/statusline.sh sums. Exists because the agent cannot see the context_window payload and its from-conversation-length estimate ran ~40% high (measured 2026-08-01: 'around 400k' against a real 287k), making every threshold reminder a false alarm. --json for chaining."
     tags: [context, session, measurement, statusline, thresholds]
-    version: "1.0.0"
+    version: "1.0.1"
 
   link_skills:
     path: "executions/link_skills.py"

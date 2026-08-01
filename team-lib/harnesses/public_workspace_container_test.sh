@@ -1,7 +1,7 @@
 #!/bin/bash
 # ---
 # template: harness
-# version: 1.0.2
+# version: 1.0.3
 # summary: "Pristine-container proof that the PUBLISHED workspace (ai-workspace-reference)
 #   can be cloned onto a blank box, run through the ONBOARDING it ships, and end with a
 #   working agent. Installs from the published bytes only — no host state, no private repo."
@@ -288,7 +288,13 @@ for reg in sorted(glob.glob(os.path.join(TL, "registry", "*.yaml"))):
         global checked
         if isinstance(node, dict):
             p = node.get("path")
-            if isinstance(p, str) and p and not p.startswith(("http", "~")):
+            # Glob PATTERNS are not paths. mirror.yaml states its mapping as globs
+            # (`_admin/**`), and treating those as files invented three broken entries
+            # on the team path — the only path that sees mirror.yaml, since publication
+            # excludes it. A checker that cannot tell a pattern from a path fails the
+            # artifact for being written correctly.
+            if (isinstance(p, str) and p and not p.startswith(("http", "~"))
+                    and not any(ch in p for ch in "*?[")):
                 checked += 1
                 if not any(os.path.exists(os.path.join(root, p)) for root in ROOTS):
                     missing.append((os.path.basename(reg), p))
