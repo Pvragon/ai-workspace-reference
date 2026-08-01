@@ -239,6 +239,18 @@ skills:
     tags: [onboarding, identity, ceremony, new-agent]
     version: "1.1.1"
 
+  - name: graduate
+    description: "Move a proven capability from my-lib into team-lib as a MOVE, never a copy. Wraps graduate_capability.py: interprets each of its four pre-flight refusals (content conflict, operator identifier, personal-layer dependency, split capability) into fix-it / override / do-not-graduate, applies the move, and verifies 0 actionable drift plus that the skill still resolves through its symlink. Enforces the half that gets skipped — after graduation the personal copy stops existing."
+    path: skills/graduate/SKILL.md
+    capabilities: [graduation, layer-currency, governance]
+    dependencies:
+      - executions/graduate_capability.py
+      - executions/layer_drift_scan.py
+      - registry/mirror.yaml
+      - directives/graduate-to-team-library.md
+    tags: [governance, graduation, promotion, team-lib, layers]
+    version: "1.0.0"
+
   - name: team-lib-currency
     description: "Audit and repair drift between my-lib and team-lib — the copies a teammate actually installs. Runs layer_drift_scan.py, then supplies the judgment the scan withholds: which direction each divergence goes (graduate as a MOVE, pull back, merge, or declare intentionally divergent on both sides). Detection is scheduled nightly in the dream cycle; resolution is task-triggered and lives here."
     path: skills/team-lib-currency/SKILL.md
