@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.1
+# version: 1.3.0
 # summary: "Headless driver for the sleep cycle — the durable scheduler's cron target, fired ONCE DAILY (3:47am, the overnight 'sleep' window). Runs the DETERMINISTIC, autonomous, safe passes directly (incremental groom, hygiene detect, consolidation scan, dream-journal decay, memory-index rerank, my-lib/team-lib layer-drift scan) and CUES the one daily metacognitive wake (meditate / consolidate) by recording what's due in a state file + selecting the next meditation object, without spending LLM tokens. Live-session-aware: skips heavier passes if a memory file was touched in the last BUSY_MINUTES. Design principle: this daily sleep is the ONLY clock-scheduled reasoning; all other wakes/reasoning are project/task-triggered (interactive sessions or explicit /schedule routines), never time-polled. Portable to a dedicated always-on machine later. The LLM wake runs via the /dream skill (interactive now; autonomous on the dedicated machine)."
 # created: 2026-07-12
-# last_updated: 2026-07-31
+# last_updated: 2026-08-01
 # maintainer: the-operator
 # ---
 """

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.1.0
 # summary: "PostToolUse hook that regenerates the public reference repo whenever team-lib is pushed,
 #   so the published layer is never stale by more than one push. Runs publish_public_reference.py,
 #   commits the result in the public repo (never pushes — that stays a human decision), and logs a
