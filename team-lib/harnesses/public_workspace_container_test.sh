@@ -1,7 +1,7 @@
 #!/bin/bash
 # ---
 # template: harness
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Pristine-container proof that the PUBLISHED workspace (ai-workspace-reference)
 #   can be cloned onto a blank box, run through the ONBOARDING it ships, and end with a
 #   working agent. Installs from the published bytes only — no host state, no private repo."

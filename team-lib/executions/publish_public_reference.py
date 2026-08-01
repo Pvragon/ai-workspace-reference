@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.1
+# version: 1.0.2
 # summary: "Publishes team-lib to the public reference repo as a GENERALIZATION: copies every
 #   included tree, drops what is proprietary, rewrites operator and client identifiers into
 #   placeholders, and REFUSES to write any file that still contains a blocked term afterwards.
