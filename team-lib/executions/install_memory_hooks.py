@@ -165,8 +165,20 @@ def install_hooks(apply: bool, uninstall: bool) -> int:
 
 
 # ------------------------------------------------------------------- cron ----
+class CronUnavailable(RuntimeError):
+    """No `crontab` binary on this host.
+
+    Deliberately distinct from "crontab exists and is empty". Collapsing the two
+    would make a box that CANNOT schedule look identical to one that simply has
+    nothing scheduled yet, and the installer would report a cron it never installed.
+    """
+
+
 def current_crontab() -> str:
-    r = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+    try:
+        r = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+    except FileNotFoundError as exc:  # the `cron` package is not installed
+        raise CronUnavailable("no `crontab` binary on this host") from exc
     return r.stdout if r.returncode == 0 else ""
 
 
@@ -205,7 +217,10 @@ def write_crontab(lines: list[str], apply: bool) -> int:
     if not apply:
         return 0
     body = "\n".join(ln for ln in lines if ln.strip()) + "\n"
-    r = subprocess.run(["crontab", "-"], input=body, text=True, capture_output=True)
+    try:
+        r = subprocess.run(["crontab", "-"], input=body, text=True, capture_output=True)
+    except FileNotFoundError as exc:
+        raise CronUnavailable("no `crontab` binary on this host") from exc
     if r.returncode != 0:
         print(f"!! crontab install failed: {r.stderr.strip()}", file=sys.stderr)
         return 1
@@ -243,7 +258,18 @@ def main() -> int:
     rc = install_hooks(args.apply, args.uninstall)
     if not args.no_cron:
         print("\nCron:")
-        rc |= install_cron(args.apply, args.uninstall, args.agent_cmd)
+        try:
+            rc |= install_cron(args.apply, args.uninstall, args.agent_cmd)
+        except CronUnavailable as exc:
+            # Soft on purpose, and it must stay soft: verify_memory_install.py treats
+            # cron as a WARN for exactly this reason — a host may schedule with systemd
+            # timers or Task Scheduler instead. Failing the whole install here would
+            # block the memory system on a container that never wanted cron anyway.
+            print(f"  SKIPPED — {exc}.")
+            print("  The memory system is fully installed; only the NIGHTLY SLEEP CYCLE")
+            print("  is unscheduled. Install cron and re-run, or schedule these yourself:")
+            print(f"    03:47  {sys.executable} {exec_dir() / 'dream_cycle.py'}")
+            print(f"    03:52  {DEFAULT_WAKE_CMD}")
     else:
         print("\nCron: skipped (--no-cron)")
 

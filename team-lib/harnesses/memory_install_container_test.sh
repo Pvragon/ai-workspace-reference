@@ -51,6 +51,19 @@ mkdir -p ~/ai-workspace
 git clone -q ~/teamlib.bundle ~/ai-workspace/team-lib 2>/dev/null
 check "team-lib cloned"                 "test -d ~/ai-workspace/team-lib/executions"
 
+echo ""
+echo "=== [Phase 7.5 BEFORE Phase 7] the pre-naming state setup actually hits ==="
+# setup_workspace.sh runs before any agent exists, so this is the state a real first
+# install is in. It must wire what it can and REFUSE to claim success.
+bash ~/ai-workspace/team-lib/_admin/install_memory.sh > /tmp/deferred.log 2>&1
+DEFERRED_RC=$?
+tail -6 /tmp/deferred.log
+check "no agent -> exit 2 (DEFERRED)"   "test $DEFERRED_RC -eq 2"
+check "deferred says so out loud"       "grep -q DEFERRED /tmp/deferred.log"
+check "hooks wired even pre-naming"     "grep -q update_memory_access ~/.claude/settings.json"
+check "no memory dir invented"          "! test -d ~/ai-workspace/agents/testagent/memory"
+
+echo ""
 echo "=== [Phase 7 stand-in] agent home, as the naming ceremony would leave it ==="
 mkdir -p ~/ai-workspace/agents/testagent
 cat > ~/ai-workspace/agents/testagent/identity.md <<'ID'
@@ -69,26 +82,45 @@ cd ~/ai-workspace/team-lib/executions
 python3 agent_paths.py && ok "agent_paths resolves" || bad "agent_paths resolves"
 
 echo ""
-echo "=== [Phase 7.5 step 2] bootstrap (DRY RUN first, as the guide says) ==="
-python3 bootstrap_memory.py 2>&1 | tail -5
-check "dry run exits 0"                 "python3 bootstrap_memory.py"
+echo "=== [Phase 7.5 step 2] DRY RUN, as the guide says ==="
+# ONBOARDING documents ONE command now, so that is what this exercises. Testing the
+# underlying three-script chain instead would leave the documented path unrun — the
+# same trap as a doc that describes a gate nobody executes.
+INSTALL=~/ai-workspace/team-lib/_admin/install_memory.sh
+bash $INSTALL --dry-run 2>&1 | tail -6
+check "dry run exits 0"                 "bash $INSTALL --dry-run"
 check "dry run wrote NOTHING"           "! test -f ~/ai-workspace/agents/testagent/memory/MEMORY.md"
 
 echo ""
-echo "=== [Phase 7.5 step 3] bootstrap --apply ==="
-python3 bootstrap_memory.py --apply 2>&1 | tail -8
+echo "=== [Phase 7.5 step 3] the documented one-command install ==="
+bash $INSTALL > /tmp/install.log 2>&1
+INSTALL_RC=$?
+tail -25 /tmp/install.log
+check "install exits 0"                 "test $INSTALL_RC -eq 0"
 check "memory dir created"              "test -d ~/ai-workspace/agents/testagent/memory"
 check "MEMORY.md created"               "test -s ~/ai-workspace/agents/testagent/memory/MEMORY.md"
 check "short-term dir created"          "test -d ~/ai-workspace/agents/testagent/memory/short-term"
-
-echo ""
-echo "=== [Phase 7.5 step 4] install hooks ==="
-python3 install_memory_hooks.py --apply 2>&1 | tail -8
 check "settings.json written"           "test -f ~/.claude/settings.json"
 check "hook registered by ABSOLUTE path" "grep -q update_memory_access ~/.claude/settings.json"
+check "verify ran inside the installer" "grep -q 'wired and firing' /tmp/install.log"
+
+# A box with no `cron` package must still yield a working memory system — only the
+# nightly cycle goes unscheduled. This is the pristine-box case by definition.
+if command -v crontab >/dev/null 2>&1; then
+    echo "  (crontab present in this image — cron path exercised for real)"
+else
+    check "missing crontab degrades soft" "grep -q 'SKIPPED — no .crontab. binary' /tmp/install.log"
+fi
 
 echo ""
-echo "=== [Phase 7.5 step 5] verify ==="
+echo "=== [Phase 7.5 step 4] re-run is a clean no-op (idempotence) ==="
+bash $INSTALL > /tmp/install2.log 2>&1
+RERUN_RC=$?
+check "second run exits 0"              "test $RERUN_RC -eq 0"
+check "second run changed nothing"      "grep -q 'already correct' /tmp/install2.log"
+
+echo ""
+echo "=== [Phase 7.5 step 5] verify standalone ==="
 python3 verify_memory_install.py 2>&1 | tail -20
 check "verify_memory_install exits 0"   "python3 verify_memory_install.py"
 
