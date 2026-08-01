@@ -27,6 +27,12 @@ executions:
     tags: [publication, public-repo, scrub, generalization, reference]
     version: "1.0.2"
 
+  context_usage:
+    path: "executions/context_usage.py"
+    description: "Reports the current session's context usage by reading the last usage payload from the session JSONL — input_tokens + cache_read_input_tokens + cache_creation_input_tokens, the same three fields ~/.claude/statusline.sh sums. Exists because the agent cannot see the context_window payload and its from-conversation-length estimate ran ~40% high (measured 2026-08-01: 'around 400k' against a real 287k), making every threshold reminder a false alarm. --json for chaining."
+    tags: [context, session, measurement, statusline, thresholds]
+    version: "1.0.0"
+
   link_skills:
     path: "executions/link_skills.py"
     description: "Exposes the shared skill library to the agent harness: wires ~/.claude/skills to the personal layer and creates a pointer in my-lib/skills for every team-lib skill (external-pack skills as ext-<name>), leaving personal skills of the same name to shadow the shared one. Idempotent; --dry-run reports. Run by setup_workspace.sh — without it a fresh install has a library it cannot invoke."
