@@ -251,6 +251,36 @@ def main() -> int:
                      f"{drift_actionable} actionable my-lib/team-lib drift finding(s): "
                      + ", ".join(drift_items[:4]))
 
+    # Publication: regenerate the public reference layer if it has fallen behind.
+    #
+    # This does not violate "detection here, resolution never here" — the public repo
+    # is a GENERATED artifact, so regenerating it is a deterministic transform of
+    # team-lib, in the same class as the reranker, not a judgment. The judgment
+    # (pushing it to the world) is deliberately not made here.
+    #
+    # It exists because publish_gate.py only fires on pushes made through this
+    # harness. A push from a plain terminal, another machine, or any session without
+    # the hook produces no publication at all, and the public layer sits stale until
+    # someone happens to run the scan. This is that backstop.
+    try:
+        p = json.loads(_run("publish_gate.py", "--run", "--quiet"))
+    except Exception:
+        log.append("publication: (skipped)")
+    else:
+        if p.get("status") == "refused":
+            log.append("publication: REFUSED — a blocked identifier survived generalization")
+            _finding("publication", "leak-blocked",
+                     "publish refused: a scrubbed identifier survived generalization. "
+                     "The public repo was NOT updated — add a generalization rule.",
+                     severity="high")
+        elif p.get("written"):
+            log.append(f"publication: regenerated {p['written']} file(s) (committed, not pushed)")
+            _finding("publication", "regenerated",
+                     f"public reference regenerated from team-lib ({p['written']} file(s)) "
+                     "and committed. Review and push when ready.")
+        else:
+            log.append("publication: public already current")
+
     # Close-signal coverage: how much of the corpus can the sweep actually close?
     # A workstream with no close_signal is invisible to pathway 1, so the sweep
     # reporting "nothing closed" is mostly evidence that it had nothing to check.
