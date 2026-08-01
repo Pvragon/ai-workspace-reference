@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.1
+# version: 1.2.2
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,

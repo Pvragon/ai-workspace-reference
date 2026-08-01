@@ -43,7 +43,7 @@ executions:
     path: "executions/layer_drift_scan.py"
     description: "Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by comparing CONTENT HASHES, not version numbers — three shared skills once carried identical versions with different content. Walks registry/mirror.yaml; honours two-sided `mirror: divergent` declarations; also checks that every registry entry resolves on disk. Read-only. Run nightly by dream_cycle.py."
     tags: [drift, governance, currency, graduation, linter]
-    version: "1.2.1"
+    version: "1.2.2"
 
   publish_github_release:
     path: "executions/publish_github_release.py"
@@ -116,7 +116,7 @@ executions:
     path: "executions/dream_cycle.py"
     description: "Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank — then CUES the one daily metacognitive wake via a state file without spending tokens. Live-session-aware: skips mutating passes if a memory file changed in the last 10 minutes."
     tags: [memory, scheduler, cron, sleep-cycle, maintenance]
-    version: "1.3.2"
+    version: "1.3.3"
 
   dream_select:
     path: "executions/dream_select.py"

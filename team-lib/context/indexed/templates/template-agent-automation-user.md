@@ -1,8 +1,8 @@
 ---
 template: agent-automation-user
-version: 2.14.0
+version: 2.14.1
 summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, artifact mirroring, self-annealing, file organization, metadata standards, sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), surface-calibrated brevity, session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), and one-implementation-per-capability (graduation is a MOVE, not a copy). Loaded automatically at session start."
-last_updated: 2026-07-30
+last_updated: 2026-08-01
 mirror: derived
 mirror_source: my-lib/AGENTS.md
 mirror_reason: >-
