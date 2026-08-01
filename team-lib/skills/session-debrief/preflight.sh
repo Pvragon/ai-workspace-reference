@@ -284,6 +284,13 @@ import json, sys
 from datetime import datetime
 # JSONL timestamps are UTC ("...Z"); session_end is LOCAL (date +%H:%M). Comparing them
 # raw produced a start AFTER the end (20:05 -> 16:22). Convert to local before printing.
+#
+# And print the DATE too when the session did not start today. Bare "%H:%M" silently
+# reports a cross-midnight session as if it began this morning: on 2026-07-31 a session
+# that actually started 2026-07-30 13:46 and ran ~28h reported "13:46", which a debrief
+# subagent then used to conclude that the sessions own earlier work belonged to some
+# previous session. Same failure family as the UTC/local bug fixed above — a correct
+# clock time carrying an implied-and-wrong date.
 try:
     with open(sys.argv[1]) as f:
         for line in f:
@@ -292,18 +299,33 @@ try:
             ts = rec.get("timestamp")
             if ts:
                 dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone()
-                print(dt.strftime("%H:%M")); break
+                today = datetime.now().astimezone().date()
+                print(dt.strftime("%H:%M") if dt.date() == today
+                      else dt.strftime("%m-%d %H:%M"))
+                break
 except Exception:
     pass
 ' "$_proj_dir/$_sid.jsonl" 2>/dev/null || echo "unknown")
 fi
-# Fall back to the oldest commit made today — still a proxy, but an OLDEST one, so it
-# errs toward over-reporting the window rather than collapsing it to nothing.
+# Fall back to the oldest commit in the last 48h — still a proxy, but an OLDEST one, so
+# it errs toward over-reporting the window rather than collapsing it to nothing.
+# NOT scoped to "today": that truncates a session which began yesterday to whatever it
+# happened to do after midnight, which is the same defect the primary path had.
 if [[ -z "$session_start" || "$session_start" == "unknown" ]]; then
-  session_start=$(git log --format='%ci' --since="$(date +%Y-%m-%d) 00:00" 2>/dev/null \
-    | tail -1 | cut -d' ' -f2 | cut -d: -f1-2)
+  _oldest=$(git log --format='%ci' --since="48 hours ago" 2>/dev/null | tail -1)
+  if [[ -n "$_oldest" ]]; then
+    _od=$(echo "$_oldest" | cut -d' ' -f1)
+    _ot=$(echo "$_oldest" | cut -d' ' -f2 | cut -d: -f1-2)
+    if [[ "$_od" == "$(date +%Y-%m-%d)" ]]; then
+      session_start="$_ot"
+    else
+      session_start="$(echo "$_od" | cut -d- -f2-3) $_ot"
+    fi
+  fi
   [[ -z "$session_start" ]] && session_start="unknown"
 fi
+# Machine-readable companions, so downstream never has to re-derive this.
+if [[ "$session_start" == *" "* ]]; then session_spans_midnight=true; else session_spans_midnight=false; fi
 session_end=$(date +%H:%M)
 today=$(date +%Y-%m-%d)
 
@@ -481,6 +503,7 @@ cat <<REPORT
   "session_info": {
     "date": "$today",
     "approx_start": "$session_start",
+    "spans_midnight": $session_spans_midnight,
     "end": "$session_end",
     "memory_index_lines": $memory_index_lines,
     "session_marker": "$session_marker",
