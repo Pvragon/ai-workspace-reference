@@ -185,6 +185,57 @@ check_dir "agents"
 
 echo "----------------------------------------"
 
+# 4b. Agent memory system
+#
+# A missing memory install is invisible: the library looks complete, the agent
+# answers normally, and it simply never remembers anything. So it gets a check.
+#
+# Severity depends on whether an agent exists yet, because setup CANNOT install
+# memory before the choose-name ceremony:
+#   no agent   -> WARN (deferred; a legitimate post-setup to-do)
+#   agent, unwired -> FAIL (the installer should have run and did not)
+echo "Checking Agent Memory..."
+MEM_EXEC="$WORKSPACE_ROOT/team-lib/executions"
+MEM_INSTALLER="$WORKSPACE_ROOT/team-lib/_admin/install_memory.sh"
+
+if [[ ! -d "$MEM_EXEC" ]]; then
+    log_warn "team-lib/executions missing — cannot check the memory system"
+elif python3 "$MEM_EXEC/agent_paths.py" --json &>/dev/null; then
+    AGENT_HOME=$(python3 -c "import sys; sys.path.insert(0,'$MEM_EXEC'); import agent_paths; print(agent_paths.agent_home())" 2>/dev/null || echo "")
+    log_pass "Agent home resolved: ${AGENT_HOME:-unknown}"
+
+    # Hooks — the reinforcement half. Registered in the harness, not the workspace.
+    hooks_missing=""
+    for hook in update_memory_access.py inject_lens.py allow_memory_writes.py; do
+        if grep -q "$hook" "$HOME/.claude/settings.json" 2>/dev/null; then
+            log_pass "Memory hook registered: $hook"
+        else
+            hooks_missing="yes"
+            log_fail "Memory hook NOT registered: $hook — run: bash $MEM_INSTALLER"
+        fi
+    done
+
+    # Index — the data half. Its absence means bootstrap never ran.
+    if [[ -n "$AGENT_HOME" && -f "$AGENT_HOME/memory/MEMORY.md" ]]; then
+        log_pass "Memory index present: MEMORY.md"
+    else
+        log_fail "No memory/MEMORY.md — run: bash $MEM_INSTALLER"
+    fi
+
+    # Cron — soft by design: some hosts schedule differently (verify_memory_install
+    # treats it the same way), so a missing entry is a to-do, not a broken install.
+    if crontab -l 2>/dev/null | grep -q "pvragon-memory"; then
+        log_pass "Nightly dream cycle scheduled (cron)"
+    else
+        log_warn "No nightly dream-cycle cron — run: bash $MEM_INSTALLER"
+    fi
+else
+    log_warn "No agent named yet — memory install deferred (expected on a fresh setup)"
+    log_info "   After ONBOARDING Phase 7 (choose-name), run: bash $MEM_INSTALLER"
+fi
+
+echo "----------------------------------------"
+
 # 5. Toolchain
 echo "Checking Toolchain..."
 check_cli_tool "gh" "gh --version" "sudo apt-get install -y gh, then: gh auth login"

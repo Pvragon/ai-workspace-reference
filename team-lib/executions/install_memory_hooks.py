@@ -222,11 +222,20 @@ def main() -> int:
                     help="command the reflective wake runs (default: %(default)s)")
     args = ap.parse_args()
 
-    try:
-        agent_home()
-    except AgentResolutionError as exc:
-        print(f"cannot resolve the agent:\n{exc}", file=sys.stderr)
-        return 1
+    # Only the CRON step needs an agent (it cd's into the agent home and writes its
+    # logs there). Hook registration needs exec_dir() alone, which is agent-independent
+    # — and the hooks are built to exit 0 when they cannot resolve an agent, a state
+    # verify_memory_install.py asserts explicitly. So gate the check on the step that
+    # actually needs it: an unconditional guard blocks the one useful thing a
+    # pre-naming install CAN do, which is wire the harness ahead of the ceremony.
+    if not args.no_cron:
+        try:
+            agent_home()
+        except AgentResolutionError as exc:
+            print(f"cannot resolve the agent:\n{exc}\n\n"
+                  f"Hooks alone do not need an agent — re-run with --no-cron to register\n"
+                  f"them now and install the cron after the naming ceremony.", file=sys.stderr)
+            return 1
 
     verb = "Uninstalling" if args.uninstall else "Installing"
     print(f"{verb} memory-system harness wiring{'' if args.apply else '  [dry-run]'}\n")

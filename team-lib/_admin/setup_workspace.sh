@@ -639,6 +639,31 @@ else
 fi
 
 # ============================================================================
+# AGENT MEMORY SYSTEM
+# ============================================================================
+# Without this the install is a library, not an agent: no reinforcement hook, no
+# nightly dream cycle, no memory index. The installer is idempotent and handles the
+# ordering constraint setup cannot avoid — the agent home does not exist until the
+# choose-name ceremony in the agent's first session — by wiring the agent-independent
+# half now and exiting 2 (DEFERRED). Never let it abort setup; it is re-runnable.
+
+MEMORY_SCRIPT="${WORKSPACE_ROOT}/team-lib/_admin/install_memory.sh"
+MEMORY_STATUS="not-run"
+
+if [[ -f "$MEMORY_SCRIPT" ]]; then
+    memory_rc=0
+    bash "$MEMORY_SCRIPT" || memory_rc=$?
+    case $memory_rc in
+        0) MEMORY_STATUS="installed" ;;
+        2) MEMORY_STATUS="deferred"  ;;
+        *) MEMORY_STATUS="failed"
+           echo "    ⚠️  Memory install failed — re-run later: bash $MEMORY_SCRIPT" ;;
+    esac
+else
+    echo "    ⚠️  Memory installer not found at $MEMORY_SCRIPT — skipping."
+fi
+
+# ============================================================================
 # VALIDATION
 # ============================================================================
 
@@ -656,4 +681,21 @@ echo ""
 echo "=== Setup complete! ==="
 echo "1. Restart your terminal (or run 'source ~/.bashrc')."
 echo "2. Open VS Code using: ${WORKSPACE_ROOT}/pvragon-workspace.code-workspace"
+
+# The deferred memory install is the single most-missed step, because nothing about a
+# populated library looks unfinished. Say so here, where the user is still reading.
+case "$MEMORY_STATUS" in
+    deferred)
+        echo "3. Name your agent (ONBOARDING Phase 7), then give it memory:"
+        echo "       bash $MEMORY_SCRIPT"
+        echo "   Until then your agent starts every session from nothing."
+        ;;
+    failed)
+        echo "3. ⚠️  The memory install failed above. Re-run it:"
+        echo "       bash $MEMORY_SCRIPT"
+        ;;
+    installed)
+        echo "3. Memory system installed and verified. ✅"
+        ;;
+esac
 echo ""

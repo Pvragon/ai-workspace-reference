@@ -27,7 +27,19 @@ alternatives): `prez.prgn.ai/pvragon/260730-agent-memory-architecture`.
 
 ---
 
-## Install (three commands)
+## Install (one command)
+
+```bash
+bash ~/ai-workspace/team-lib/_admin/install_memory.sh
+```
+
+Idempotent. It chains the three steps below and refuses to report success on a partial
+install: exit 0 = installed and verified, 2 = deferred (no agent home yet — name the agent
+first), 1 = failed. `setup_workspace.sh` calls it, and the choose-name ceremony calls it
+again once the agent home exists. `--dry-run` to inspect, `--no-cron` for hosts that
+schedule differently, `--agent NAME` for non-interactive installs.
+
+The steps it runs, if you need to drive them by hand:
 
 ```bash
 cd ~/ai-workspace/team-lib/executions
@@ -37,6 +49,10 @@ python3 bootstrap_memory.py --apply      # dirs, frontmatter backfill, starter l
 python3 install_memory_hooks.py --apply  # register 4 hooks + 2 cron lines
 python3 verify_memory_install.py         # prove the policy is actually wired
 ```
+
+`install_memory_hooks.py` needs a resolvable agent only for the **cron** step; pass
+`--no-cron` and it will register the hooks alone, which is how the harness gets wired
+before the naming ceremony has happened.
 
 `verify_memory_install.py` exits non-zero if anything is wrong. **Run it after any change
 to hooks, paths, or settings.** A disconnected hook is otherwise invisible: memories
@@ -403,6 +419,7 @@ confirming that ceiling.
 | `memory_self_check.py` | hygiene linter; detect + `--fix-safe` |
 | `regen_current_state.py` | single writer of `current-state.md` |
 | `sweep_workstreams.py` | close-detection + age-out for project memories |
+| `_admin/install_memory.sh` | **install** — the entry point; chains the three below |
 | `bootstrap_memory.py` | **install** — dirs, backfill, starter library, first index |
 | `install_memory_hooks.py` | **install** — hooks + cron |
 | `verify_memory_install.py` | **install** — prove the policy is wired |

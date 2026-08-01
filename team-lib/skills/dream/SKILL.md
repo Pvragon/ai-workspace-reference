@@ -19,8 +19,8 @@ mirror_reason: >-
 > **Portable.** Every script below resolves the agent directory through
 > `team-lib/executions/agent_paths.py`, so nothing here is specific to one agent or
 > machine. If the agent cannot be resolved the scripts say so and exit rather than
-> guessing. Install with `bootstrap_memory.py --apply` then
-> `install_memory_hooks.py --apply`, and confirm with `verify_memory_install.py`.
+> guessing. Install with `bash team-lib/_admin/install_memory.sh` — it chains the
+> bootstrap, the hooks and the verification, and is safe to re-run.
 
 The cleanup arm of the dream cycle is deterministic (`/self-check`, the debrief groom). This skill is the **reflective arm** — the part that needs a mind, not a linter. `dream_cycle.py` (cron) decides *when* and cues *what*; this skill is where the wake actually happens.
 
