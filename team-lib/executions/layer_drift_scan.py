@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.4
+# version: 1.2.5
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,
@@ -660,16 +660,31 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
     # it is supposed to catch.
     orphans: list[dict] = []
     keep_root = set(spec.get("include_files") or [])
+    trees = list(spec.get("include") or [])
     if pub_base.is_dir():
-        for existing in sorted(pub_base.glob("*")):
-            if not existing.is_file() or existing.name in keep_root:
+        # Walk the WHOLE published prefix, not just its root. Root-only was still the same
+        # blind spot one level in: 5 files under personas/, logs/ and context/global/ ship
+        # publicly from trees the contract never lists, hand-copied at the first commit and
+        # never seen since — not by prune (which only walks INCLUDED trees), not by the
+        # root-only orphan check. Reviewed and confirmed 2026-08-01.
+        for existing in sorted(pub_base.rglob("*")):
+            if not existing.is_file():
                 continue
-            if _excluded(existing.name, excludes):
+            rel = existing.relative_to(pub_base).as_posix()
+            if "/.git/" in f"/{rel}" or rel.startswith(".git/"):
+                continue
+            if rel in keep_root:
+                continue
+            in_tree = any(rel.startswith(f"{tree}/") for tree in trees)
+            if in_tree:
+                continue          # inside a managed tree: prune's territory, not this check
+            if _excluded(rel, excludes) or _excluded(existing.name, excludes):
                 continue
             orphans.append(_finding(
-                "orphan-in-public", "med", "publication", existing.name,
-                hint="published at the root but no longer in include_files — a rename or "
-                     "removal at the source. Run publish_public_reference.py --apply --prune",
+                "orphan-in-public", "med", "publication", rel,
+                hint="published but outside the publication contract — a rename, a removal, "
+                     "or a tree that was never in `include`. Publication only ships listed "
+                     "trees, so this file has no source of truth.",
             ))
 
     findings: list[dict] = orphans + _root_file_classification(spec, shared_root)

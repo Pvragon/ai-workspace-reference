@@ -2,7 +2,7 @@
 name: update-ai-workspace-children
 description: Walk the whole my-lib → team-lib → public promotion chain in one pass — tidy and document the personal layer, decide what graduates, validate the shared layer, regenerate and validate the public layer, then push in the order the gates require. Use before a release, when onboarding someone onto team-lib, when the nightly cycle cues drift, or when asked whether the three layers are in sync.
 template: skill-definition
-version: 1.0.2
+version: 1.0.3
 summary: "The judgment half of the promotion chain. executions/workspace_chain_audit.py runs every deterministic gate; this skill decides what the gates cannot — which layer an item belongs in, what should graduate, what to document — and drives the chain end to end to a pushed, proven state."
 created: 2026-08-01
 last_updated: 2026-08-01
@@ -113,7 +113,8 @@ Graduate an item only when all of these hold:
 Then move it, do not copy it:
 
 ```bash
-python3 ~/ai-workspace/team-lib/executions/graduate_capability.py <name> --apply
+python3 ~/ai-workspace/team-lib/executions/graduate_capability.py skills/<name> --apply
+# layer-relative paths, not bare names: `skills/foo`, `executions/foo.py`
 ```
 
 If two copies must genuinely differ, declare it two-sided as `mirror: divergent` in

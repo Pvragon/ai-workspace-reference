@@ -1,6 +1,6 @@
 ---
 template: onboarding-guide
-version: 0.1.2
+version: 0.1.3
 summary: "DRAFT. An OPTIONAL alternative onboarding path (Claude Code Desktop / Codex) for people using the public ai-workspace-reference library who'd prefer a desktop app over VS Code + a terminal. Additive — the VS Code + terminal path in GETTING_STARTED.md stays the default; this forks in at Phase 5 for those who want it."
 status: draft
 created: 2026-07-21
@@ -185,6 +185,21 @@ hooks engine — so plan for adaptation, not absence.
 box, and with a memory layer wired it can self-anneal too. The friction is less about missing
 primitives than about the desktop app reaching the WSL workspace — so if that reach matters to you,
 Path A (Claude Code desktop, WSL mode) is the lower-effort route today.
+
+---
+
+## When you finish here — go back for memory
+
+This document stops at the naming ceremony. That is **not** the end of setup.
+
+Return to [GETTING_STARTED.md](./GETTING_STARTED.md) and do **Phase 7.5** (give your agent
+memory) and **Phase 8** (first real task). Without Phase 7.5 your agent has a name and a home
+and no memory at all — it starts every session from nothing, and nothing about a working
+install looks unfinished. One command:
+
+```bash
+bash ~/ai-workspace/team-lib/_admin/install_memory.sh
+```
 
 ---
 

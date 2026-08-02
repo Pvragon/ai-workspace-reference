@@ -39,7 +39,7 @@ skills:
   - layer_drift_scan.py
   - publish_public_reference.py
   - graduate_capability.py
-  version: 1.0.2
+  version: 1.0.3
 - name: create-directive
   description: Guidelines for creating effective workflow directives that orchestrate without redundancy
   path: skills/create-directive/SKILL.md

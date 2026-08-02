@@ -49,7 +49,7 @@ executions:
     path: "executions/layer_drift_scan.py"
     description: "Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by comparing CONTENT HASHES, not version numbers — three shared skills once carried identical versions with different content. Walks registry/mirror.yaml; honours two-sided `mirror: divergent` declarations; also checks that every registry entry resolves on disk. Read-only. Run nightly by dream_cycle.py."
     tags: [drift, governance, currency, graduation, linter]
-    version: "1.2.4"
+    version: "1.2.5"
 
   publish_github_release:
     path: "executions/publish_github_release.py"

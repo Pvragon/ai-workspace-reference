@@ -1,6 +1,6 @@
 ---
 template: workspace-reference
-version: 1.11.4
+version: 1.11.5
 summary: "Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory conventions, functional stack (including integrations/ for CLIs, MCPs, and remote execution interfaces), agent identity system, registry strategy, governance, project docs structure, live-infrastructure documentation pattern, and T3/T4 memory split (situational hook-triggered lens vs always-on baked-in lens). v1.10.0 (2026-06-11): personal/ is now a private per-user repo and the Obsidian vault root (notes-shaped content only); added projects/personal monorepo for personal-domain micro-projects with ideation→build→standalone lifecycle."
 created: 2026-01-15
 last_updated: 2026-08-01
@@ -292,9 +292,12 @@ get wrong, so it is stated twice:
   A drift scan reporting ungraduated items is reporting normality, not debt. The verifiable
   claim is narrower and stronger: *everything `mirror.yaml` declares mirrored must agree*.
 - **The public repo IS a derived mirror of `team-lib`** — a total function over the contract.
-  Measured the same day: 487 → 358 files through 8 published trees, 18 exclude globs, 4
-  excluded root files (each carrying a written reason), 13 scrub terms and 28 generalization
-  rules. Everything published is current; everything absent is absent on purpose.
+  Measured 2026-08-01: 488 tracked files in team-lib produce 315 under `team-lib/`
+  in the public repo, through 8 published trees, 18 exclude globs, 4 excluded root files
+  (each carrying a written reason), 13 scrub terms and 28 generalization rules. The public
+  repo also carries hand-maintained files the publisher does not own (its root README, the
+  portable-agent-package, example agent) — those are NOT part of this count and are the one
+  place a stale reference can survive a rename, which is exactly what happened here.
 
 **What belongs where**
 
@@ -306,7 +309,7 @@ get wrong, so it is stated twice:
 | Generic capability others would use | graduate it out | ✅ | ✅ |
 | Operator identity, real names, emails | ✅ | ✅ | ❌ generalized to placeholders |
 | Client names, client infrastructure | ✅ | ✅ | ❌ scrub-blocked; publication REFUSES the file |
-| Third-party skill packs (`skills/_external/`) | ❌ | ✅ as submodules | ❌ fetched from source, never redistributed |
+| Third-party skill packs | ❌ as `_external/`; mirrored as `ext-*` pointers | ✅ as submodules under `_external/` | ❌ fetched from source, never redistributed |
 | `mirror.yaml` itself | — | ✅ | ❌ it contains the blocklist, so it names every client |
 | Secrets | `personal/secrets/` only | ❌ | ❌ |
 

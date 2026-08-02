@@ -1,7 +1,7 @@
 ---
 template: onboarding-guide
-version: 2.0.1
-summary: "THE setup guide: blank computer → fully functioning named agent. Assumes nothing — no accounts, no auth, no tools. Each phase ends with a checkpoint. Terminal path is proven end-to-end by harnesses/public_workspace_container_test.sh; the desktop-app alternative branches at Phase 5 and is still draft. Absorbed GETTING_STARTED.md + the fork appendix 2026-08-01."
+version: 2.0.2
+summary: "THE setup guide: blank computer → fully functioning named agent. Assumes nothing — no accounts, no auth, no tools. Each phase ends with a checkpoint. Terminal path is proven end-to-end by harnesses/public_workspace_container_test.sh; the desktop-app alternative branches at Phase 5 and is still draft. Absorbed ONBOARDING.md 2026-08-01; kept its own fork appendix."
 created: 2026-07-16
 last_updated: 2026-08-01
 maintainer: pvragon
@@ -40,12 +40,16 @@ This one guide covers both. They share Phases 0–4; they differ only in what yo
 |---|---|---|
 | You work in | VS Code / Antigravity + a terminal | The Claude Code desktop app |
 | Follow | this guide, straight through | this guide to Phase 4, then [DESKTOP_APP_SETUP.md](./DESKTOP_APP_SETUP.md) |
-| Status | **Proven** — run end-to-end on a blank container by `harnesses/public_workspace_container_test.sh` | **Draft** — not yet verified end-to-end on a real Windows machine |
+| Status | **Phases 3–4 and 7.5 proven** on a blank container by `harnesses/public_workspace_container_test.sh`; Phases 0–2, 5 and 6 need a human | **Draft** — never verified on a real Windows machine |
 
 Take the terminal path unless you have a reason not to. The desktop path is real and people are
 using it, but it has not had its live verification pass, so treat its UI labels and checkpoints as
 approximate and tell us what differs. Absolute beginners on the desktop path should start at
 [START_HERE_DESKTOP.md](./START_HERE_DESKTOP.md).
+
+**The desktop path ends at the naming ceremony.** It does not cover Phase 7.5, and an
+agent without Phase 7.5 starts every session from nothing — permanently. Come back here
+for **Phase 7.5 and Phase 8** when the desktop doc runs out.
 
 **Time:** roughly 60–90 minutes, most of it waiting on installs.
 
@@ -61,10 +65,11 @@ Everything on this list is either something you have or something your **onboard
 - [ ] A **ClickUp** invite to the Pvragon workspace
 - [ ] **Claude access** — a Claude Team/Pro account login *or* an API key (ask your onboarding contact which you're getting; you'll use it in Phase 6)
 - [ ] A **Baserow token** (`BASEROW_MCP_TOKEN`) from your team lead (used in Phase 4; you can proceed without it and add it later)
+- [ ] The **Google OAuth client** `client_secret.json` for the team Desktop client — ask your onboarding contact. Without it `gws auth login` in Phase 4 cannot succeed.
 
 You will also create, during setup: your own **private personal AI library repo** (`<you>-ai-library`) on GitHub — the setup script creates it for you in Phase 3; you don't need to prepare anything.
 
-> **macOS users:** Phases 1–2 differ (no WSL needed). Do [GETTING_STARTED_MAC.md](./GETTING_STARTED_MAC.md) Phase 1, then rejoin this document at **Phase 2**.
+> **macOS users:** Phase 1 differs (no WSL needed). Do [GETTING_STARTED_MAC.md](./GETTING_STARTED_MAC.md), then rejoin this document at **Phase 2** — do not skip Phase 2, it is the `gh auth login` step most setup pain traces back to.
 
 ---
 
@@ -184,8 +189,10 @@ Your workspace exists; now wire up credentials so the tools actually work.
    | `CLICKUP_API_TOKEN` | ClickUp scripting (optional now) | Generate your own: ClickUp → Settings → Apps → API Token |
 
    The template file groups keys into **team-shared** (ask your lead), **per-user** (generate your own), and **project-specific** (only when assigned to a project — never copy someone else's). **Never** commit this file or paste its values into chat.
-2. **Google Workspace CLI:**
+2. **Google Workspace CLI.** It needs the team OAuth client first — `gws auth login` fails without it:
    ```bash
+   mkdir -p ~/.config/gws
+   cp /path/to/client_secret.json ~/.config/gws/client_secret.json
    gws auth login
    ```
    Log in with your Pvragon Google account. On WSL the browser may not auto-launch — copy the printed URL into your Windows browser.
