@@ -269,6 +269,69 @@ agents/
 
 ---
 
+### 4.6 The Publication Layer — `ai-workspace-reference` (public)
+
+A fourth link in the chain, and the one most easily forgotten because nobody works in it:
+the **public reference repo** (`Pvragon/ai-workspace-reference`), a generated mirror of
+`team-lib` with everything proprietary removed. It is never edited by hand. It is produced by
+`executions/publish_public_reference.py` from the contract in `registry/mirror.yaml`.
+
+### 4.7 How the layers relate — the promotion chain
+
+```
+my-lib  ──graduate──▶  team-lib  ──publish──▶  ai-workspace-reference
+(mine)                 (ours)                  (anyone's)
+```
+
+**One direction, and each hop is a FILTER, not a copy.** That distinction is the thing people
+get wrong, so it is stated twice:
+
+- **`team-lib` is NOT a mirror of `my-lib`.** It holds only what has *graduated*. Measured
+  2026-08-01: 591 tracked files in `my-lib` against 487 in `team-lib`, with **59 ungraduated
+  items** (executions, skills, context, directives, personas) that are correctly personal.
+  A drift scan reporting ungraduated items is reporting normality, not debt. The verifiable
+  claim is narrower and stronger: *everything `mirror.yaml` declares mirrored must agree*.
+- **The public repo IS a derived mirror of `team-lib`** — a total function over the contract.
+  Measured the same day: 487 → 358 files through 8 published trees, 18 exclude globs, 4
+  excluded root files (each carrying a written reason), 13 scrub terms and 28 generalization
+  rules. Everything published is current; everything absent is absent on purpose.
+
+**What belongs where**
+
+| | `my-lib` | `team-lib` | public |
+|---|---|---|---|
+| Personal experiments, half-built tools | ✅ born here | only once proven | — |
+| Client/project-specific work | ✅ | ❌ (belongs in `projects/`) | ❌ |
+| Generic capability others would use | graduate it out | ✅ | ✅ |
+| Operator identity, real names, emails | ✅ | ✅ | ❌ generalized to placeholders |
+| Client names, client infrastructure | ✅ | ✅ | ❌ scrub-blocked; publication REFUSES the file |
+| Third-party skill packs (`skills/_external/`) | ❌ | ✅ as submodules | ❌ fetched from source, never redistributed |
+| `mirror.yaml` itself | — | ✅ | ❌ it contains the blocklist, so it names every client |
+| Secrets | `personal/secrets/` only | ❌ | ❌ |
+
+**Graduation is a MOVE, never a copy.** Two live copies have no owner for the diff; both stay
+individually valid while the comparison silently rots. See
+[graduate-to-team-library.md](../../directives/graduate-to-team-library.md) and Operating
+Principle #15. The same rule governs the publish hop: the public repo carries no hand-edits, so
+there is nothing there to drift.
+
+**The contract is machine-readable, and it is authoritative.** `registry/mirror.yaml` declares
+the mirror mapping, the publication trees, the exclusions (each with a written reason), the
+scrub blocklist and the generalization rules. When this document and that file disagree, the
+file wins — it is what the tools execute. Note the deliberate asymmetry: `mirror.yaml` is
+itself excluded from publication, because a blocklist enumerates exactly what it protects.
+
+**How it is kept true**
+
+| Concern | Mechanism | When |
+|---|---|---|
+| Layers disagree on a mirrored item | `executions/layer_drift_scan.py` (content hashes, not versions) | nightly + on demand |
+| Public layer fell behind | `executions/publish_gate.py` | on every `team-lib` push, + nightly floor |
+| Versions stale at the publish boundary | `executions/version_gate.py` | PreToolUse on `git push` |
+| Third-party packs unpinned | `_admin/update_external_pack_pins.sh --check` | nightly |
+| A stranger cannot actually install it | `harnesses/public_workspace_container_test.sh` | before a release |
+| The whole chain, end to end | **skill: `update-ai-workspace-children`** | before a release, or when asked |
+
 ## 5. Workspace Directory Map
 
 ```text
