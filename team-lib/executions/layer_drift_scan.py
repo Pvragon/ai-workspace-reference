@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.6
+# version: 1.2.7
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,
@@ -930,7 +930,10 @@ def run(manifest: str | Path | None = None, tree: str | None = None,
         Path(__file__).resolve().parent.parent / "registry" / "mirror.yaml"
 
     if not manifest_path.is_file():
-        return {"status": "error", "error": f"manifest not found: {manifest_path}"}
+        # Withheld on purpose in the public distribution — see publish_public_reference.
+        note = (" — not available in the public reference distribution: registry/mirror.yaml "
+                "holds the scrub blocklist and is withheld by design. Nothing is broken.")
+        return {"status": "error", "error": f"manifest not found: {manifest_path}{note}"}
 
     try:
         spec = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}

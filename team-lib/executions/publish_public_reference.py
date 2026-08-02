@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.5
+# version: 1.0.6
 # summary: "Publishes team-lib to the public reference repo as a GENERALIZATION: copies every
 #   included tree, drops what is proprietary, rewrites operator and client identifiers into
 #   placeholders, and REFUSES to write any file that still contains a blocked term afterwards.
@@ -201,7 +201,16 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None,
     mpath = Path(manifest) if manifest else \
         Path(__file__).resolve().parent.parent / "registry" / "mirror.yaml"
     if not mpath.is_file():
-        return {"status": "error", "error": f"manifest not found: {mpath}"}
+        # In the PUBLIC reference distribution this file is withheld on purpose — it holds
+        # the scrub blocklist, so it names every client. Tools that need it therefore cannot
+        # run there, and "manifest not found: <path>" reads like a broken install rather than
+        # a deliberate omission. Say which it is.
+        hint = ""
+        if not (mpath.parent.parent / "registry" / "mirror.yaml").is_file():
+            hint = (" — this tool is not available in the public reference distribution: "
+                    "registry/mirror.yaml holds the scrub blocklist and is withheld by design, "
+                    "so publication tooling cannot run from a public clone. Nothing is broken.")
+        return {"status": "error", "error": f"manifest not found: {mpath}{hint}"}
 
     spec = yaml.safe_load(mpath.read_text(encoding="utf-8")) or {}
     pub = spec.get("publication") or {}

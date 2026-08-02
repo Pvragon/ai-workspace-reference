@@ -27,6 +27,19 @@ cli_tools:
     required: true
     post_install_notes: "Run 'claude' once in ~/ai-workspace/my-lib and complete /login (Pvragon Claude account or API key)."
 
+# Servers that CANNOT be provisioned from here, kept so the knowledge is not lost.
+# configure_toolchain.sh does not read this section — listing them under mcp_servers
+# implied an install that cannot happen, and validate would have chased them forever.
+manual_mcp_servers:
+  pencil:
+    description: "Pencil design-file editor (.pen)"
+    why_manual: >-
+      The server ships inside the Pencil VS Code extension, so its command is an absolute
+      path carrying an extension version and the local username. There is no portable form.
+    configure_by_hand: >-
+      command: ~/.vscode-server/extensions/highagency.pencildev-<version>/out/mcp-server-linux-x64
+      args: ["--app", "visual_studio_code", "--agent", "claudeCodeCLI"]
+
 mcp_servers:
   context7:
     description: "Up-to-date library/framework documentation lookup"
@@ -54,11 +67,6 @@ mcp_servers:
         command: npx
         args: ["@playwright/mcp@latest"]
     post_install_notes: "Downloads its own browser on first use. To pin an existing Chromium add --executable-path <path>; the operator's machine also passes --config. Both are per-machine and deliberately not baked in here."
-
-  pencil:
-    description: "Pencil design-file editor (.pen). Per-machine: its command is a VS Code extension binary."
-    required: false
-    post_install_notes: "No portable command exists — the server ships inside the Pencil VS Code extension, so the path carries an extension version and a username. Configure by hand: command = ~/.vscode-server/extensions/highagency.pencildev-<version>/out/mcp-server-linux-x64, args = [--app, visual_studio_code, --agent, claudeCodeCLI]."
 
   clickup:
     description: "ClickUp project management (optional — the clickup-cli integration is the path we actually use)"
