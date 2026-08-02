@@ -190,6 +190,11 @@ ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/deliverables/_archive"
 ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/logs"
 
+# team-lib runtime directories. These cannot arrive with the clone: their only tracked
+# file is index.md, which publication excludes by design, and git does not track empty
+# directories — so a published install had no team-lib/logs and failed validate.sh.
+ensure_dir "${WORKSPACE_ROOT}/team-lib/logs"
+
 # Layer 3: Workbench
 ensure_dir "${WORKSPACE_ROOT}/projects"
 

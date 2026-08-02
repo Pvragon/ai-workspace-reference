@@ -85,7 +85,13 @@ check_git_repo() {
                 return
             fi
         done
-        log_fail "$dir remote mismatch. Expected one of: $expected_remote, Found: $actual_remote"
+        # A remote we do not recognise is not structural breakage — forks, mirrors and
+        # offline installs are all legitimate. Only "no remote at all" is a failure.
+        if [[ "$actual_remote" != "none" ]]; then
+            log_warn "$dir remote is unrecognised (expected one of: $expected_remote, found: $actual_remote) — fine for a fork or an offline install"
+        else
+            log_fail "$dir is a git repository with no remote — expected one of: $expected_remote"
+        fi
         return
     fi
 

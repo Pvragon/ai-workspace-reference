@@ -23,4 +23,18 @@
 #
 # ------------------------------------------
 
-personas: []
+personas:
+  - name: brand-guard
+    description: Brand Voice Guardian and AI-Detector
+    path: personas/brand-guard.md
+    traits: [critical, quality-focused, brand-conscious]
+    use_cases: [content-review, quality-assurance, brand-consistency]
+    version: "1.0.0"
+
+  - name: linkedin-writer
+    description: LinkedIn Content Specialist
+    path: personas/linkedin-writer.md
+    traits: [professional, conversational, authentic]
+    use_cases: [social-media, content-creation, linkedin-posts]
+    version: "1.0.1"
+
