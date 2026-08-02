@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.0.1
 # summary: "Fetches the third-party skill packs into skills/_external from their upstream
 #   repos, for installs where they are not git submodules — i.e. anyone who installed from
 #   the public reference repo. Reads .gitmodules, so the pack list has exactly one source.

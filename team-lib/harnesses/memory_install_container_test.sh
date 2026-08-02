@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pristine-container test of ONBOARDING.md Phase 7.5 — the memory install.
+# Pristine-container test of GETTING_STARTED.md Phase 7.5 — the memory install.
 #
 # Proves a teammate can point a harness at team-lib and end up with a working memory
 # system, starting from a box with nothing installed. A host-machine run passes
@@ -11,7 +11,7 @@
 # empty corpus as a hard failure; and it parsed the reranker's output with a regex that
 # a new band silently broke.
 #
-# RUN IT after any change to the memory scripts or to ONBOARDING Phase 7.5.
+# RUN IT after any change to the memory scripts or to GETTING_STARTED.md Phase 7.5.
 #
 #   cd ~/ai-workspace/team-lib
 #   git bundle create /mnt/c/temp/memtest/teamlib.bundle HEAD main   # COMMITTED state only
@@ -83,7 +83,7 @@ python3 agent_paths.py && ok "agent_paths resolves" || bad "agent_paths resolves
 
 echo ""
 echo "=== [Phase 7.5 step 2] DRY RUN, as the guide says ==="
-# ONBOARDING documents ONE command now, so that is what this exercises. Testing the
+# GETTING_STARTED.md documents ONE command now, so that is what this exercises. Testing the
 # underlying three-script chain instead would leave the documented path unrun — the
 # same trap as a doc that describes a gate nobody executes.
 INSTALL=~/ai-workspace/team-lib/_admin/install_memory.sh

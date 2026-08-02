@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.1
+# version: 1.0.2
 # summary: "Installs the agent memory system end to end: bootstrap the memory data, register the
 #   harness hooks, install the nightly cron, then prove the wiring with verify_memory_install.py.
 #   Idempotent and safe to re-run. Handles the case setup cannot avoid — a workspace that has no
@@ -15,7 +15,7 @@
 # Why this script exists
 # ----------------------
 # setup_workspace.sh produced a populated library but not a running agent: no
-# reinforcement hook, no nightly dream cycle, no memory index. ONBOARDING.md named the
+# reinforcement hook, no nightly dream cycle, no memory index. GETTING_STARTED.md named the
 # three scripts as manual steps and nothing chained them, so an install that skipped
 # Phase 7.5 looked identical to one that completed it.
 #
@@ -126,7 +126,7 @@ fi
 # ------------------------------------------------------- deferred (no agent) ----
 if [[ "$AGENT_STATUS" == "absent" ]]; then
     echo "    ℹ️  No agent exists yet — that is expected on a first install."
-    echo "       The agent names itself in its first session (ONBOARDING Phase 7), which"
+    echo "       The agent names itself in its first session (GETTING_STARTED.md Phase 7), which"
     echo "       is what creates the home this install writes into."
     echo ""
     echo "    ---> Wiring the agent-independent half now (hooks; cron deferred)"
@@ -155,7 +155,7 @@ if [[ "$AGENT_STATUS" == "absent" ]]; then
 
            workspace setup  ->  the ceremony  ->  memory
 
-       After your agent has named itself (ONBOARDING Phase 7), run:
+       After your agent has named itself (GETTING_STARTED.md Phase 7), run:
 
            bash ${ADMIN_DIR}/install_memory.sh
 

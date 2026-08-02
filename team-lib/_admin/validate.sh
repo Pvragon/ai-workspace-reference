@@ -272,7 +272,7 @@ elif python3 "$MEM_EXEC/agent_paths.py" --json &>/dev/null; then
     fi
 else
     log_warn "No agent named yet — memory install deferred (expected on a fresh setup)"
-    log_info "   After ONBOARDING Phase 7 (choose-name), run: bash $MEM_INSTALLER"
+    log_info "   After GETTING_STARTED.md Phase 7 (choose-name), run: bash $MEM_INSTALLER"
 fi
 
 echo "----------------------------------------"

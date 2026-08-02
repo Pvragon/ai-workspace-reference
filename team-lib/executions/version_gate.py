@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution-script
-# version: 1.1.1
+# version: 1.1.2
 # summary: PreToolUse hook on `git push` that keeps frontmatter versions honest.
 #   For every versioned file whose BODY changed in the commits about to be pushed
 #   without its `version:` changing, it bumps the patch level, stamps
@@ -212,7 +212,17 @@ def resolve_pushed_repo(cmd, cwd_hint, note=lambda *a: None):
             if os.path.isdir(cand):
                 repo = cand
             else:
+                # The command NAMES a target we cannot resolve (an unexpanded $VAR, a
+                # worktree path built in the shell). Falling through to the session cwd
+                # would evaluate a DIFFERENT repo and report success about it — measured
+                # 2026-08-01, a worktree push of team-lib was evaluated against my-lib and
+                # logged "nothing: no versioned file changed without a bump".
+                #
+                # "I cannot tell which repo" is not the same fact as "no repo was named",
+                # and only one of them is safe to guess at. Skip instead; --reconcile is
+                # the floor that catches whatever this misses.
                 note("unexpanded-cd", cd.group(1)[:40])
+                return None
 
     repo = repo or cwd_hint or os.getcwd()
     return git(repo, "rev-parse", "--show-toplevel") or repo
@@ -370,6 +380,11 @@ def main():
     beat("push", cmd[:80].replace("\n", " "))
 
     repo = resolve_pushed_repo(cmd, data.get("cwd"), beat)
+    if not repo:
+        # Named a target we could not resolve. Deferring is correct and cheap: --reconcile
+        # runs nightly on both layers and will bump whatever this skipped. Never block.
+        beat("skip", "unresolvable push target — deferring to --reconcile")
+        sys.exit(0)
     if not repo.startswith(WORKSPACE):
         beat("skip", f"outside workspace: {repo}")
         sys.exit(0)  # not ours to police

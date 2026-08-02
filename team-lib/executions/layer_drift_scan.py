@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.2
+# version: 1.2.3
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,
@@ -561,7 +561,7 @@ def _root_file_classification(spec: dict, shared_root: Path) -> list[dict]:
 
     `include` lists TREES, so files at the layer root belong to none of them and the
     publisher's rglob can never reach them. That is not a bug you notice — it is a
-    bug you don't: ONBOARDING.md sat 208 lines divergent for ten days while the scan
+    bug you don't: GETTING_STARTED.md sat 208 lines divergent for ten days while the scan
     reported 0 actionable, because a mapping-based check cannot compare what is not
     in the mapping (the same shape as the `integrations` leak, 2026-07-30).
 

@@ -1,21 +1,21 @@
 #!/bin/bash
 # ---
 # template: harness
-# version: 1.0.3
+# version: 1.0.4
 # summary: "Pristine-container proof that the PUBLISHED workspace (ai-workspace-reference)
-#   can be cloned onto a blank box, run through the ONBOARDING it ships, and end with a
+#   can be cloned onto a blank box, run through the GETTING_STARTED.md it ships, and end with a
 #   working agent. Installs from the published bytes only — no host state, no private repo."
 # created: 2026-08-01
 # last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 #
-# Pristine-container test of the PUBLISHED workspace — the whole ONBOARDING path.
+# Pristine-container test of the PUBLISHED workspace — the whole GETTING_STARTED.md path.
 #
 # Sibling of memory_install_container_test.sh, one layer up: that one proves Phase 7.5
 # installs a memory system on a fresh box; this one proves the artifact we publish to the
 # world (ai-workspace-reference) can be cloned onto a blank machine, run through the
-# ONBOARDING it itself ships, and end with a working agent.
+# GETTING_STARTED.md it itself ships, and end with a working agent.
 #
 # Why the PUBLISHED bytes and not team-lib directly. Publication is a transform — a file
 # map, a scrub list, submodules materialized into plain files. Every one of those can
@@ -24,14 +24,14 @@
 # agent. The only way to know is to install from the published side, on a box with nothing.
 #
 # What is substituted, and why each substitution is honest:
-#   1. ONBOARDING Phase 3 clones the PRIVATE installer repo (Pvragon/pvragon-ai-library),
+#   1. GETTING_STARTED.md Phase 3 clones the PRIVATE installer repo (Pvragon/pvragon-ai-library),
 #      whose ROOT is team-lib. The public repo carries the same content one level down at
 #      team-lib/. So the container derives an installer origin with
 #      `git subtree split --prefix=team-lib` over the published bundle and points
 #      TEAM_REPO_URL at it. Only published bytes are used, and no network or private
 #      access is involved.
 #   2. setup_workspace.sh asks four questions. They are answered from a file, exactly as
-#      ONBOARDING Phase 3 instructs a human to answer them.
+#      GETTING_STARTED.md Phase 3 instructs a human to answer them.
 # Everything else runs as published. Any other failure is a finding, not a harness bug.
 #
 #   cd ~/ai-workspace/projects/ai-workspace-reference
@@ -104,7 +104,7 @@ else
     git clone -q ~/public.bundle ~/public-ref 2>/dev/null
 fi
 check "repo cloned"                      "test -d ~/public-ref/team-lib/_admin"
-check "repo ships ONBOARDING"            "test -s ~/public-ref/team-lib/ONBOARDING.md"
+check "repo ships GETTING_STARTED.md"            "test -s ~/public-ref/team-lib/GETTING_STARTED.md"
 check "repo ships setup_system"          "test -s ~/public-ref/team-lib/_admin/setup_system.sh"
 check "repo ships setup_workspace"       "test -s ~/public-ref/team-lib/_admin/setup_workspace.sh"
 check "repo ships install_memory"        "test -s ~/public-ref/team-lib/_admin/install_memory.sh"
@@ -138,7 +138,7 @@ echo "=== [Phase 3.0b] derive the installer origin from published bytes only ===
 if [ "$MODE" = "team" ]; then
   echo "  (team path: the cloned repo IS the installer origin; no derivation needed)"
 else
-# ONBOARDING clones a repo whose ROOT is team-lib; the public repo nests it one level
+# GETTING_STARTED.md clones a repo whose ROOT is team-lib; the public repo nests it one level
 # down. subtree-split reproduces the private repo's shape without inventing content.
 cd ~/public-ref
 # Identity via env, NOT `git config --global` — the global config must stay empty so that
@@ -168,7 +168,7 @@ check "system python3 has yaml"          "python3 -c 'import yaml'"
 check "node satisfies claude/gws (>=22)" "test \"\$(node -v | sed -E 's/^v([0-9]+).*/\1/')\" -ge 22"
 
 echo ""
-echo "=== [Phase 3.3] setup_workspace.sh — answers fed exactly as ONBOARDING says ==="
+echo "=== [Phase 3.3] setup_workspace.sh — answers fed exactly as GETTING_STARTED.md says ==="
 TEAM_REPO_URL="file:///home/guest/pvragon-ai-library.git" \
     bash ~/public-ref/team-lib/_admin/setup_workspace.sh < ~/answers.txt > /tmp/workspace.log 2>&1
 WS_RC=$?
@@ -178,7 +178,7 @@ check "setup_workspace says complete"    "grep -q '=== Setup complete! ===' /tmp
 check "it did NOT stall on a prompt"     "! grep -q 'Invalid option' /tmp/workspace.log"
 
 echo ""
-echo "--- Phase 3 checkpoint, as ONBOARDING states it ---"
+echo "--- Phase 3 checkpoint, as GETTING_STARTED.md states it ---"
 for d in agents my-lib personal projects team-lib; do
     check "root exists: $d"              "test -d $WS/$d"
 done
@@ -205,7 +205,7 @@ check "my-lib is a git repo"             "test -d $WS/my-lib/.git"
 check "AGENTS.md installed"              "test -s $WS/my-lib/AGENTS.md"
 check "CLAUDE.md installed"              "test -s $WS/my-lib/CLAUDE.md"
 check "GEMINI.md installed"              "test -s $WS/my-lib/GEMINI.md"
-# ONBOARDING Phase 6 asks the agent about artifact mirroring; the answer has to be IN
+# GETTING_STARTED.md Phase 6 asks the agent about artifact mirroring; the answer has to be IN
 # the file it loads, or the checkpoint is unanswerable.
 check "AGENTS.md answers the Phase 6 question" \
       "grep -q 'runtime/deliverables' $WS/my-lib/AGENTS.md"
@@ -216,7 +216,7 @@ check "base requirements installed"      "$WS/my-lib/.venv/bin/python -c 'import
 check ".env created from template"       "test -f $WS/personal/secrets/.env"
 
 echo ""
-echo "--- toolchain provisioning, as ONBOARDING Phase 6 promises it ---"
+echo "--- toolchain provisioning, as GETTING_STARTED.md Phase 6 promises it ---"
 sed -n '/---> CLI Tools/,/Toolchain setup complete/p' /tmp/workspace.log | head -25
 # Phase 6 states plainly: "Claude Code was installed during Phase 3 (it's part of the
 # standard toolchain)." toolchain.yaml marks claude and gws required:true.
@@ -230,7 +230,7 @@ check "setup reports the deferred step"  "grep -q 'Name your agent' /tmp/workspa
 check "no memory dir invented"           "test -z \"\$(find $WS/agents -maxdepth 2 -type d -name memory 2>/dev/null)\""
 
 echo ""
-echo "=== [Phase 4.3] validate.sh — ONBOARDING's own checkpoint ==="
+echo "=== [Phase 4.3] validate.sh — GETTING_STARTED.md's own checkpoint ==="
 bash $TL/_admin/validate.sh > /tmp/validate.log 2>&1
 VAL_RC=$?
 grep -E 'FAIL|WARN|passed|valid' /tmp/validate.log | head -30

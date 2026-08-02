@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.2.0
-# summary: "Discovers workspace paths by convention — no hardcoded user/repo names. Outputs JSON for other scripts to source. v1.2.0: also detects ONBOARDING.md as a workspace marker (team-lib ships it) and is layer-neutral so both layers can run an identical copy. v1.1.0: re-anchors WORKSPACE_ROOT on the script's own location when invoked from a cwd outside the workspace tree (fixes silent empty-path discovery during debrief postflight when cwd=~/.claude)."
+# version: 1.2.1
+# summary: "Discovers workspace paths by convention — no hardcoded user/repo names. Outputs JSON for other scripts to source. v1.2.0: also detects GETTING_STARTED.md as a workspace marker (team-lib ships it) and is layer-neutral so both layers can run an identical copy. v1.1.0: re-anchors WORKSPACE_ROOT on the script's own location when invoked from a cwd outside the workspace tree (fixes silent empty-path discovery during debrief postflight when cwd=~/.claude)."
 # created: 2026-04-02
-# last_updated: 2026-07-30
+# last_updated: 2026-08-01
 # maintainer: pvragon
 # ---
 #
@@ -50,8 +50,8 @@ _candidate="$REPO_ROOT"
 while [[ "$_candidate" != "/" && "$_candidate" != "$HOME" ]]; do
   _candidate=$(dirname "$_candidate")
   # A workspace root has sibling dirs: agents/, or a dir with GETTING_STARTED.md
-  # / ONBOARDING.md (team-lib ships the latter, so both markers must be checked).
-  if [[ -d "$_candidate/agents" ]] || ls "$_candidate"/*/GETTING_STARTED.md "$_candidate"/*/ONBOARDING.md &>/dev/null; then
+  # / GETTING_STARTED.md (team-lib ships the latter, so both markers must be checked).
+  if [[ -d "$_candidate/agents" ]] || ls "$_candidate"/*/GETTING_STARTED.md "$_candidate"/*/GETTING_STARTED.md &>/dev/null; then
     WORKSPACE_ROOT="$_candidate"
     break
   fi

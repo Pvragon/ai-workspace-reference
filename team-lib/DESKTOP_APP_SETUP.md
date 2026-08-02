@@ -1,7 +1,7 @@
 ---
 template: onboarding-guide
-version: 0.1.1
-summary: "DRAFT. An OPTIONAL alternative onboarding path (Claude Code Desktop / Codex) for people using the public ai-workspace-reference library who'd prefer a desktop app over VS Code + a terminal. Additive — the VS Code + terminal path in ONBOARDING.md stays the default; this forks in at Phase 5 for those who want it."
+version: 0.1.2
+summary: "DRAFT. An OPTIONAL alternative onboarding path (Claude Code Desktop / Codex) for people using the public ai-workspace-reference library who'd prefer a desktop app over VS Code + a terminal. Additive — the VS Code + terminal path in GETTING_STARTED.md stays the default; this forks in at Phase 5 for those who want it."
 status: draft
 created: 2026-07-21
 last_updated: 2026-08-01
@@ -14,7 +14,7 @@ maintainer: pvragon
 > steps to get an agent running, which then walks you through the rest using *this* guide. The
 > document below is the detailed reference that agent (or a self-driver) follows.
 
-**This is an optional path.** The standard onboarding ([ONBOARDING.md](./ONBOARDING.md)) sets you up
+**This is an optional path.** The standard onboarding ([GETTING_STARTED.md](./GETTING_STARTED.md)) sets you up
 in VS Code with a terminal, and that stays the default. Nothing here removes it. This guide is just a
 *second* on-ramp for people who'd rather drive the workspace from a friendly desktop chat app. Pick
 whichever fits you, or use both; the desktop app and VS Code coexist happily on the same workspace.
@@ -44,7 +44,7 @@ exactly what to type when it can't. You are the hands; it is the guide.
    from. (If you have nothing set up yet, point it at any folder, e.g. your Documents.)
 3. **Say what you want.** Paste something like:
    > I want to set up the Pvragon AI workspace on this machine. Please read the onboarding guide at
-   > https://github.com/Pvragon/ai-workspace-reference (start with `team-lib/ONBOARDING.md`) and walk
+   > https://github.com/Pvragon/ai-workspace-reference (start with `team-lib/GETTING_STARTED.md`) and walk
    > me through it one step at a time. Generate and explain each command, tell me exactly where to run
    > it, and wait for me to confirm each step worked before the next.
 4. **Follow along.** Do the steps it hands you, confirm each one, and let it lead.
@@ -55,7 +55,7 @@ your fallback if you'd rather do a step yourself or the agent gets stuck.
 ### What "the agent walks you through it" honestly means
 
 The one-time setup — installing Linux (WSL), connecting GitHub, running the two bootstrap scripts,
-adding your keys (**ONBOARDING Phases 1–4**) — happens with **your hands on a terminal and the agent
+adding your keys (**GETTING_STARTED.md Phases 1–4**) — happens with **your hands on a terminal and the agent
 as your guide.** It writes out each command, explains what it does, tells you which window to paste it
 into, and reads the result to catch errors. A few steps are irreducibly yours: installing WSL needs a
 Windows **admin** terminal plus one **reboot**, and the GitHub / Google sign-ins need your clicks.
@@ -114,7 +114,7 @@ Because your workspace lives inside Linux, you use **WSL mode** — not "Local."
 > **Coming from the setup session?** This WSL-mode session is **brand new** — it has none of the
 > conversation history from the terminal-setup chat that got you here (and if you just rebooted, that
 > chat is gone). That's fine. To pick up cleanly, paste:
-> > Re-read `team-lib/DESKTOP_APP_SETUP.md` and `team-lib/ONBOARDING.md`, check where my setup got to
+> > Re-read `team-lib/DESKTOP_APP_SETUP.md` and `team-lib/GETTING_STARTED.md`, check where my setup got to
 > > (run `validate.sh` if unsure), and tell me the next step.
 
 **✓ Checkpoint:** a session is open, pointed at `my-lib`, with no error about a missing distribution.
@@ -129,7 +129,7 @@ It should answer about mirroring deliverables to `my-lib/runtime/deliverables/` 
 **✓ Checkpoint:** it answers from its instructions without searching for files first.
 
 ### A5. Name your agent 🎉
-Same ceremony as ONBOARDING Phase 7, done right here in the desktop chat:
+Same ceremony as GETTING_STARTED.md Phase 7, done right here in the desktop chat:
 > Please read ~/ai-workspace/team-lib/skills/choose-name/SKILL.md and follow it.
 
 Then start a **new** session and confirm it greets you already knowing its name.
@@ -195,9 +195,9 @@ Path A (Claude Code desktop, WSL mode) is the lower-effort route today.
       human paste them into a separate terminal? — this determines how hands-off setup really is;
       (b) do workspace-configured MCP servers load in WSL mode; (c) exact Codex desktop
       environment-selection flow for a WSL folder. Capture fresh A2–A3 screenshots during this run.
-- [x] Placed in canonical `team-lib/` beside `ONBOARDING.md` (draft status).
+- [x] Placed in canonical `team-lib/` beside `GETTING_STARTED.md` (draft status).
 - [x] Gap fixes applied (setup manual/agent boundary, WSL-session resume step, honest step counts,
       audience line, corrected Codex capabilities).
-- [x] Pointer added from `ONBOARDING.md` Phase 5.
+- [x] Pointer added from `GETTING_STARTED.md` Phase 5.
 - [x] Mirrored to the public `ai-workspace-reference` repo.
 - [ ] Lift `status: draft` → active once the live verification pass is done.

@@ -1,6 +1,6 @@
 ---
 template: onboarding-guide
-version: 0.1.1
+version: 0.1.2
 summary: "DRAFT. The step-zero card for a total newbie: get Claude Max, open the desktop app's Code tab, paste one prompt pointing at the repo, and let the agent do the rest. The absolute minimum a non-technical person needs to start; hands off to DESKTOP_APP_SETUP.md (which the agent reads)."
 status: draft
 created: 2026-07-21
@@ -34,7 +34,7 @@ covers it — not this public copy.)*
    **paste this exactly** into the chat box and send it:
 
    > I want to set up the Pvragon AI workspace on this computer. I'm not technical. Please read the
-   > guide at https://github.com/Pvragon/ai-workspace-reference — start with `team-lib/ONBOARDING.md`
+   > guide at https://github.com/Pvragon/ai-workspace-reference — start with `team-lib/GETTING_STARTED.md`
    > and `team-lib/START_HERE_DESKTOP.md` / `team-lib/DESKTOP_APP_SETUP.md` — and walk me through the
    > whole setup one step at a time. Run whatever you safely can for me. Whenever I need to do
    > something myself, tell me exactly what to click or type and where, and wait for me to say "done"

@@ -23,6 +23,23 @@
 # ------------------------------------------
 
 skills:
+- name: update-ai-workspace-children
+  description: 'Walk the whole my-lib -> team-lib -> public promotion chain in one pass: tidy and document
+    the personal layer, decide what graduates, validate the shared layer, regenerate and validate the
+    public layer, then push in the order the gates require. Judgment half of workspace_chain_audit.py.'
+  path: skills/update-ai-workspace-children/SKILL.md
+  capabilities:
+  - layer-sync
+  - graduation
+  - publication
+  - release-readiness
+  - governance
+  dependencies:
+  - workspace_chain_audit.py
+  - layer_drift_scan.py
+  - publish_public_reference.py
+  - graduate_capability.py
+  version: 1.0.2
 - name: create-directive
   description: Guidelines for creating effective workflow directives that orchestrate without redundancy
   path: skills/create-directive/SKILL.md
@@ -602,8 +619,8 @@ skills:
   version: 1.1.1
 - name: choose-name
   description: Welcoming ceremony for a new AI teammate to choose their own name, pronouns, and identity.
-    Run once in an agent's first session (final phase of ONBOARDING.md); writes the identity block into
-    the tool's global config file and scaffolds ~/ai-workspace/agents/<name>/.
+    Run once in an agent's first session (final phase of GETTING_STARTED.md); writes the identity block
+    into the tool's global config file and scaffolds ~/ai-workspace/agents/<name>/.
   path: skills/choose-name/SKILL.md
   capabilities:
   - onboarding

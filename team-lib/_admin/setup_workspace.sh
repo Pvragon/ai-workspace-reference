@@ -167,7 +167,7 @@ ensure_dir "${WORKSPACE_ROOT}/my-lib/runtime/logs"
 ensure_dir "${WORKSPACE_ROOT}/projects"
 
 # Cross-cutting: agent identity & memory. Populated by the choose-name
-# ceremony on the agent's first session (see ONBOARDING.md, final phase).
+# ceremony on the agent's first session (see GETTING_STARTED.md, final phase).
 ensure_dir "${WORKSPACE_ROOT}/agents"
 
 # ============================================================================
@@ -432,7 +432,7 @@ User: $(whoami)
 "
 
 # Secrets template — the canonical env file every execution script sources.
-# ONBOARDING.md's \"Get your keys\" section explains where each value comes from.
+# GETTING_STARTED.md's \"Get your keys\" section explains where each value comes from.
 ensure_file "${WORKSPACE_ROOT}/personal/secrets/.env.template" "# Pvragon AI Workspace — secrets file
 # Copy real values in place of the placeholders. This file is the template;
 # the live copy is .env in this same directory. NEVER commit either one,
@@ -723,7 +723,7 @@ echo "2. Open VS Code using: ${WORKSPACE_ROOT}/pvragon-workspace.code-workspace"
 # populated library looks unfinished. Say so here, where the user is still reading.
 case "$MEMORY_STATUS" in
     deferred)
-        echo "3. Name your agent (ONBOARDING Phase 7), then give it memory:"
+        echo "3. Name your agent (GETTING_STARTED.md Phase 7), then give it memory:"
         echo "       bash $MEMORY_SCRIPT"
         echo "   Until then your agent starts every session from nothing."
         ;;

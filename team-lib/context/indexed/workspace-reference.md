@@ -1,6 +1,6 @@
 ---
 template: workspace-reference
-version: 1.11.1
+version: 1.11.4
 summary: "Canonical architectural reference for the Pvragon AI Workspace: 4-layer hierarchy, directory conventions, functional stack (including integrations/ for CLIs, MCPs, and remote execution interfaces), agent identity system, registry strategy, governance, project docs structure, live-infrastructure documentation pattern, and T3/T4 memory split (situational hook-triggered lens vs always-on baked-in lens). v1.10.0 (2026-06-11): personal/ is now a private per-user repo and the Obsidian vault root (notes-shaped content only); added projects/personal monorepo for personal-domain micro-projects with ideation→build→standalone lifecycle."
 created: 2026-01-15
 last_updated: 2026-08-01
@@ -301,13 +301,16 @@ get wrong, so it is stated twice:
 | | `my-lib` | `team-lib` | public |
 |---|---|---|---|
 | Personal experiments, half-built tools | ✅ born here | only once proven | — |
-| Client/project-specific work | ✅ | ❌ (belongs in `projects/`) | ❌ |
+| Client/project-specific **skills, code, directives** | ✅ | ❌ (belongs in `projects/`) | ❌ |
+| **CLIs / MCP servers / integrations** (`integrations/`) | ❌ | ✅ even when client-specific | only the non-proprietary ones |
 | Generic capability others would use | graduate it out | ✅ | ✅ |
 | Operator identity, real names, emails | ✅ | ✅ | ❌ generalized to placeholders |
 | Client names, client infrastructure | ✅ | ✅ | ❌ scrub-blocked; publication REFUSES the file |
 | Third-party skill packs (`skills/_external/`) | ❌ | ✅ as submodules | ❌ fetched from source, never redistributed |
 | `mirror.yaml` itself | — | ✅ | ❌ it contains the blocklist, so it names every client |
 | Secrets | `personal/secrets/` only | ❌ | ❌ |
+
+**Integrations are structural, not content.** A CLI or MCP server is an architectural addition to what the workspace can *do*, so all of them live together in `team-lib/integrations/` regardless of who the client is — `waystar-cli` sits beside `clickup-cli` and `agent-mailbox` because splitting them by client would scatter one layer across four repos and leave nowhere to look. Proprietary ones simply do not publish (`waystar-cli/*` is excluded); the rest do. This is the one place the "client-specific work belongs in `projects/`" rule does NOT apply, and the exception is deliberate — ruled 2026-08-01.
 
 **Graduation is a MOVE, never a copy.** Two live copies have no owner for the diff; both stay
 individually valid while the comparison silently rots. See
@@ -522,9 +525,14 @@ To prevent entropy and "junk drawer" accumulation, the workspace enforces strict
 ### 10.1 Team Library (`team-lib`)
 **Strict Rule:** Shared Infrastructure Only.
 *   **Directive:** [team-library-governance.md](../../directives/team-library-governance.md)
-*   **Enforcement:** Automated by `graduate_files.py` and GitHub Branch Protection.
+*   **Enforcement:** `graduate_capability.py` plus GitHub Branch Protection.
 *   **Protocol:**
-    *   **No Direct Pushes:** All changes must go through Pull Request.
+    *   **No Direct Pushes:** All changes must go through Pull Request. Repo owners hold
+        bypass rights and use them only for release mechanics (publishing the generated
+        public layer, version-gate commits), so a "bypassed rule violations" line in a push
+        log is expected there and is not evidence of a broken process. Everyone else: PR.
+        The exception is recorded in the operator's personal layer, deliberately — it is not
+        a team default and must not be read as one.
     *   **No Personal Scoping:** Scripts must be generic (no `user-` prefixes).
     *   **Definition of Done:** Required frontmatter, docstrings, and tests.
 

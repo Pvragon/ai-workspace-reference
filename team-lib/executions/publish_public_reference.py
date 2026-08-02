@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.2
+# version: 1.0.4
 # summary: "Publishes team-lib to the public reference repo as a GENERALIZATION: copies every
 #   included tree, drops what is proprietary, rewrites operator and client identifiers into
 #   placeholders, and REFUSES to write any file that still contains a blocked term afterwards.
@@ -185,12 +185,14 @@ def _blocked(text: str, blocklist: list[tuple[str, str]]) -> list[str]:
     return sorted({f"{g}:{t}" for g, t in blocklist if t.lower() in low})
 
 
-def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -> dict:
+def run(apply: bool = False, prune: bool = False, manifest: str | None = None,
+        force: bool = False) -> dict:
     """Publish team-lib into the public reference repo.
 
     Args:
         apply: Write changes. Default False (dry run).
         prune: Delete published files whose source no longer exists.
+        force: Publish even if the shared layer is not on main.
         manifest: Path to mirror.yaml; defaults to ../registry/mirror.yaml.
 
     Returns:
@@ -208,6 +210,24 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
 
     shared = ws / layers.get("shared", "team-lib")
     public = ws / layers.get("public", "")
+
+    # The public repo is generated from whatever is CHECKED OUT, and the shared tree is
+    # shared: a peer can leave team-lib on a feature branch, and did — measured 2026-08-01,
+    # team-lib sat on `fix/waystar-creds-canonical-location` with six unpushed commits while
+    # the publish gate was armed. Publishing then would ship an unreviewed branch to the
+    # world, and nothing in this tool or the gate would have noticed. Refuse instead.
+    if not force:
+        import subprocess
+        try:
+            br = subprocess.run(["git", "-C", str(shared), "branch", "--show-current"],
+                                capture_output=True, text=True, timeout=30).stdout.strip()
+        except Exception:                                   # noqa: BLE001
+            br = ""
+        if br and br != "main":
+            return {"status": "error",
+                    "error": f"team-lib is on branch '{br}', not main — refusing to publish a "
+                             f"non-main checkout to the public repo. Switch team-lib to main, "
+                             f"or pass --force if you truly mean to publish this branch."}
     if not public or not public.is_dir():
         return {"status": "error", "error": f"public layer not found: {public}"}
 
@@ -287,6 +307,22 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
             dst.write_text(out, encoding="utf-8")
 
     if prune:
+        # Root-level entry docs first. They come from include_files, not from a tree, so the
+        # tree walk below never sees them and a renamed guide orphans forever: measured
+        # 2026-08-01, renaming ONBOARDING.md to GETTING_STARTED.md left BOTH in the public
+        # repo, and the stale one still read perfectly plausibly. Publication is a total
+        # function over root files, so anything at the root that is not in include_files is
+        # by definition no longer published.
+        keep_root = set(pub.get("include_files") or [])
+        for existing in sorted(base.glob("*")):
+            if not existing.is_file() or existing.name in keep_root:
+                continue
+            if _excluded(existing.name, excludes):
+                continue
+            pruned.append(existing.name)
+            if apply:
+                existing.unlink()
+
         for tree in pub.get("include") or []:
             tree_root = base / tree
             if not tree_root.is_dir():
@@ -320,13 +356,15 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None) -
 def main() -> int:
     ap = argparse.ArgumentParser(description="Publish team-lib to the public reference repo.")
     ap.add_argument("--apply", action="store_true", help="write changes (default: dry run)")
+    ap.add_argument("--force", action="store_true",
+                    help="publish even if team-lib is not on main")
     ap.add_argument("--prune", action="store_true",
                     help="delete published files whose source no longer exists")
     ap.add_argument("--manifest", default=None)
     ap.add_argument("--verbose", action="store_true", help="list every file")
     args = ap.parse_args()
 
-    r = run(apply=args.apply, prune=args.prune, manifest=args.manifest)
+    r = run(apply=args.apply, prune=args.prune, manifest=args.manifest, force=args.force)
     if r["status"] == "error":
         print(f"Error: {r['error']}", file=sys.stderr)
         return 2

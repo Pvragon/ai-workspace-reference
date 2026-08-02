@@ -3,6 +3,12 @@ name: who
 description: "Show which other Claude Code sessions are live right now, what each is doing (busy/idle + repo@branch + cwd), and whether each is reachable for messaging (bridged to Remote Control vs local-only). On-demand multi-instance awareness — the active-query companion to the passive PreToolUse roster advisory. Use when about to edit shared files, before starting parallel work, or when the user asks 'what are my other sessions doing?'."
 template: skill-definition
 version: 1.0.0
+summary: "Shows which other Claude Code sessions are live right now, what each is doing (busy/idle + repo@branch + cwd) and whether it is reachable for messaging — the active-query companion to the passive PreToolUse roster advisory."
+created: 2026-07-11
+last_updated: 2026-08-01
+maintainer: pvragon
+template: skill-definition
+version: 1.0.0
 created: 2026-07-11
 last_updated: 2026-07-11
 maintainer: pvragon
