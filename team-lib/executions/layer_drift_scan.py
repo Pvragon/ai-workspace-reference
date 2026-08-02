@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.3
+# version: 1.2.4
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,
@@ -650,7 +650,29 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
             text, _ = _filter_registry(text, _pub_paths, shared_root)
         return text
 
-    findings: list[dict] = _root_file_classification(spec, shared_root)
+    # Orphaned root docs: published once, then renamed or removed at the source.
+    #
+    # The tree walk below cannot see these — root docs come from include_files, not from a
+    # tree — which is the same blind spot --prune had until 2026-08-01. Renaming
+    # ONBOARDING.md to GETTING_STARTED.md left BOTH live in the public repo, the stale one
+    # reading perfectly plausibly, and neither the publisher nor this scan said a word.
+    # Fixing only the publisher would leave the DETECTOR still unable to see the condition
+    # it is supposed to catch.
+    orphans: list[dict] = []
+    keep_root = set(spec.get("include_files") or [])
+    if pub_base.is_dir():
+        for existing in sorted(pub_base.glob("*")):
+            if not existing.is_file() or existing.name in keep_root:
+                continue
+            if _excluded(existing.name, excludes):
+                continue
+            orphans.append(_finding(
+                "orphan-in-public", "med", "publication", existing.name,
+                hint="published at the root but no longer in include_files — a rename or "
+                     "removal at the source. Run publish_public_reference.py --apply --prune",
+            ))
+
+    findings: list[dict] = orphans + _root_file_classification(spec, shared_root)
     for tree in spec.get("include") or []:
         s_files = _walk(shared_root / tree, excludes)
         p_files = _walk(pub_base / tree, excludes)
@@ -972,6 +994,7 @@ _LABEL = {
     "LEAK": "LEAK — PUBLISHED (a client/operator identifier is already public)",
     "leak-blocks-publish": "leak blocks publish (identifier present; refresh is blocked)",
     "stale-in-public": "stale in public (published copy no longer matches team-lib)",
+    "orphan-in-public": "orphaned in public (published once, then renamed or removed at the source)",
     "unpublished": "unpublished (clean and publishable, not in the public repo)",
     "not-standalone": "NOT STANDALONE (shared layer depends on the personal one)",
     "root-unclassified": "ROOT UNCLASSIFIED (neither published nor excluded-with-reason)",
