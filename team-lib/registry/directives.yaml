@@ -30,7 +30,7 @@ directives:
     scope: global
     priority: medium
     tags: [multi-agent, coordination, mailbox, git, cross-machine, agent-to-agent]
-    version: "0.1.1"
+    version: "0.1.2"
 
   run-deal-hunt:
     path: "directives/run-deal-hunt.md"

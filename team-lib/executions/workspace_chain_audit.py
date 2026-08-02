@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.2
+# version: 1.0.3
 # summary: "Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and
 #   returns one verdict: layer drift, registry resolution in all three layers, publication
 #   freshness, the scrub blocklist over the released files, external-pack pins, version
@@ -137,6 +137,19 @@ def run() -> dict:
 
     if not TEAM.is_dir():
         return {"status": "error", "error": f"no team-lib at {TEAM}"}
+
+    # State the subject, and refuse to be quietly wrong about it.
+    #
+    # WS comes from agent_paths.workspace(), not from this file's location. Run from a fresh
+    # clone of the PUBLIC repo it printed PASS while auditing ~/ai-workspace — a verdict about
+    # a workspace it was not in. (layer_drift_scan errored honestly in the same clone; one of
+    # the two was lying about its subject.) Reviewed 2026-08-01.
+    info["workspace"] = str(WS)
+    here = Path(__file__).resolve()
+    _check(results, "auditing the workspace this script lives in", str(here).startswith(str(WS)),
+           f"workspace={WS}" + ("" if str(here).startswith(str(WS)) else
+                                f" but this script is at {here} — the verdict below describes "
+                                f"{WS}, NOT the tree you are standing in"))
 
     # --- 0. which branch are we even auditing? -----------------------------------
     #

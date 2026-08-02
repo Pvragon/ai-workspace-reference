@@ -1,6 +1,6 @@
 ---
 template: integration
-version: 1.1.1
+version: 1.1.2
 type: cli
 summary: "ClickUp CLI integration via Restish — covers full v2 + v3 API surface including task comments with @mentions and Chat messaging. Replaces the ClickUp MCP."
 created: 2026-03-19
@@ -47,7 +47,7 @@ Copy the template config:
 
 ```bash
 mkdir -p ~/.config/restish
-cp team-lib/skills/clickup-cli/restish-apis-template.json ~/.config/restish/apis.json
+cp team-lib/integrations/clickup-cli/restish-apis-template.json ~/.config/restish/apis.json
 ```
 
 Then edit `~/.config/restish/apis.json` and replace `YOUR_TOKEN_HERE` with your ClickUp API token.
@@ -71,12 +71,12 @@ restish clickup-v3/workspaces/9011906822/chat/channels
 echo '{"comment_text": "Deployed to staging"}' | restish post clickup-v2/task/TASK_ID/comment
 
 # Comment with @mention (use clickup_mention_comment.py wrapper)
-python3 team-lib/skills/clickup-cli/clickup_mention_comment.py \
+python3 team-lib/integrations/clickup-cli/clickup_mention_comment.py \
   --task TASK_ID \
   --message "Hey @Roman Naidenko can you review this?"
 
 # Multiple @mentions
-python3 team-lib/skills/clickup-cli/clickup_mention_comment.py \
+python3 team-lib/integrations/clickup-cli/clickup_mention_comment.py \
   --task TASK_ID \
   --message "@Dana Hetté @Victor Cheung ready for QA"
 ```

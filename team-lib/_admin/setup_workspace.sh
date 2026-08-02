@@ -35,6 +35,24 @@ echo "=== Pvragon AI Workspace Setup ==="
 # Default Team Library URL (can be overridden via environment)
 TEAM_REPO_URL="${TEAM_REPO_URL:-https://github.com/Pvragon/pvragon-ai-library.git}"
 
+# ...but if we are running from INSIDE a workspace-mirror clone — i.e. the public reference
+# repo, which carries team-lib/ as a subdirectory — then the team library is already on disk
+# beside us and the default URL points at a private repo the reader cannot read.
+#
+# Measured 2026-08-01: anonymously, Pvragon/pvragon-ai-library is a 404, TEAM_REPO_URL was
+# documented in zero public markdown files, and the container harness only got through this
+# step by doing a `git subtree split` substitution documented nowhere a reader would look.
+# The public quick start therefore stopped dead at step 2 for every stranger who tried it.
+SETUP_SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"      # .../<team-lib>/_admin
+LOCAL_TEAM_LIB="$(cd "${SETUP_SRC_DIR}/.." && pwd)"                # .../<team-lib>
+MIRROR_ROOT="$(cd "${LOCAL_TEAM_LIB}/.." 2>/dev/null && pwd || true)"
+USE_LOCAL_TEAM_LIB=false
+if [[ -z "${TEAM_REPO_URL_EXPLICIT:-}" && "$(basename "$LOCAL_TEAM_LIB")" == "team-lib" \
+      && -n "$MIRROR_ROOT" && -d "${MIRROR_ROOT}/team-lib/_admin" && -f "${MIRROR_ROOT}/README.md" ]]; then
+    USE_LOCAL_TEAM_LIB=true
+    MIRROR_ORIGIN="$(git -C "$MIRROR_ROOT" remote get-url origin 2>/dev/null || echo "")"
+fi
+
 # ============================================================================
 # TEAM LIBRARY SETUP (Must happen first)
 # ============================================================================
@@ -54,8 +72,17 @@ if [[ ! -d "$TEAM_LIB_DIR/.git" ]]; then
         mv "$TEAM_LIB_DIR" "${TEAM_LIB_DIR}.backup.$(date +%s)"
     fi
 
-    echo "    Cloning team-lib from $TEAM_REPO_URL..."
-    if git clone --recurse-submodules "$TEAM_REPO_URL" "$TEAM_LIB_DIR"; then
+    if [[ "$USE_LOCAL_TEAM_LIB" == "true" ]]; then
+        # Self-sourcing install: copy the library we are running from, and record where it
+        # came from so validate.sh can recognise the origin.
+        echo "    Installing team-lib from this clone (${LOCAL_TEAM_LIB})..."
+        mkdir -p "$TEAM_LIB_DIR"
+        cp -a "${LOCAL_TEAM_LIB}/." "$TEAM_LIB_DIR/"
+        rm -rf "${TEAM_LIB_DIR}/.git"
+        git init -q "$TEAM_LIB_DIR"
+        [[ -n "${MIRROR_ORIGIN:-}" ]] && git -C "$TEAM_LIB_DIR" remote add origin "$MIRROR_ORIGIN" 2>/dev/null || true
+        echo "    ✅ team-lib installed from the reference clone."
+    elif git clone --recurse-submodules "$TEAM_REPO_URL" "$TEAM_LIB_DIR"; then
         echo "    ✅ team-lib cloned successfully."
     else
         echo "    ❌ Failed to clone team-lib. Check your network connection and URL."

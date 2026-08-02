@@ -31,7 +31,7 @@ executions:
     path: "executions/workspace_chain_audit.py"
     description: "Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and returns one verdict: layer drift, registry resolution in all three layers, publication freshness, the scrub blocklist over the RELEASED files, external-pack pins, version staleness, both harnesses, skill invocability and push state. Read-only by construction. The judgment half is the update-ai-workspace-children skill."
     tags: [audit, publication, drift, release, governance, chain]
-    version: "1.0.2"
+    version: "1.0.3"
 
   context_usage:
     path: "executions/context_usage.py"

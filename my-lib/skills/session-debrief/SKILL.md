@@ -18,7 +18,7 @@ This skill has **graduated to the shared library**: see [`team-lib/skills/sessio
 It demonstrates the **graduation lifecycle** that keeps the workspace healthy:
 
 1. A capability starts as a personal skill in `my-lib/skills/` — fast to iterate, only you depend on it.
-2. Once it stabilizes and proves useful beyond one person, it's promoted to `team-lib/skills/` via the [`graduate-to-team-library`](../../directives/graduate-to-team-library.md) directive.
+2. Once it stabilizes and proves useful beyond one person, it's promoted to `team-lib/skills/` via the [`graduate-to-team-library`](../../../team-lib/directives/graduate-to-team-library.md) directive.
 3. The my-lib copy becomes a pointer (this file) so nothing links to a stale duplicate.
 
 If you're building your own workspace from this reference: run the debrief from the team-lib copy.

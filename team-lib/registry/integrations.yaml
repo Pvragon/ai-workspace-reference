@@ -145,7 +145,7 @@ integrations:
   - chat
   - mentions
   - task-comments
-  version: 1.1.1
+  version: 1.1.2
 - name: namecheap-cli
   description: 'Namecheap CLI (command `namecheap`) — full-coverage (59/59 documented methods) CLI + importable
     Python client for the Namecheap XML API: domains (register/renew/check/contacts/locks), DNS (safe

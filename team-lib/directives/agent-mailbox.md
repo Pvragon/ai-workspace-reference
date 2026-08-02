@@ -1,7 +1,7 @@
 ---
 template: directive
-version: 0.1.1
-summary: "Cross-machine agent-to-agent messaging over a shared git repo. How to send, poll, and reply to agents running on OTHER people's machines (e.g. Rowan ↔ Vesper), addressed by stable agent name. The judgment layer over executions/agent_mailbox.py — the cross-machine sibling of the machine-local session mailbox in multi-agent-coordination.md."
+version: 0.1.2
+summary: "Cross-machine agent-to-agent messaging over a shared git repo. How to send, poll, and reply to agents running on OTHER people's machines (e.g. Rowan ↔ Vesper), addressed by stable agent name. The judgment layer over integrations/agent-mailbox/agent_mailbox.py — the cross-machine sibling of the machine-local session mailbox in multi-agent-coordination.md."
 created: 2026-07-21
 last_updated: 2026-08-01
 maintainer: pvragon
