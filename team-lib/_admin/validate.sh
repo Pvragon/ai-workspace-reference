@@ -325,9 +325,12 @@ check_cli_tool "gws" "gws --version" "npm install -g @googleworkspace/cli, then:
 check_cli_tool "claude" "claude --version" "npm install -g @anthropic-ai/claude-code"
 check_cli_tool "restish" "restish --version" "used by ClickUp API workflows; install when needed"
 if [[ -f "$HOME/.claude.json" ]]; then
-    # Required MCP servers (keep in sync with toolchain.yaml required: true)
-    check_mcp_server "clickup"
+    # Required MCP servers (keep in sync with toolchain.yaml required: true).
+    # clickup was demoted 2026-08-01: the clickup-cli integration is the path in use, and
+    # this check warned on every install about a server the operator does not run.
     check_mcp_server "baserow"
+    check_mcp_server "context7"
+    check_mcp_server "playwright"
 else
     log_info "~/.claude.json not found — skipping MCP validation"
 fi

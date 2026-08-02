@@ -28,9 +28,41 @@ cli_tools:
     post_install_notes: "Run 'claude' once in ~/ai-workspace/my-lib and complete /login (Pvragon Claude account or API key)."
 
 mcp_servers:
-  clickup:
-    description: "ClickUp project management"
+  context7:
+    description: "Up-to-date library/framework documentation lookup"
     required: true
+    config:
+      claude:
+        type: stdio
+        command: npx
+        args: ["-y", "@upstash/context7-mcp@latest"]
+        env: {}
+      gemini:
+        command: npx
+        args: ["-y", "@upstash/context7-mcp@latest"]
+
+  playwright:
+    description: "Browser automation and page inspection"
+    required: true
+    config:
+      claude:
+        type: stdio
+        command: npx
+        args: ["@playwright/mcp@latest"]
+        env: {}
+      gemini:
+        command: npx
+        args: ["@playwright/mcp@latest"]
+    post_install_notes: "Downloads its own browser on first use. To pin an existing Chromium add --executable-path <path>; the operator's machine also passes --config. Both are per-machine and deliberately not baked in here."
+
+  pencil:
+    description: "Pencil design-file editor (.pen). Per-machine: its command is a VS Code extension binary."
+    required: false
+    post_install_notes: "No portable command exists — the server ships inside the Pencil VS Code extension, so the path carries an extension version and a username. Configure by hand: command = ~/.vscode-server/extensions/highagency.pencildev-<version>/out/mcp-server-linux-x64, args = [--app, visual_studio_code, --agent, claudeCodeCLI]."
+
+  clickup:
+    description: "ClickUp project management (optional — the clickup-cli integration is the path we actually use)"
+    required: false
     config:
       claude:
         type: stdio

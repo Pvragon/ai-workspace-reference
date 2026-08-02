@@ -20,7 +20,7 @@ executions:
     path: "executions/version_gate.py"
     description: "PreToolUse hook on `git push` that keeps frontmatter versions honest. For every versioned file whose BODY changed in the commits about to be pushed without its `version:` changing, it bumps the patch level, stamps last_updated, syncs any registry entry recording the same version, and commits that as a chore(version) commit so the push carries it. Resolves the standing tension between AGENTS.md Op#10 (commit early and often) and the frontmatter versioning rule by putting the version at the PUBLISH boundary rather than every commit: a commit is a private checkpoint, a version is a published identity. Escalate or skip per-push with [minor]/[major]/[no-version] in any commit message in the range. Never blocks — any error defers silently so a push is never lost. Origin: 62% version compliance measured across 90 days (91 commits / 57 bumps), 26% on the most-iterated skill."
     tags: [hook, claude-code, versioning, frontmatter, registry, drift, publish-boundary]
-    version: "1.1.3"
+    version: "1.1.4"
   publish_public_reference:
     path: "executions/publish_public_reference.py"
     description: "Publishes team-lib into the public reference repo as a GENERALIZATION driven entirely by registry/mirror.yaml: copies every included tree, drops what is proprietary, rewrites operator and client identifiers into placeholders, and REFUSES any file still containing a blocked term afterwards. Text-vs-binary by decodability, not suffix. --prune deletes published files whose source is gone, but never touches excluded paths (excluded means unmanaged, not delete). Dry-run by default."
@@ -31,7 +31,7 @@ executions:
     path: "executions/workspace_chain_audit.py"
     description: "Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and returns one verdict: layer drift, registry resolution in all three layers, publication freshness, the scrub blocklist over the RELEASED files, external-pack pins, version staleness, both harnesses, skill invocability and push state. Read-only by construction. The judgment half is the update-ai-workspace-children skill."
     tags: [audit, publication, drift, release, governance, chain]
-    version: "1.0.4"
+    version: "1.0.5"
 
   context_usage:
     path: "executions/context_usage.py"

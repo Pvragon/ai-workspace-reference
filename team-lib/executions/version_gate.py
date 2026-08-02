@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution-script
-# version: 1.1.3
+# version: 1.1.4
 # summary: PreToolUse hook on `git push` that keeps frontmatter versions honest.
 #   For every versioned file whose BODY changed in the commits about to be pushed
 #   without its `version:` changing, it bumps the patch level, stamps
@@ -186,12 +186,20 @@ def resolve_pushed_repo(cmd, cwd_hint, note=lambda *a: None):
     inferred. Two forms have already bitten us, both by silently falling through to
     the session cwd — which is whatever directory the PREVIOUS command left behind:
 
-      `git -C $VAR push`       -> literal "$VAR"           (2026-07-31)
-      `cd <repo> && git push`  -> the cd is invisible      (2026-08-01)
+      `git -C $VAR push`        -> literal "$VAR"          (2026-07-31, half-fixed)
+      `cd <repo> && git push`   -> the cd is invisible     (2026-08-01)
+      `(cd <repo> && git push)` -> matched by nothing      (2026-08-01, adversarial)
+      `pushd <repo> && git push`-> matched by nothing      (2026-08-01, adversarial)
 
-    The second one made version_gate version the generated public repo while the
-    source layer shipped unversioned. This lives in one place precisely so a second
-    push-boundary hook cannot re-acquire the same bug independently.
+    The second made version_gate version the generated public repo while the source
+    layer shipped unversioned. The 2026-07-31 entry was recorded as fixed and was not:
+    only the `cd` branch returned None, while `-C` went on falling through to the
+    session cwd for another day, under a docstring that said otherwise. An adversarial
+    probe drove a `git -C $VAR push` of team-lib into a version bump of my-lib.
+
+    ALL of these now return None. A target we cannot resolve is not the same fact as
+    no target at all, and only one of those is safe to guess at; --reconcile is the
+    floor that catches whatever this skips.
 
     `note` is an optional logging callback (event, detail).
     """
@@ -401,7 +409,18 @@ def main():
     # version its source never had, and the next publish silently reverts it.
     # Belt and braces with the cd/-C resolution above: that stops us ARRIVING here
     # by accident, this stops us acting even if we do.
-    if os.path.realpath(repo) == os.path.realpath(os.path.join(WORKSPACE, PUBLIC_LAYER)):
+    #
+    # Compare the COMMON git dir, not the working tree. A worktree of the public repo has
+    # its own toplevel, so the identity test missed it and versioned the generated artifact
+    # in place — the "even if we do" the comment above promised to cover. Confirmed by
+    # adversarial probe, 2026-08-01.
+    def _repo_identity(path):
+        common = git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
+        return os.path.realpath(common) if common else os.path.realpath(path)
+
+    public_root = os.path.join(WORKSPACE, PUBLIC_LAYER)
+    if (os.path.realpath(repo) == os.path.realpath(public_root)
+            or (os.path.isdir(public_root) and _repo_identity(repo) == _repo_identity(public_root))):
         beat("skip", "generated artifact — versions come from the source layer")
         print("[version-gate] SKIPPED — this is the generated public repo. Version it in\n"
               "               team-lib and re-run publish_public_reference.py.", file=sys.stderr)

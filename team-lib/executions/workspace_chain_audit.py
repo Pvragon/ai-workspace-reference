@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.4
+# version: 1.0.5
 # summary: "Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and
 #   returns one verdict: layer drift, registry resolution in all three layers, publication
+#   freshness INCLUDING prune's question (files whose source is gone), the scrub blocklist over
 #   freshness, the scrub blocklist over the released files, external-pack pins, version
 #   staleness, harness results and push state. Read-only. The judgment half lives in the
 #   update-ai-workspace-children skill."
@@ -107,20 +108,26 @@ def _scrub_released():
     try:
         import yaml
     except ImportError:
-        return None, None
+        return None, None, None
     spec = yaml.safe_load((TEAM / "registry" / "mirror.yaml").read_text(encoding="utf-8")) or {}
     terms = [t.lower() for ts in ((spec.get("publication") or {}).get("scrub") or {}).values()
              for t in ts]
     files = [p for p in PUBLIC.rglob("*") if p.is_file() and ".git/" not in str(p)]
-    leaked = []
+    leaked, unscannable = [], []
     for p in files:
         try:
             low = p.read_text(encoding="utf-8").lower()
         except (UnicodeDecodeError, OSError):
-            continue
+            # Cannot be scrubbed, so cannot be cleared. Counted, not silently skipped:
+            # a binary can carry a client logo no content gate would ever see.
+            unscannable.append(str(p.relative_to(PUBLIC)))
+            low = ""
         if any(t in low for t in terms):
             leaked.append(str(p.relative_to(PUBLIC)))
-    return len(files), leaked
+        # Path names are published too, and carry client names as readily as bodies do.
+        if any(t in str(p.relative_to(PUBLIC)).lower() for t in terms):
+            leaked.append(str(p.relative_to(PUBLIC)) + " (in the PATH)")
+    return len(files), leaked, unscannable
 
 
 def _git_state(repo: Path):
@@ -236,15 +243,20 @@ def run() -> dict:
                "a file still carries a blocked identifier after generalization" if refused
                else "no refusals")
 
-    total, leaked = _scrub_released()
+    total, leaked, unscannable = _scrub_released()
     if total is None:
         _check(results, "no proprietary material in the public repo", False,
                "could not read the blocklist", blocking=False)
     else:
         info["public_files"] = total
         _check(results, "no proprietary material in the public repo", not leaked,
-               f"{total} released files scanned, {len(leaked)} leaking"
+               f"{total} released files scanned (content AND path), {len(leaked)} leaking"
                + (f" — {', '.join(leaked[:4])}" if leaked else ""))
+        # Undecodable files cannot be scrubbed, so they cannot be CLEARED either. Reported
+        # rather than silently skipped: a binary can carry a client logo no gate would see.
+        _check(results, "every released file was actually scannable", not unscannable,
+               f"{len(unscannable)} undecodable file(s) — unscannable, therefore uncleared"
+               + (f": {', '.join(unscannable[:3])}" if unscannable else ""), blocking=False)
 
     # --- 4. third-party pins ------------------------------------------------------
     pins = TEAM / "_admin" / "update_external_pack_pins.sh"
@@ -268,12 +280,17 @@ def run() -> dict:
                blocking=False)
 
     # --- 6. the harnesses ---------------------------------------------------------
+    # A guarded `if path.is_file()` meant deleting a harness removed its line entirely and
+    # the audit still said PASS — the gate disappears and nothing mourns it. An expected
+    # tool that is missing is a finding, not a skipped line.
     for h in ("test_layer_drift_scan.py", "test_version_gate.py"):
         path = TEAM / "harnesses" / h
-        if path.is_file():
-            rc, out, err = _sh(sys.executable, str(path))
-            _check(results, f"harness: {h}", rc == 0,
-                   (out or err).strip().splitlines()[-1][:100] if (out or err) else f"rc={rc}")
+        if not path.is_file():
+            _check(results, f"harness: {h}", False, f"MISSING at {path} — a gate is gone")
+            continue
+        rc, out, err = _sh(sys.executable, str(path))
+        _check(results, f"harness: {h}", rc == 0,
+               (out or err).strip().splitlines()[-1][:100] if (out or err) else f"rc={rc}")
 
     # --- 7. install-time wiring ----------------------------------------------------
     rc, out, _ = _sh(sys.executable, str(TEAM / "executions" / "link_skills.py"), "--dry-run")

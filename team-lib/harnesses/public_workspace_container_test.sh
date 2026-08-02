@@ -1,7 +1,7 @@
 #!/bin/bash
 # ---
 # template: harness
-# version: 1.0.4
+# version: 1.0.5
 # summary: "Pristine-container proof that the PUBLISHED workspace (ai-workspace-reference)
 #   can be cloned onto a blank box, run through the GETTING_STARTED.md it ships, and end with a
 #   working agent. Installs from the published bytes only — no host state, no private repo."
@@ -40,7 +40,7 @@
 #   cp ~/ai-workspace/team-lib/harnesses/public_workspace_container_test.sh \
 #      /mnt/c/temp/wstest/harness.sh
 #   python3 -c "import yaml;print('\\n'.join(t for ts in \
-#     yaml.safe_load(open('registry/mirror.yaml'))['publication']['scrub'].values() \
+#     yaml.safe_load(open('team-lib/registry/mirror.yaml'))['publication']['scrub'].values() \
 #     for t in ts))" > /mnt/c/temp/wstest/scrub-tokens.txt   # never hard-code these
 #   "/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe" \
 #       run --rm -v "C:\\temp\\wstest:/src" ubuntu:24.04 bash /src/harness.sh
