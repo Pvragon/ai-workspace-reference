@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution-script
-# version: 1.1.2
+# version: 1.1.3
 # summary: PreToolUse hook on `git push` that keeps frontmatter versions honest.
 #   For every versioned file whose BODY changed in the commits about to be pushed
 #   without its `version:` changing, it bumps the patch level, stamps
@@ -203,10 +203,16 @@ def resolve_pushed_repo(cmd, cwd_hint, note=lambda *a: None):
         if os.path.isdir(cand):
             repo = cand
         else:
+            # Same rule as the cd branch below, and it was missing here — which is how a
+            # `git -C $VAR push` of team-lib got evaluated against my-lib and reported
+            # success. The docstring claimed this form was fixed; only half of it was.
             note("unexpanded-C", m.group(1)[:40])
+            return None
 
     if repo is None:
-        cd = re.search(r"(?:^|&&|;|\|)\s*cd\s+(\S+)", cmd)
+        # `(cd repo && git push)` and `pushd repo && git push` were matched by nothing, so
+        # they fell through to the session cwd too. Both confirmed live.
+        cd = re.search(r"(?:^|&&|;|\||\(|\{)\s*(?:cd|pushd)\s+(\S+)", cmd)
         if cd:
             cand = os.path.expanduser(cd.group(1).strip("'\""))
             if os.path.isdir(cand):

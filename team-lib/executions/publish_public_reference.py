@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.4
+# version: 1.0.5
 # summary: "Publishes team-lib to the public reference repo as a GENERALIZATION: copies every
 #   included tree, drops what is proprietary, rewrites operator and client identifiers into
 #   placeholders, and REFUSES to write any file that still contains a blocked term afterwards.
@@ -223,11 +223,17 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None,
                                 capture_output=True, text=True, timeout=30).stdout.strip()
         except Exception:                                   # noqa: BLE001
             br = ""
-        if br and br != "main":
+        # `br == ""` means UNDETERMINED (detached HEAD — every CI checkout — or a non-git
+        # source tree), and the first cut treated that as permission. That is the precise
+        # failure this guard was written to prevent, reproduced inside the guard itself:
+        # a probe that cannot answer must not return the permissive value.
+        if br != "main":
+            undetermined = not br
+            where = "an UNDETERMINED branch (detached HEAD, or not a git tree)" if undetermined \
+                else f"branch '{br}', not main"
             return {"status": "error",
-                    "error": f"team-lib is on branch '{br}', not main — refusing to publish a "
-                             f"non-main checkout to the public repo. Switch team-lib to main, "
-                             f"or pass --force if you truly mean to publish this branch."}
+                    "error": f"team-lib is on {where} — refusing to publish. Switch team-lib to "
+                             f"main, or pass --force if you truly mean to publish this state."}
     if not public or not public.is_dir():
         return {"status": "error", "error": f"public layer not found: {public}"}
 
@@ -289,7 +295,12 @@ def run(apply: bool = False, prune: bool = False, manifest: str | None = None,
             if dropped:
                 registry_drops[name] = dropped
 
-        leftover = _blocked(out, blocklist)
+        # The destination PATH is published too, and was never scrubbed. mirror.yaml's own
+        # comments note client names appear as path fragments (`projects/northwind`,
+        # `acme-health-brand`); an adversarial probe published `executions/acme-health_export_helper.py`
+        # and `skills/northwind-deploy-notes/SKILL.md` with clean bodies and every gate reported
+        # 0 leaks. A name is as public as a line of text.
+        leftover = _blocked(out, blocklist) + _blocked(name, blocklist)
         if leftover:
             # Refuse, loudly. Publishing this would leak; silently skipping
             # it would make the public repo quietly incomplete instead.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: harness
-# version: 1.0.1
+# version: 1.0.2
 # summary: "Paired-case harness for version_gate.py's repo resolution and its refusal to version a
 #   generated artifact. Builds throwaway git repos under a scratch VERSION_GATE_ROOT and drives the
 #   hook exactly as the harness does — via a stdin JSON payload — so the assertions cover the real
@@ -95,6 +95,17 @@ def version_of(path: Path) -> str:
     return m.group(1) if m else "?"
 
 
+def _gate_module():
+    """Import version_gate directly, to test resolution as a FUNCTION rather than by
+    observing side effects — the unresolvable cases have no side effect to observe."""
+    import importlib.util
+    gate = Path(__file__).resolve().parent.parent / "executions" / "version_gate.py"
+    spec = importlib.util.spec_from_file_location("version_gate", gate)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def main() -> int:
     root = Path(tempfile.mkdtemp(prefix="vgate-"))
     fails = []
@@ -170,6 +181,20 @@ def main() -> int:
               version_of(team / "skills/thing.md") == v_before)
     finally:
         shutil.rmtree(root, ignore_errors=True)
+
+    # case 5: an UNRESOLVABLE push target must SKIP, never fall through to the session cwd.
+    #
+    # Case 3 fires `git -C {real_path} push` and called that coverage of "git -C $VAR" — but a
+    # resolvable path is exactly the case that never broke. An adversarial probe showed the
+    # unresolvable form still versioned whatever repo the session happened to stand in, a fix
+    # the docstring claimed and this suite never exercised. Falsified: these assertions fail
+    # against the previous revision.
+    print("case 5: a push target we cannot resolve must be skipped, not guessed")
+    for cmd in ("git -C $UNSET_REPO push",
+                "(cd $UNSET_REPO && git push)",
+                "pushd $UNSET_REPO && git push"):
+        got = _gate_module().resolve_pushed_repo(cmd, None)
+        check(f"skipped instead of guessing: {cmd}", got is None)
 
     print()
     if fails:

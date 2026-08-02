@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.5
+# version: 1.2.6
 # summary: "Deterministic drift detector between the personal layer (my-lib) and the shared layer
 #   (team-lib). Compares CONTENT HASHES of the file bodies, not version numbers — because the
 #   2026-07-30 audit found three shared skills carrying IDENTICAL versions with different content,
@@ -661,6 +661,15 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
     orphans: list[dict] = []
     keep_root = set(spec.get("include_files") or [])
     trees = list(spec.get("include") or [])
+    # The publisher's own answer to "what should exist here", shared rather than reimplemented.
+    try:
+        from publish_public_reference import published_rel_paths
+        expected_now = published_rel_paths(spec, shared_root)
+    except Exception:                                    # noqa: BLE001
+        expected_now = None
+    if expected_now is None:
+        expected_now = set()
+        trees = []                                        # cannot judge; report nothing
     if pub_base.is_dir():
         # Walk the WHOLE published prefix, not just its root. Root-only was still the same
         # blind spot one level in: 5 files under personas/, logs/ and context/global/ ship
@@ -675,10 +684,18 @@ def _publication(spec: dict, shared_root: Path, public_root: Path) -> list[dict]
                 continue
             if rel in keep_root:
                 continue
-            in_tree = any(rel.startswith(f"{tree}/") for tree in trees)
-            if in_tree:
-                continue          # inside a managed tree: prune's territory, not this check
-            if _excluded(rel, excludes) or _excluded(existing.name, excludes):
+            # Delegating in-tree files to prune was wrong twice over: nothing in the chain
+            # RUNS prune (the audit calls the publisher without it), and prune skips excluded
+            # paths on purpose — so a file inside an included tree at an excluded path was
+            # owned by nobody. That is not hypothetical: companies/index.md has been live in
+            # the public repo, sourceless, through every green audit. Compare against what
+            # publication would actually emit instead of guessing whose territory it is.
+            if rel in expected_now:
+                continue
+            # Basename matching was also wrong: exclude patterns are tree-relative, so
+            # testing them against a bare filename silently exempted whole name classes
+            # (any root file called `pvragon-*.md`, for instance).
+            if _excluded(rel, excludes):
                 continue
             orphans.append(_finding(
                 "orphan-in-public", "med", "publication", rel,

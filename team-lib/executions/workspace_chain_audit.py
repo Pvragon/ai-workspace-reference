@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.3
+# version: 1.0.4
 # summary: "Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and
 #   returns one verdict: layer drift, registry resolution in all three layers, publication
 #   freshness, the scrub blocklist over the released files, external-pack pins, version
@@ -146,8 +146,11 @@ def run() -> dict:
     # the two was lying about its subject.) Reviewed 2026-08-01.
     info["workspace"] = str(WS)
     here = Path(__file__).resolve()
-    _check(results, "auditing the workspace this script lives in", str(here).startswith(str(WS)),
-           f"workspace={WS}" + ("" if str(here).startswith(str(WS)) else
+    # String-prefix matching passed for any sibling directory sharing the prefix
+    # (~/ai-workspace-clone, ~/ai-workspace.bak). Compare path components.
+    inside = WS.resolve() in here.parents
+    _check(results, "auditing the workspace this script lives in", inside,
+           f"workspace={WS}" + ("" if inside else
                                 f" but this script is at {here} — the verdict below describes "
                                 f"{WS}, NOT the tree you are standing in"))
 
@@ -162,7 +165,7 @@ def run() -> dict:
     branch = br.strip()
     info["team_lib_branch"] = branch
     _check(results, "team-lib is on main", branch == "main",
-           f"on '{branch}'" + ("" if branch == "main" else
+           f"on '{branch or 'DETACHED HEAD / not a git tree'}'" + ("" if branch == "main" else
                                " — commits land here, and publication would ship THIS branch. "
                                "Do Phases 1-2, then stop before publishing."))
 
@@ -191,8 +194,11 @@ def run() -> dict:
         if checked is None:
             _check(results, f"registry resolves: {label}", False, "PyYAML missing", blocking=False)
         else:
-            _check(results, f"registry resolves: {label}", not missing,
+            # `0 paths, 0 unresolved` is not a pass — it is a layer with no registry at all.
+            _check(results, f"registry resolves: {label}", (not missing) and checked > 0,
                    f"{checked} paths, {len(missing)} unresolved"
+                   + (" — NO registry entries found at all; this check had no subject"
+                      if checked == 0 else "")
                    + (f" — {', '.join(missing[:4])}" if missing else ""))
 
     # --- 3. publication is current and clean -------------------------------------
@@ -202,18 +208,29 @@ def run() -> dict:
     # it is the release gate greening on a comparison nobody asked for. Same defect this file
     # already fixed in the publisher and the version gate — a probe that cannot reach its
     # subject must say so, not answer about a substitute.
-    if branch and branch != "main":
+    if branch != "main":
         for name in ("public layer is current",
                      "publication refuses nothing (no blocked files)"):
             _check(results, name, False,
-                   f"UNKNOWN — cannot compare: team-lib is on '{branch}', so the publisher "
-                   f"would read that branch, not main", blocking=False)
+                   f"UNKNOWN — cannot compare: team-lib is on "
+                   f"{branch or 'an UNDETERMINED branch (detached HEAD?)'}, so the publisher "
+                   f"would read that state, not main", blocking=False)
     else:
         rc, out, _ = _sh(sys.executable, str(TEAM / "executions" / "publish_public_reference.py"))
         would_write = "written/updated : 0" in out
         _check(results, "public layer is current", would_write,
                "publish dry-run would write nothing" if would_write
                else "publish dry-run WOULD write — run publish_public_reference.py --apply")
+        # Ask prune's question too. Orphans inside included trees are prune's territory,
+        # and nothing in the chain was running prune — so "the public layer is current"
+        # was true of additions and silent about deletions.
+        _rc, pout, _ = _sh(sys.executable,
+                           str(TEAM / "executions" / "publish_public_reference.py"), "--prune")
+        stale_gone = "pruned          : 0" in pout
+        _check(results, "no files in public whose source is gone", stale_gone,
+               "prune dry-run finds nothing to remove" if stale_gone
+               else "prune dry-run WOULD remove files — run publish_public_reference.py "
+                    "--apply --prune")
         refused = "refused (leak)  : 0" not in out
         _check(results, "publication refuses nothing (no blocked files)", not refused,
                "a file still carries a blocked identifier after generalization" if refused
@@ -239,7 +256,9 @@ def run() -> dict:
     # --- 5. versions at the publish boundary --------------------------------------
     vg = TEAM / "executions" / "version_gate.py"
     if vg.is_file():
-        rc, out, _ = _sh(sys.executable, str(vg), "--reconcile", "--dry-run")
+        # Pass the repo explicitly: version_gate defaults to os.getcwd(), which it inherits
+        # from whoever launched the audit — run from /tmp it reported a vacuous empty result.
+        rc, out, _ = _sh(sys.executable, str(vg), "--reconcile", "--dry-run", cwd=str(TEAM))
         try:
             n = len(json.loads(out).get("bumped", []))
         except ValueError:
@@ -270,7 +289,8 @@ def run() -> dict:
         st = _git_state(repo)
         if st:
             info["repos"][label] = st
-    unpushed = [k for k, v in info["repos"].items() if v["ahead"] not in ("0", "?")]
+    # "?" means no upstream — a repo nobody can pull from is not "pushed".
+    unpushed = [k for k, v in info["repos"].items() if v["ahead"] != "0"]
     _check(results, "everything pushed", not unpushed,
            f"unpushed: {', '.join(unpushed)}" if unpushed else "all repos at origin",
            blocking=False)
