@@ -1,0 +1,402 @@
+{
+  "$schema": "branded-template-v2",
+  "templateType": "html-document",
+  "templateVersion": "1.1.0",
+  "description": "Long-form branded HTML DOCUMENT or artifact (dark, self-contained): a report, walkthrough, handoff page or explainer read top-to-bottom \u2014 the format for prez.example.com document pages. Not a slide deck (that is html-presentation). Rendered by markdown-to-branded-html. Design rules were settled with the operator on 2026-09-03 on the Acme Health billing-classification walkthrough: one brand tint for every coloured text and numeral, the accent colour only on non-text lines and edges, 3:1 heading rhythm, diagrams inline as SVG with a click-to-open zoom/pan viewer.",
+  "htmlSettings": {
+    "selfContained": true,
+    "darkMode": true,
+    "viewport": {
+      "width": "device-width",
+      "initialScale": 1
+    },
+    "contentMaxWidth": 1120,
+    "contentMaxWidthUnit": "px",
+    "embeddedFont": {
+      "family": {
+        "tokenRef": "typography.font.primary"
+      },
+      "fallbackFamily": {
+        "tokenRef": "typography.font.fallback"
+      },
+      "file": "noto-sans-latin-300-700.woff2",
+      "_fileNote": "Variable woff2, latin subset, weights 300-700, shipped in markdown-to-branded-html/scripts/assets and inlined as a data URI. No webfont CDN \u2014 publish-to-prez requires self-contained pages.",
+      "weightRange": [
+        300,
+        700
+      ]
+    },
+    "externalDependencies": {}
+  },
+  "cssVariables": {
+    "accentPrimary": {
+      "tokenRef": "color.brand.primary"
+    },
+    "accentSecondary": {
+      "tokenRef": "color.brand.accent"
+    },
+    "headingText": {
+      "tokenRef": "color.derivative.primary.tint3"
+    },
+    "textMain": {
+      "tokenRef": "color.text.onDark"
+    },
+    "textMuted": {
+      "tokenRef": "color.background.accent"
+    },
+    "textSubtle": {
+      "tokenRef": "color.text.subtle"
+    },
+    "bgBody": {
+      "tokenRef": "color.text.default"
+    },
+    "bgCard": {
+      "tokenRef": "color.text.default"
+    },
+    "white": {
+      "tokenRef": "color.background.default"
+    },
+    "_notes": {
+      "headingText": "The tint of the primary that still reads as the primary on a dark ground. Used for EVERY coloured text and numeral: section headings, the title accent word, eyebrow, step numerals, kicker labels, captions, list markers, links. Lighter tints read as white; the mid tint reads as sky blue; the accent (orange) reads harsh on near-black (chromostereopsis).",
+      "accentSecondary": "NON-TEXT accents only: header and footer rules, kicker dashes, callout side lines, the viewer bar edge, link underlines. Never as text on a dark ground."
+    }
+  },
+  "background": {
+    "bodyColor": {
+      "tokenRef": "color.text.default"
+    },
+    "nearBlack": "080e10",
+    "_nearBlackNote": "Fixed dark-theme constant shared with html-presentation \u2014 the deepest layer behind the wave canvas; not brand-derived. The only non-token colour the validator permits.",
+    "cardAlpha": 0.97,
+    "cardTintAlpha": 0.18,
+    "waveCanvas": {
+      "enabled": true,
+      "fullViewport": true,
+      "fixed": true,
+      "respectsReducedMotion": true,
+      "timeStep": 0.008,
+      "layers": [
+        {
+          "name": "deep-primary",
+          "yPosition": 0.72,
+          "amplitude": 30,
+          "wavelength": 400,
+          "speed": 0.4,
+          "color": {
+            "tokenRef": "color.brand.primary"
+          },
+          "alpha": 0.12
+        },
+        {
+          "name": "mid-primary",
+          "yPosition": 0.78,
+          "amplitude": 22,
+          "wavelength": 320,
+          "speed": 0.6,
+          "color": {
+            "tokenRef": "color.brand.primary"
+          },
+          "alpha": 0.08
+        },
+        {
+          "name": "accent-hint",
+          "yPosition": 0.85,
+          "amplitude": 18,
+          "wavelength": 500,
+          "speed": 0.35,
+          "color": {
+            "tokenRef": "color.brand.accent"
+          },
+          "alpha": 0.04
+        },
+        {
+          "name": "foreground",
+          "yPosition": 0.88,
+          "amplitude": 15,
+          "wavelength": 280,
+          "speed": 0.8,
+          "color": {
+            "tokenRef": "color.brand.primary"
+          },
+          "alpha": 0.06
+        }
+      ],
+      "topSky": {
+        "yPosition": 0.18,
+        "amplitude": 20,
+        "wavelength": 500,
+        "speed": 0.25,
+        "color": {
+          "tokenRef": "color.brand.primary"
+        },
+        "alpha": 0.08
+      }
+    }
+  },
+  "typography": {
+    "body": {
+      "fontSize": 17,
+      "fontSizeUnit": "px",
+      "lineHeight": 1.65,
+      "color": {
+        "tokenRef": "color.background.accent"
+      }
+    },
+    "bodyMobile": {
+      "fontSize": 16,
+      "fontSizeUnit": "px",
+      "breakpoint": 600
+    },
+    "h1": {
+      "fontSize": "clamp(30px,4.6vw,44px)",
+      "fontWeight": 800,
+      "color": {
+        "tokenRef": "color.text.onDark"
+      },
+      "accentColor": {
+        "tokenRef": "color.derivative.primary.tint3"
+      },
+      "marginAbove": 22,
+      "marginBelow": 10
+    },
+    "lede": {
+      "fontSize": 19,
+      "fontSizeUnit": "px",
+      "color": {
+        "tokenRef": "color.text.subtle"
+      },
+      "maxWidth": "60ch"
+    },
+    "eyebrow": {
+      "fontSize": 12,
+      "fontSizeUnit": "px",
+      "fontWeight": 700,
+      "letterSpacing": "0.12em",
+      "uppercase": true,
+      "monospace": true,
+      "color": {
+        "tokenRef": "color.derivative.primary.tint3"
+      }
+    },
+    "h2": {
+      "fontSize": 27,
+      "fontSizeUnit": "px",
+      "fontWeight": 800,
+      "color": {
+        "tokenRef": "color.derivative.primary.tint3"
+      },
+      "marginAbove": 66,
+      "marginBelow": 22,
+      "firstMarginAbove": 44
+    },
+    "h3": {
+      "fontSize": 21,
+      "fontSizeUnit": "px",
+      "fontWeight": 750,
+      "color": {
+        "tokenRef": "color.derivative.primary.tint3"
+      },
+      "marginAbove": 48,
+      "marginBelow": 16,
+      "numberBadge": {
+        "enabled": true,
+        "size": 32,
+        "borderRadius": 9,
+        "numeralColor": {
+          "tokenRef": "color.derivative.primary.tint3"
+        },
+        "_note": "'### 1. Title' renders the numeral in a badge"
+      }
+    },
+    "h4": {
+      "fontSize": 13.5,
+      "fontSizeUnit": "px",
+      "fontWeight": 700,
+      "letterSpacing": "0.12em",
+      "uppercase": true,
+      "color": {
+        "tokenRef": "color.derivative.primary.tint3"
+      },
+      "marginAbove": 36,
+      "marginBelow": 12,
+      "kickerDash": {
+        "enabled": true,
+        "width": 22,
+        "height": 3,
+        "color": {
+          "tokenRef": "color.brand.accent"
+        }
+      }
+    },
+    "headingRhythm": {
+      "aboveToBelowRatio": 3,
+      "_note": "Space above a heading is three times the space below it at every level, so a heading visibly belongs to what follows (nested). Elements that follow a heading carry no top margin of their own."
+    },
+    "monospace": "ui-monospace,\"SF Mono\",SFMono-Regular,Menlo,Consolas,\"Liberation Mono\",monospace"
+  },
+  "components": {
+    "callout": {
+      "_use": "bold-led paragraphs the author marks as callouts",
+      "background": "cardTint",
+      "borderLeft": {
+        "width": 4,
+        "color": {
+          "tokenRef": "color.brand.accent"
+        }
+      },
+      "borderRadius": 10
+    },
+    "table": {
+      "headerBackground": {
+        "tokenRef": "color.brand.primary"
+      },
+      "headerText": {
+        "tokenRef": "color.text.onDark"
+      },
+      "firstColumnText": {
+        "tokenRef": "color.text.onDark"
+      },
+      "bodyText": {
+        "tokenRef": "color.background.accent"
+      },
+      "zebra": "cardTint",
+      "scrollsHorizontallyBelow": 560
+    },
+    "figure": {
+      "_use": "every mermaid fence / diagram",
+      "captionBackground": "band-soft",
+      "captionTitleColor": {
+        "tokenRef": "color.derivative.primary.tint3"
+      },
+      "canvasBackground": {
+        "tokenRef": "color.background.default"
+      },
+      "_canvasNote": "Diagram colours are tuned for white; the canvas stays white inside the dark page.",
+      "clickToOpen": true
+    },
+    "viewer": {
+      "_use": "full-window zoom/pan for any figure",
+      "zoomSteps": [
+        0.15,
+        0.25,
+        0.4,
+        0.55,
+        0.75,
+        1,
+        1.4,
+        2,
+        3,
+        4,
+        6
+      ],
+      "pan": "drag",
+      "zoom": "wheel, pinch, double-click, +/- keys",
+      "close": "Esc",
+      "barEdge": {
+        "tokenRef": "color.brand.accent"
+      }
+    },
+    "rules": {
+      "header": {
+        "width": 3,
+        "color": {
+          "tokenRef": "color.brand.accent"
+        }
+      },
+      "footer": {
+        "width": 3,
+        "color": {
+          "tokenRef": "color.brand.accent"
+        }
+      }
+    },
+    "listMarkers": {
+      "color": {
+        "tokenRef": "color.derivative.primary.tint3"
+      }
+    },
+    "links": {
+      "color": {
+        "tokenRef": "color.derivative.primary.tint3"
+      },
+      "underline": {
+        "tokenRef": "color.brand.accent"
+      },
+      "hover": {
+        "tokenRef": "color.text.onDark"
+      }
+    }
+  },
+  "logoPlacement": {
+    "header": {
+      "asset": {
+        "tokenRef": "logo.fullOnDark.file",
+        "fallback": "logo.full.file"
+      },
+      "height": 34,
+      "position": "top-right",
+      "_note": "asset paths are relative to context/indexed/companies/{brand}/brand/"
+    },
+    "favicon": {
+      "asset": {
+        "tokenRef": "logo.iconOnDark.file",
+        "fallback": "logo.icon.file"
+      }
+    }
+  },
+  "accessibility": {
+    "_note": "Measured at build time by markdown-to-branded-html and the build fails below the minimum. WCAG 2.x contrast ratio: 4.5:1 normal text, 3:1 large text (>=24px or bold >=18.66px) and non-text. Keys name cssVariables; nearBlack is the page ground.",
+    "contrastGate": [
+      {
+        "name": "body text on page",
+        "fg": "textMuted",
+        "bg": "nearBlack",
+        "min": 4.5
+      },
+      {
+        "name": "body text on card",
+        "fg": "textMuted",
+        "bg": "bgCard",
+        "min": 4.5
+      },
+      {
+        "name": "heading text on page",
+        "fg": "headingText",
+        "bg": "nearBlack",
+        "min": 4.5
+      },
+      {
+        "name": "heading text on card",
+        "fg": "headingText",
+        "bg": "bgCard",
+        "min": 4.5
+      },
+      {
+        "name": "h1 on page",
+        "fg": "textMain",
+        "bg": "nearBlack",
+        "min": 3.0
+      },
+      {
+        "name": "subtle text on page",
+        "fg": "textSubtle",
+        "bg": "nearBlack",
+        "min": 3.0
+      },
+      {
+        "name": "table header text",
+        "fg": "textMain",
+        "bg": "accentPrimary",
+        "min": 4.5
+      }
+    ],
+    "tokenOnly": true,
+    "_tokenOnlyNote": "Every hex and rgb triple in the rendered CSS/JS must be a brand token or background.nearBlack."
+  },
+  "embeddedAssets": {
+    "logo": "data URI, downscaled to 420px wide",
+    "favicon": "data URI, 64px",
+    "font": "data URI (see htmlSettings.embeddedFont)",
+    "diagrams": "inline SVG (mermaid, native renderer) \u2014 keep the viewBox; strip width/height/max-width"
+  }
+}

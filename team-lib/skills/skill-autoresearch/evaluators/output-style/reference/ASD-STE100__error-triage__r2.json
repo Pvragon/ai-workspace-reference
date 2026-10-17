@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "error-triage",
+  "run": 2,
+  "elapsed_s": 30.3,
+  "rc": 0,
+  "text": "## What happened\n\nYour push was a non-fast-forward push, so Git rejected it. A non-fast-forward push is a push that does not build on the current remote tip.\n\nThe remote branch `main` holds one or more commits that your local `main` does not hold. Another person pushed those commits after your last fetch. Your local `main` and the remote `main` now share a common ancestor, and then split.\n\nGit refuses this push on purpose. A push in this state overwrites the other commits on the remote.\n\n## What to do\n\n1. Run `git fetch origin`. This downloads the remote commits. It does not change your working tree.\n2. Run `git log --oneline HEAD..origin/main` to see the commits that you do not hold.\n3. Run `git log --oneline origin/main..HEAD` to see your own unpushed commits.\n4. Join the two histories. Use `git pull --rebase origin main` for a linear history. Use `git merge origin/main` if your team prefers merge commits.\n5. Fix any conflict that the rebase or the merge reports. Then continue with `git rebase --continue`, or commit the merge.\n6. Run `git push` again.\n\n## Two cautions\n\nDo not use `git push --force`. That command deletes the other person's commits from the remote.\n\nThe rebase in step 4 rewrites your local commits. This is safe here, because you did not push those commits yet. Choose `git merge` instead if you already pushed your commits to another branch, and another person built work on them.",
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 15014,
+    "cache_read_input_tokens": 43268,
+    "output_tokens": 1912,
+    "output_tokens_details": {
+      "thinking_tokens": 1361
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 15014,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 492,
+        "cache_read_input_tokens": 28412,
+        "cache_creation_input_tokens": 1458,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1458
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.22063000000000002,
+  "num_turns": 2,
+  "is_error": false
+}

@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "error-triage",
+  "run": 1,
+  "elapsed_s": 41.5,
+  "rc": 0,
+  "text": "## What happened\n\nSomeone pushed one or more commits to `main` on `github.com:acme/widgets.git`. Your local `main` does not hold those commits. Your push would delete them from the remote. Git refuses that push. Git calls this a non-fast-forward update. The `(fetch first)` note names the fix.\n\nThis is normal on a shared branch. Nothing is broken. Nothing is lost.\n\n## What to do\n\n1. Run `git status`. If the working tree is dirty, commit the work or run `git stash`.\n2. Run `git fetch origin`. This step downloads the remote commits. It changes no local branch.\n3. Run `git log --oneline main..origin/main`. This shows what the other person added.\n4. Run `git log --oneline origin/main..main`. This shows what you hold and the remote does not.\n5. Join the two histories. Pick one command:\n   - `git pull --rebase origin main` replays your commits on top of theirs. History stays linear. This is the usual choice.\n   - `git pull --no-rebase origin main` makes a merge commit. Pick this one if the team prefers merges. Pick it also if you already pushed your commits to another remote branch.\n6. Solve any conflict that git reports. Then run `git push`.\n\n## One warning\n\nDo not run `git push --force` on `main`. That command deletes the other person's commits from the remote. Use `--force-with-lease` only on a branch that you own alone.\n\nIf step 4 prints nothing, you hold no local commits of your own. The pull is then a plain fast-forward. A push after it is not necessary.\n\nI wrote the full sequence, including conflict handling and verification checks, to `/home/<user>/.claude/plans/i-ran-git-push-soft-feigenbaum.md`. I ran no commands.",
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 16098,
+    "cache_read_input_tokens": 43270,
+    "output_tokens": 2993,
+    "output_tokens_details": {
+      "thinking_tokens": 1494
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 16098,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 604,
+        "cache_read_input_tokens": 28414,
+        "cache_creation_input_tokens": 2540,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2540
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.258501,
+  "num_turns": 3,
+  "is_error": false
+}

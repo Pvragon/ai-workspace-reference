@@ -1,0 +1,6 @@
+{
+  "style": "Concise",
+  "prompt_id": "error-triage",
+  "run": 2,
+  "text": "Someone else pushed commits to `origin/main` after you last fetched, so your local `main` isn't a descendant of the remote tip \u2014 Git refuses to push because that would discard their work.\n\nFix: integrate their commits first, then push.\n\n```\ngit pull --rebase origin main   # replays your commits on top of theirs\ngit push\n```\n\nIf the rebase hits conflicts: resolve, `git add <files>`, `git rebase --continue` (or `git rebase --abort` to back out).\n\nUse `git pull origin main` (merge) instead if your team prefers merge commits, or if your commits are already pushed elsewhere and rewriting them would disrupt others.\n\nDon't use `git push --force` here \u2014 it would delete the remote commits."
+}

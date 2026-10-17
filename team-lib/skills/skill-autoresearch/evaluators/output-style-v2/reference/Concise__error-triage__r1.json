@@ -1,0 +1,6 @@
+{
+  "style": "Concise",
+  "prompt_id": "error-triage",
+  "run": 1,
+  "text": "Someone pushed commits to `main` on the remote after you last fetched, so your local `main` isn't a descendant of `origin/main`. Git refuses the push rather than discard their work.\n\nFix:\n\n```\ngit pull --rebase origin main\ngit push\n```\n\nThat replays your local commits on top of the remote ones. If the rebase hits conflicts, resolve them, `git add` the files, `git rebase --continue`; `git rebase --abort` backs out.\n\nTwo notes: if you'd rather not rewrite your local commits, use `git pull` (merge) instead \u2014 you get a merge commit. And don't reach for `git push --force` here; it would delete the other person's commits from the remote."
+}

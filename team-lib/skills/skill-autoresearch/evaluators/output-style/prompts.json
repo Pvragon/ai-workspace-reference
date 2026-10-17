@@ -1,0 +1,10 @@
+[
+  {"id": "explain-script", "prompt": "I haven't read it. Explain what fixture/rotate_logs.py does and what I should know before running it on a production log directory."},
+  {"id": "bug-hunt", "prompt": "There is a bug in fixture/rotate_logs.py that can silently destroy data in at least one realistic case. Find it and explain it to me. Do not fix it."},
+  {"id": "test-gaps", "prompt": "Look at fixture/tests/test_rotate_logs.py. What does it cover, and what are the most important cases it misses?"},
+  {"id": "error-triage", "prompt": "I ran `git push` and got:\n\n```\n! [rejected]        main -> main (fetch first)\nerror: failed to push some refs to 'github.com:acme/widgets.git'\nhint: Updates were rejected because the remote contains work that you do not have locally.\n```\n\nWhat happened and what should I do? Don't run anything, just tell me."},
+  {"id": "decision-db", "prompt": "I'm building a single-user desktop note-taking app in Python. It needs to work offline now and sync to a server later. SQLite or Postgres for the local store? Give me a recommendation."},
+  {"id": "concept", "prompt": "I'm a backend engineer new to LLM APIs. Explain what prompt caching is and why the order of the prompt matters for it."},
+  {"id": "review-fn", "prompt": "Review this function for problems. Don't rewrite it, just tell me what's wrong and how serious each issue is.\n\n```python\ndef load_config(path=None):\n    path = path or os.environ.get('APP_CONFIG', '~/.app/config.json')\n    with open(os.path.expanduser(path)) as f:\n        cfg = json.load(f)\n    for k, v in os.environ.items():\n        if k.startswith('APP_'):\n            cfg[k[4:].lower()] = v\n    cfg.setdefault('timeout', 30)\n    cfg.setdefault('retries', 3)\n    return cfg\n```"},
+  {"id": "tradeoff-pins", "prompt": "Should I pin exact dependency versions in requirements.txt? The project is both a library other teams import and a service we deploy. What's your recommendation?"}
+]

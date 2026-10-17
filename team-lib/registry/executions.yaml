@@ -1,0 +1,715 @@
+# summary: Team executions registry. Lists shared execution scripts with paths and capabilities.
+# Executions Registry (team)
+# ------------------------------------------
+# This manifest catalogs available team execution scripts.
+# Note: workspace.yaml also references executions with run() signatures for chaining.
+#
+# Schema:
+#   executions:
+#     <name>:
+#       path: <string>           # Relative path to script
+#       description: <string>    # Brief description
+#       tags: [<string>, ...]    # Searchable tags
+#       version: <string>        # Semantic version
+#
+# ------------------------------------------
+
+# ------------------------------------------------------------------------------------
+# NOTES MIGRATED INTO THE HEADER 2026-08-08. This manifest is now GENERATED, and PyYAML
+# cannot round-trip comments inside the data region — so the generator refused to write
+# rather than silently delete these. They are preserved verbatim below.
+#
+# Section dividers that were organisational only (`# --- Provider: X ---`, `# C-Level`)
+# are NOT preserved: generation sorts entries, so a divider no longer marks anything.
+# The fact they carried is now the DERIVED `provider:` field on each entry.
+# ------------------------------------------------------------------------------------
+  # Unblocks session-debrief graduation: the skill calls all of these.
+
+executions:
+  agent_paths:
+    path: executions/agent_paths.py
+    description: 'Resolves the agent''s on-disk home and every memory subdirectory (memory, short-term,
+      dream-journal, meditations, lenses, runtime/state). Single source of truth imported by every memory-system
+      script — this is what makes the system portable to any agent name on any machine. Resolution: $PVRAGON_AGENT_HOME
+      -> personal/config/agent.json -> $PVRAGON_AGENT -> auto-detect the single agents/*/identity.md.
+      Raises rather than guessing when ambiguous.'
+    tags:
+    - memory
+    - paths
+    - agent
+    - portability
+    - config
+    version: 1.0.3
+  allow_memory_writes:
+    path: executions/allow_memory_writes.py
+    description: PreToolUse hook that auto-allows Edit/Write/MultiEdit to agent memory and handoff paths
+      so memory capture and session debrief never trigger a permission prompt, independent of permission
+      mode or cwd. Returns an 'allow' decision that short-circuits the permission pipeline; defers silently
+      otherwise so it never over-broadens.
+    tags:
+    - memory
+    - hook
+    - permissions
+    - capture
+    version: 1.1.2
+  archive_old_transcripts:
+    path: executions/archive_old_transcripts.sh
+    description: Moves Claude Code session JSONLs and their per-session artifact dirs (tool-results/,
+      subagents/, workflows/, logs/) older than N days (default 14) out of ~/.claude/projects/ into ~/.claude/projects-archive/
+      — a move, never a delete, structure preserved — so the statusline's cost meter cannot re-parse a
+      multi-GB corpus. Scoped to those dirs because the project dir holds live session state.
+    tags:
+    - cleanup
+    - wsl
+    - workspace-hygiene
+    - session-debrief
+    - ccusage
+    - tool-results
+    version: 1.0.4
+  backfill_memory_created:
+    path: executions/backfill_memory_created.py
+    description: 'One-shot migration: gives every T2 topic file a trustworthy `created:` from its git
+      birth commit (followed through renames), which the New band keys on. Existing frontmatter always
+      wins. Preserves mtime on write, because files with no `last_accessed` score off mtime. Use --dry-run/--sample
+      before --apply.'
+    tags:
+    - memory
+    - migration
+    - frontmatter
+    - backfill
+    version: 1.0.1
+  bootstrap_memory:
+    path: executions/bootstrap_memory.py
+    description: One-time migration making an existing or brand-new agent memory directory ready for the
+      retrieval policy. Creates the tier directories, backfills policy frontmatter using each file's MTIME
+      (never 'now', which would flatten day-one ranking), seeds a starter meditation library and lens
+      template, migrates a legacy scheduler state file, and generates the first index. Dry-run by default;
+      idempotent.
+    tags:
+    - memory
+    - install
+    - bootstrap
+    - migration
+    version: 1.0.2
+  build_index:
+    path: executions/build_index.py
+    version: 1.0.1
+    description: Generate the `## Contents` table of a directory's index.md from the `summary:` of each
+      file the registry indexes, per config/registry-map.yaml. Third consumer of build_registry.read_frontmatter.
+      Default is a rebuild-and-diff check; --apply writes.
+  build_registry:
+    path: executions/build_registry.py
+    description: Generate a registry manifest FROM the frontmatter of the files it indexes, per config/registry-map.yaml.
+      Derives path/version/description/source and a skill's listing/category (frontmatter -> sidecars
+      -> defaults) and a persona's skill_categories; preserves every hand-authored field. --check is a
+      rebuild-and-diff drift gate; --apply writes.
+    tags:
+    - registry
+    - manifest
+    - frontmatter
+    - drift
+    - generated-artifact
+    - publish-boundary
+    dependencies:
+    - PyYAML
+    version: 0.11.0
+  build_skill_overrides:
+    path: executions/build_skill_overrides.py
+    version: 1.1.1
+    description: Single writer of the Claude Code skill listing map. Resolves the listing of every skill
+      the harness sees, plus the built-in (bundled) skills declared in a sidecar, and writes my-lib/config/claude-skill-overrides.json
+      with an owned-keys state file. --check exits 1 when stale; --installed diffs against settings.json;
+      every run simulates the listing budget.
+  clean_zone_identifiers:
+    path: executions/clean_zone_identifiers.sh
+    description: Finds and removes WSL Zone.Identifier alternate-data-stream files (*:Zone.Identifier)
+      across a workspace root. Defaults to ~/ai-workspace. Supports --dry-run.
+    tags:
+    - cleanup
+    - wsl
+    - workspace-hygiene
+    - session-debrief
+    version: 1.1.0
+  consolidation_scan:
+    path: executions/consolidation_scan.py
+    description: Deterministic detector for the consolidation wake (T1->T2 abstraction). Reports ungraduated
+      short-term residue older than 7 days and weak/stale T2 traces. Detection only — the graduation act
+      (abstract the durable pattern, then archive the residue) is the LLM's job in /dream consolidate.
+    tags:
+    - memory
+    - consolidation
+    - detection
+    - sleep-cycle
+    version: 1.0.1
+  context_usage:
+    path: executions/context_usage.py
+    description: Reports the CURRENT session's context usage by reading the last usage payload out of
+      the session JSONL — the same three fields the statusline sums. Exists because the agent cannot see
+      the context_window payload and its from-conversation-length estimate ran ~40% high, which made every
+      threshold reminder wrong in the alarming direction.
+    tags:
+    - context
+    - session
+    - measurement
+    - statusline
+    - thresholds
+    version: 1.0.1
+  dream_cycle:
+    path: executions/dream_cycle.py
+    description: 'Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free
+      passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank — then
+      CUES the one daily metacognitive wake via a state file without spending tokens. Live-session-aware:
+      skips mutating passes if a memory file changed in the last 10 minutes.'
+    tags:
+    - memory
+    - scheduler
+    - cron
+    - sleep-cycle
+    - maintenance
+    version: 1.6.1
+  dream_journal:
+    path: executions/dream_journal.py
+    description: 'Dream-journal residue store for the sleep cycle''s reflective wakes. write() appends
+      a dated first-person residue entry to <agent>/memory/dream-journal/YYMMDD-<slug>.md (frontmatter:
+      date/wake/object/shelf). recent() returns the newest N entries for cold-start loading. decay() archives
+      entries older than a threshold into dream-journal/_archive/ (never deletes). Residue is the experiential
+      layer — what shifted / felt unresolved / got integrated — distinct from factual T2 memory.'
+    tags:
+    - memory
+    - residue
+    - journal
+    - continuity
+    - sleep-cycle
+    version: 1.0.0
+  dream_select:
+    path: executions/dream_select.py
+    description: Deterministic meditation-object selector. Scores each object by cadence_weight * min(days_since_last_sat,21)/21,
+      hard-excludes the most recently sat object, and enforces an awareness-shelf floor so instrumentally
+      useful objects cannot crowd out the useless-but-true ones. --record stamps last_sat/sit_count after
+      a real sit.
+    tags:
+    - memory
+    - meditation
+    - rotation
+    - sleep-cycle
+    version: 1.0.1
+  dump_system_state:
+    path: executions/dump_system_state.py
+    description: Dumps deterministic snapshots of live infrastructure state to <agent-home>/system-state/
+      for git-backed backup and drift detection. Captures crontab, Claude Code hooks, public settings
+      (secrets stripped), local MCP servers (via `claude mcp list`), and ~/.bashrc. Layer 2 of the live-infrastructure
+      documentation pattern (Layer 1 = the personal layer's context/indexed/active-systems.md manual overview).
+    tags:
+    - infrastructure
+    - backup
+    - automation
+    - system-state
+    - drift-detection
+    version: 1.1.0
+  extract_session_transcripts:
+    path: executions/extract_session_transcripts.py
+    description: Converts every Claude Code session JSONL (live and ~/.claude/projects-archive) into a
+      filtered, human-readable markdown transcript in <agent home>/transcripts/ (resolved by agent_paths.py).
+      Streaming, idempotent, no LLM, stdlib-only. Exits 1 if any session is left without a transcript.
+    tags:
+    - memory
+    - transcripts
+    - claude-code
+    - archival
+    - t1-episodic
+    version: 1.1.2
+  extract_touched_files:
+    path: executions/extract_touched_files.py
+    description: Reads a Claude Code session JSONL (plus subagent JSONLs), extracts unique file_path values
+      from Edit/Write/MultiEdit/NotebookEdit tool calls, classifies by repo (mylib / agents / other),
+      filters to currently-existing files. Used by postflight to auto-derive --mylib-files / --agents-files.
+    tags:
+    - debrief
+    - postflight
+    - jsonl
+    - automation
+    - file-tracking
+    version: 1.2.2
+  fanout_load_advisory:
+    path: executions/fanout_load_advisory.py
+    description: 'PreToolUse advisory on Agent/Workflow spawns: surfaces available memory, live peer count,
+      and the safe worker count at the exact moment a fan-out is about to start. Speaks only when headroom
+      is short. Never blocks.'
+    tags:
+    - hook
+    - claude-code
+    - load
+    - fanout
+    - subagents
+    - safety
+    version: 1.0.1
+  findings:
+    path: executions/findings.py
+    description: 'The findings inbox: a pull-only queue of audit observations, with an ambient statusline
+      segment that escalates on AGE. Decouples the cheap frequent write (nightly audits) from the gated
+      read (when the operator has space), so findings stop being announced at the two worst moments —
+      session close and session start.'
+    tags:
+    - findings
+    - inbox
+    - attention
+    - statusline
+    - audit
+    - timing
+    version: 1.1.0
+  graduate_capability:
+    path: executions/graduate_capability.py
+    description: Graduates a capability from the personal layer to the shared one as a MOVE, not a copy.
+      Skills move and are symlinked back; executions and directives move and the personal copy is archived
+      behind a pointer. Pre-flight refuses a split capability, operator identifiers, personal-code dependencies,
+      and a skill without a valid `listing:` / `category:`.
+    tags:
+    - graduation
+    - team-lib
+    - move-not-copy
+    - split-capability
+    - governance
+    version: 2.1.1
+  guard_name_spellings:
+    path: executions/guard_name_spellings.py
+    version: 1.0.1
+    description: PreToolUse guard that DENIES any write, edit, command or MCP call whose input contains
+      a known misspelling of a real person's name (pairs in team-lib/config/name-spellings.yaml). Read-only
+      searches and historical records (memory, transcripts, archives, .jsonl) are exempt.
+  guard_outbound_mail:
+    path: executions/guard_outbound_mail.py
+    version: 1.3.0
+    description: PreToolUse guard on Bash for outbound email. DENIES a plain-text send (gws gmail +send/+reply/+forward
+      without --html, a raw users.messages.send with no text/html part, or a drafts create/update outside
+      gmail_update_draft.py). Otherwise ASKS the operator, through the permission prompt, before any send, and
+      puts the recipients and the decoded body text in the prompt so he approves what he can read. --help
+      and --dry-run pass silently, as does a +send addressed only to the operator's own addresses, read
+      from per-user config ($MAIL_GUARD_SELF_ADDRESSES or personal/config/mail-guard.json; none configured
+      means no exemption).
+  guard_resume_format:
+    path: executions/guard_resume_format.py
+    version: 1.0.0
+    description: 'Stop hook: if the reply just written hands the operator a terminal resume command (claude --resume
+      / -r / --continue / -c) and he did not ask for a terminal or shell form, blocks the stop once so
+      the reply is rewritten as /resume <session-id>.'
+  inject_lens:
+    path: executions/inject_lens.py
+    description: Claude Code PreToolUse hook that walks the agent's lenses/*.md, parses self-declared
+      triggers (tool_match, then any of path_pattern / command_pattern / content_pattern), and injects
+      matching lens content via stderr — with per-(session, lens) dedup so each lens fires at most once
+      per session. Implements the situational T3 layer (renumbered from T3b on 2026-05-10) per the lenses
+      spec.
+    tags:
+    - memory
+    - hook
+    - lens
+    - t3
+    - context-injection
+    version: 1.3.0
+  install_memory_hooks:
+    path: executions/install_memory_hooks.py
+    description: 'Wires the memory system into the harness: registers the four PreToolUse hooks in settings.json
+      and installs the two nightly crontab lines (03:47 deterministic tick, 03:52 reflective wake). Idempotent,
+      dry-run by default, backs up settings.json, never touches unrelated hook entries. --uninstall reverses
+      it.'
+    tags:
+    - memory
+    - install
+    - hooks
+    - cron
+    - settings
+    version: 1.1.2
+  install_output_style:
+    path: executions/install_output_style.py
+    version: 1.0.0
+    description: 'Installs the agent chat-voice output style end to end: scaffold agents/<agent>/output-styles/<agent>-output-style.md
+      from context/indexed/templates/template-output-style.md (name set from identity.md), symlink ~/.claude/output-styles
+      to that directory, and set "outputStyle" in ~/.claude/settings.json. Idempotent, dry-run by default
+      (--apply writes). Never overwrites an existing style file; never edits a style that already has
+      content.'
+  install_skill_overrides:
+    path: executions/install_skill_overrides.py
+    version: 1.1.0
+    description: Installs the generated skill listing map (my-lib/config/claude-skill-overrides.json)
+      into ~/.claude/settings.json skillOverrides. Merges, never replaces; keeps and reports foreign keys,
+      including any in project .claude/settings*.json files. Dry-run by default; --apply locks, backs
+      up and writes atomically. The agent runs it with the owner's one-time approval.
+  layer_drift_scan:
+    path: executions/layer_drift_scan.py
+    description: 'Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by
+      comparing CONTENT HASHES, not version numbers — three shared skills once carried identical versions
+      with different content. Walks registry/mirror.yaml; honours two-sided `mirror: divergent` declarations;
+      also checks that every registry entry resolves on disk. Read-only. Run nightly by dream_cycle.py.'
+    tags:
+    - drift
+    - governance
+    - currency
+    - graduation
+    - linter
+    version: 1.2.12
+  link_skills:
+    path: executions/link_skills.py
+    description: 'Exposes shared skills to the harness: links ~/.claude/skills to the personal layer (a
+      symlink, or per-entry links in a real directory) and points my-lib/skills at every unshadowed team-lib
+      skill and external skill (ext-<name>). Reports a stale skill listing map. Idempotent; never deletes
+      anything it did not create.'
+    tags:
+    - setup
+    - skills
+    - onboarding
+    - harness
+    - symlinks
+    version: 1.1.2
+  list_claude_sessions:
+    path: executions/list_claude_sessions.py
+    description: List currently-open Claude Code sessions with BOTH their tmux identifier (mylib-<pid>)
+      and their Claude identifier (the /rename or -n name + sessionId). Cross-references live tmux clients,
+      window ancestry via WSL relay or Hyprland (filters phantom windows), tmux pane pids, and ~/.claude/sessions/<pid>.json.
+      Flags orphaned (detached, window-closed) sessions for reaping.
+    tags:
+    - tmux
+    - claude-code
+    - session
+    - inventory
+    - wsl
+    - observability
+    version: 1.0.1
+  list_shared_drives:
+    path: executions/list_shared_drives.py
+    description: Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials
+      from the Google Workspace MCP server.
+    tags:
+    - google-drive
+    - listing
+    - oauth
+    version: 1.1.0
+  machine_load:
+    path: executions/machine_load.py
+    description: 'Single source of truth for the pre-fan-out load check: available memory, load average,
+      live peer sessions, and how many concurrent workers are safe. Used by session-debrief preflight
+      and by the PreToolUse advisory on Agent/Workflow spawns.'
+    tags:
+    - load
+    - fanout
+    - subagents
+    - safety
+    - concurrency
+    - wsl
+    version: 1.0.1
+  memory_self_check:
+    path: executions/memory_self_check.py
+    description: Deterministic memory-hygiene linter. Detects index rows pointing at missing files, orphaned
+      topic files, dead [[wikilinks]], near-duplicate topic files, frontmatter gaps, and stale short-term.
+      --fix-safe applies only unambiguous fixes, capped per run; anything requiring judgment is escalated.
+    tags:
+    - memory
+    - linter
+    - hygiene
+    - maintenance
+    version: 1.2.1
+  migrate_summary_into_file:
+    path: executions/migrate_summary_into_file.py
+    description: One-shot migration moving the hand-curated recall summary out of the MEMORY.md and MEMORY-archive.md
+      index rows into each memory file's own `summary:`. That makes the index a pure function of the corpus,
+      so the reranker no longer reads its own prior output. Reads curated rows from BOTH index files and
+      refuses to run if any file would lose text.
+    tags:
+    - memory
+    - migration
+    - frontmatter
+    - summary
+    - one-shot
+    version: 1.0.1
+  normalize_memory_type:
+    path: executions/normalize_memory_type.py
+    description: One-shot migration collapsing the three ways a T2 memory file declared its kind (top-level
+      `type:`, `type:` nested under `metadata:`, and `template:`) into one authoritative top-level `type:`
+      matching the filename prefix. Preserves `template:` where it names a real document template rather
+      than a memory kind — a different axis that a naive collapse would destroy.
+    tags:
+    - memory
+    - migration
+    - frontmatter
+    - convention
+    - one-shot
+    version: 1.0.1
+  normalize_workstream_status:
+    path: executions/normalize_workstream_status.py
+    description: Normalize project_*.md status frontmatter onto the canonical vocabulary. A file with
+      no status is invisible to every sweep pathway — it can neither close nor go dormant — so it sits
+      open forever without appearing anywhere.
+    tags:
+    - memory
+    - workstream
+    - lifecycle
+    - migration
+    - normalization
+    version: 1.0.2
+  publish_gate:
+    path: executions/publish_gate.py
+    description: PostToolUse hook that regenerates the public reference repo whenever team-lib is pushed,
+      so the published layer is never stale by more than one push. Commits the result in the public repo
+      but never pushes — that stays a human decision. Refuses to publish a leak, never blocks a push,
+      and shares version_gate's repo resolution.
+    tags:
+    - hook
+    - post-tool-use
+    - publish
+    - public-reference
+    - push-boundary
+    - leak-gate
+    version: 1.1.3
+  publish_github_release:
+    path: executions/publish_github_release.py
+    description: Creates an annotated git tag and publishes a GitHub release with release notes from a
+      markdown file. Supports dry-run and idempotent re-runs.
+    tags:
+    - release
+    - github
+    - git
+    version: 1.0.0
+  publish_public_reference:
+    path: executions/publish_public_reference.py
+    description: 'Publishes team-lib to the public reference repo as a GENERALIZATION: copies every included
+      tree, drops what is proprietary, rewrites operator and client identifiers into placeholders, and
+      refuses to write any file still containing a blocked term. The refusal is the point — hand-scrubbing
+      cannot survive a routine refresh. Driven entirely by config rather than hardcoded names.'
+    tags:
+    - publication
+    - public-repo
+    - scrub
+    - generalization
+    - reference
+    version: 1.1.0
+  regen_current_state:
+    path: executions/regen_current_state.py
+    description: Renders memory/current-state.md from the T2 topic files that declare a `cs_section` and
+      a `status`. Single-writer under flock, so two debriefs finishing at once cannot interleave. The
+      workstream sections of current-state.md are GENERATED — hand-edits there are discarded.
+    tags:
+    - memory
+    - current-state
+    - concurrency
+    - render
+    version: 1.1.1
+  repair_frontmatter:
+    path: executions/repair_frontmatter.py
+    description: Repair frontmatter blocks that are PRESENT but unparseable, by re-emitting them through
+      a YAML emitter so quoting is correct. Refuses anything it cannot round-trip verify. Dry-run by default;
+      --apply writes.
+    tags:
+    - frontmatter
+    - repair
+    - yaml
+    - hygiene
+    - registry
+    - documents
+    dependencies:
+    - PyYAML
+    - build_registry.py
+    version: 1.1.0
+  rerank_memory_index:
+    path: executions/rerank_memory_index.py
+    description: 'Regenerates MEMORY.md from the memory corpus on the two-strength model: score = (access_count+1)
+      * exp(-days_since_last_access / stability) + importance. Emits Hot (auto-loaded, token-budgeted),
+      Critical (importance >= 8, never rolls off), New (born within the grace window, newest first) and
+      Cold (one Read away); overflow rolls to MEMORY-archive.md. Topic files are never deleted — only
+      their index visibility shifts.'
+    tags:
+    - memory
+    - ranking
+    - index
+    - decay
+    - roll-off
+    - birth-grace
+    version: 2.4.0
+  scaffold_project_docs:
+    path: executions/scaffold_project_docs.py
+    description: Scaffolds the standard docs/ directory structure for a project in projects/, copying
+      templates and replacing placeholders.
+    tags:
+    - scaffolding
+    - project-setup
+    - docs
+    version: 1.0.0
+  session_activity:
+    path: executions/session_activity.py
+    description: Multi-agent session coordination over disk. Maintains the live peer roster that drives
+      the PreToolUse advisory when a peer shares your repo and branch, a per-session activity stream,
+      and the async mailbox plus one-line status board read once per turn. Everything is pull, not push
+      — a peer is never woken.
+    tags:
+    - hook
+    - claude-code
+    - multi-agent
+    - coordination
+    - session
+    - awareness
+    - activity-stream
+    version: 0.7.2
+  session_snapshots:
+    path: executions/session_snapshots.py
+    description: Snapshots the open Claude/tmux session fleet to a dated file and rebuilds it later. `store`
+      captures every live session (sessionId, cwd, tmux label, Hyprland workspace); `resume` opens one
+      terminal window each (Windows Terminal on WSL, foot on Hyprland), either re-attaching to a still-live
+      tmux session or resuming it from disk after a reboot. Run before restarting.
+    tags:
+    - tmux
+    - claude-code
+    - session
+    - snapshot
+    - resume
+    - reboot-recovery
+    - wsl
+    version: 1.1.6
+  setup_pane_colors:
+    path: executions/setup_pane_colors.py
+    description: Installs the Claude Code tmux pane-color notification system. Deploys pane-color.sh and
+      merges hooks into ~/.claude/settings.json so tmux panes change background while Claude is working.
+    tags:
+    - tmux
+    - claude-code
+    - hooks
+    - notifications
+    version: 1.0.0
+  staged_diff_advisory:
+    path: executions/staged_diff_advisory.py
+    description: PreToolUse git guard for shared trees. On `git commit` prints what is staged, the branch,
+      and live peers. Blocks `git stash` (its one deny). Warns before reset/rebase/amend with the last
+      3 commits, before `git worktree remove` with an untracked/ignored count, and on directory staging
+      or pathspec-less commits while peers are live.
+    tags:
+    - hook
+    - claude-code
+    - git
+    - staging
+    - concurrency
+    - safety
+    version: 1.1.0
+  standardize_memory_frontmatter:
+    path: executions/standardize_memory_frontmatter.py
+    description: Standardizes T2 memory frontmatter to the canonical schema and backfills missing fields.
+      407 of 669 files carried no `status`, so 'active' was inferred from ABSENCE — the permissive value
+      — with the reranker's active/terminal split resting on it. Records how each value was obtained and
+      refuses to guess a workstream's lifecycle.
+    tags:
+    - memory
+    - frontmatter
+    - schema
+    - backfill
+    - rerank
+    - hygiene
+    version: 1.0.1
+  sweep_workstreams:
+    path: executions/sweep_workstreams.py
+    description: 'Sweeps T2 workstream files for close signals and age-out: retires one whose `close_signal`
+      has fired, and moves an untouched follow-on to dormant after the age threshold. Dry-run by default;
+      --apply writes. Dormancy is a THIRD terminal status, touch-to-revive, so "quiet" never silently
+      reads as "abandoned".'
+    tags:
+    - memory
+    - workstream
+    - lifecycle
+    - sweep
+    - dormancy
+    - automation
+    version: 1.0.3
+  sync_people_from_baserow:
+    path: executions/sync_people_from_baserow.py
+    version: 1.0.0
+    description: Refresh the generated block in team-lib person files (context/indexed/people/) from an
+      export of Baserow People table 656. Writes only an allowlist of non-HR columns between the people-sync
+      markers, never touches hand-authored text, and reports team members with no person file. Dry run
+      by default.
+  test_memory_ranking:
+    path: executions/test_memory_ranking.py
+    description: 'Regression tests for the memory ranking pipeline, run against a synthetic fixture corpus
+      in a temp dir — never the live one. Pins the invariants the design actually claims: determinism,
+      total tie-break ordering, budget caps, curated summaries surviving regeneration including archived
+      rows, born-visible, the spacing gate, and malformed input handling.'
+    tags:
+    - memory
+    - tests
+    - regression
+    - ranking
+    version: 1.0.4
+  update_memory_access:
+    path: executions/update_memory_access.py
+    description: PreToolUse hook for the two-strength memory model. On a read or edit of a T2 topic file
+      it refreshes last_accessed hourly, and counts a spaced reinforcement (access_count +1, stability
+      x1.6) only after 20h, so cramming cannot inflate storage strength. Writes nothing when no gate is
+      due. Flock-serialized, atomic, always exits 0.
+    tags:
+    - memory
+    - hook
+    - retrieval
+    - decay
+    - spacing
+    - reinforcement
+    version: 2.1.3
+  validate_registry:
+    path: executions/validate_registry.py
+    description: Validate registry manifests that CANNOT be generated — the bucketed/sectioned kinds where
+      a human chose the grouping. Parse-checks every manifest, reports coverage in both directions, enum-checks
+      skill listing/category, honours declared exclusions, and runs the frontmatter census (including
+      skills with no `listing:`).
+    tags:
+    - registry
+    - manifest
+    - validation
+    - coverage
+    - frontmatter
+    - census
+    - gate
+    dependencies:
+    - PyYAML
+    - build_registry.py
+    version: 1.4.0
+  verify_memory_install:
+    path: executions/verify_memory_install.py
+    description: End-to-end self-test proving the memory POLICY is wired, not merely that files exist.
+      Exercises the real hook against a throwaway topic file to confirm reinforcement fires, the 20h spacing
+      gate holds, non-reinforcing tools are no-ops, curation counts, and hooks exit 0 when the agent is
+      unresolvable. Exits non-zero on any hard failure — a disconnected hook is otherwise invisible.
+    tags:
+    - memory
+    - install
+    - verification
+    - self-test
+    version: 1.0.3
+  version_gate:
+    path: executions/version_gate.py
+    description: PreToolUse hook on `git push`. For every versioned file whose BODY changed in the outgoing
+      commits without its `version:` changing, it bumps the patch level, stamps `last_updated`, regenerates
+      the registry manifests and directory indexes, mirrors the bump to a byte-identical twin, and commits
+      so the push carries it. Never blocks; [minor]/[major]/[no-version] override.
+    tags:
+    - hook
+    - claude-code
+    - versioning
+    - frontmatter
+    - registry
+    - drift
+    - publish-boundary
+    version: 1.3.0
+  workspace_chain_audit:
+    path: executions/workspace_chain_audit.py
+    description: 'Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and
+      returns one verdict: layer drift, registry resolution in all three layers, publication freshness,
+      the scrub blocklist over the RELEASED files, external-pack pins, version staleness, both harnesses,
+      skill invocability and push state. Read-only by construction. The judgment half is the update-ai-workspace-children
+      skill.'
+    tags:
+    - audit
+    - publication
+    - drift
+    - release
+    - governance
+    - chain
+    version: 1.0.6
+  workspace_discover:
+    path: executions/workspace_discover.sh
+    version: 1.2.3
+    description: Discovers workspace paths by convention — no hardcoded user or repo names — and prints
+      JSON for other scripts to source. Layer-neutral so both layers can run an identical copy, and re-anchors
+      the workspace root on the script's own location when invoked from a cwd outside the workspace tree.

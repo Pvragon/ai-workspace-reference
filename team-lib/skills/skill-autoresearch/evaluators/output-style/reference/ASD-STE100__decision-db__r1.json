@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "decision-db",
+  "run": 1,
+  "elapsed_s": 78.7,
+  "rc": 0,
+  "text": "**Recommendation: SQLite.**\n\n`ExitPlanMode` is not available in this session, so I cannot call it. The plan is written to `/home/<user>/.claude/plans/i-m-building-a-single-user-curried-codd.md`. Approve it in your own words and I will build it.\n\nThe short form:\n\n- Python ships `sqlite3` in the standard library. Postgres needs a separate server and a separate install step.\n- A desktop installer would have to bundle a Postgres server, start it, and stop it. One user gets nothing back for that work.\n- One user means one writer. Postgres sells concurrent writes that this app never uses.\n- The whole store is one file, so a backup is a file copy.\n- SQLite includes FTS5 for full-text search. Notes need search, and it costs nothing extra.\n\nThe later sync does not change the answer. Your server can run Postgres. Your local store stays SQLite. Sync moves rows across a protocol, and it does not require the same engine at both ends.\n\nThe real risk is the schema, not the engine. The engine is cheap to swap later. A schema that assumes one device is expensive to fix later. So build these into version 1:\n\n1. Text UUID keys, not integer keys that auto-increment. Two devices must never mint the same key.\n2. UTC timestamps in one format, with `created_at` and `updated_at` on every row.\n3. A `deleted_at` tombstone column. A hard delete is invisible to the server, so the server restores the row.\n4. An `outbox` table that records each local edit.\n5. A `sync_state` table that holds the last server token.\n6. A written conflict rule. \"The last write wins, per note\" is enough for one person.\n\nOne caveat I did not resolve: I do not know how many devices you plan to sync. The last-write-wins rule holds for a few devices with one owner. It loses edits if two devices change the same note offline at the same time. Tell me if that case matters, and I will size a merge strategy instead.",
+  "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 19075,
+    "cache_read_input_tokens": 106540,
+    "output_tokens": 5504,
+    "output_tokens_details": {
+      "thinking_tokens": 2654
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 19075,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 671,
+        "cache_read_input_tokens": 33811,
+        "cache_creation_input_tokens": 120,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 120
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.382665,
+  "num_turns": 4,
+  "is_error": false
+}

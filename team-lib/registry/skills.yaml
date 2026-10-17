@@ -1,0 +1,1218 @@
+# summary: Team skills registry. Lists available shared skills with paths, capabilities, and dependencies.
+# Skills Registry (team)
+# ------------------------------------------
+# This manifest catalogs available team agent skills.
+#
+# Schema:
+#   skills:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to skill definition
+#       capabilities: [<string>, ...]  # What this skill enables
+#       dependencies: [<string>, ...]  # Required skills or tools
+#       version: <string>        # Semantic version
+#       source: <string>         # DERIVED provenance: team | local | external | project | system | synced
+#       provider: <string>       # DERIVED: origin pack for _external/ skills, else "internal"
+#       listing: <on|name-only|user-only>  # DERIVED: what the harness shows the model. Edit the
+#                                # SKILL.md frontmatter (externals: config/skill-listing.yaml),
+#                                # never this entry; rendered into Claude Code skillOverrides.
+#       category: <string>       # DERIVED, same owners; one name from config/skill-categories.yaml
+#       status: <string>         # "active" (default, omitted) or "deprecated"
+#
+# Search hierarchy (Operating Principle #1):
+#   Run the find-skill skill first: it searches this manifest (with my-lib's and the current
+#   project's) by keyword and category and ranks equal matches in this order:
+#   1. Internal skills (source: team / local / project)
+#   2. External skills (source: external)
+#   When multiple skills match a query, prefer internal over external.
+#
+# ------------------------------------------
+
+# ------------------------------------------------------------------------------------
+# NOTES MIGRATED INTO THE HEADER 2026-08-08. This manifest is now GENERATED, and PyYAML
+# cannot round-trip comments inside the data region — so the generator refused to write
+# rather than silently delete these. They are preserved verbatim below.
+#
+# Section dividers that were organisational only (`# --- Provider: X ---`, `# C-Level`)
+# are NOT preserved: generation sorts entries, so a divider no longer marks anything.
+# The fact they carried is now the DERIVED `provider:` field on each entry.
+# ------------------------------------------------------------------------------------
+skills:
+- name: brand-site-chrome
+  description: 'Header + footer chrome. Invoke ext-frontend-design for the header''s distinctive layout;
+    this adds the a11y + canonical-domain specifics. Must-haves: a real skip-to-content link; aria-current
+    on the active route; a keyboard-operable mobile menu (use UUI/react-aria disclosure, don''t hand-roll
+    focus trapping); footer canonical URL sourced from brand.config.ts (NOT hardcoded — that''s the stale-OG-URL
+    bug''s cousin); independence/legal disclaimer if the brand requires one.'
+  path: skills/brand-site-chrome/SKILL.md
+  capabilities:
+  - header-footer
+  - nav-a11y
+  - canonical-domain
+  dependencies:
+  - node
+  - pnpm
+  tags:
+  - header
+  - footer
+  - navigation
+  - accessibility
+  - react-aria
+  - canonical
+  version: 1.0.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-cohesion-review
+  description: 'Stage 6 of build-brand-site: review the assembled site as ONE artifact against the web
+    and brand rubrics, plus Lighthouse and an interactive pass. Measure rather than eyeball — overflow
+    by DOM metrics, contrast by math. Ships the SwiftShader screenshot tool that actually renders under
+    WSL2. An independent reviewer signs off; self-approval is not review.'
+  path: skills/brand-site-cohesion-review/SKILL.md
+  capabilities:
+  - whole-site-review
+  - responsive-qa
+  - wcag-measure
+  - wsl-screenshot
+  - adversarial-gate
+  dependencies:
+  - node
+  - chromium
+  - python
+  tags:
+  - review
+  - cohesion
+  - wcag
+  - responsive
+  - overflow
+  - lighthouse
+  - webapp-testing
+  - wsl
+  - screenshot
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-components
+  description: 'Stage 1 of build-brand-site: adopt the Untitled UI set and brand-tune it through TOKENS,
+    verifying every variant and state by WCAG math. Carries the sharp edges — `add` overwrites already-customized
+    components and drags in transitive bloat, and a client component''s icon props force the consuming
+    page to ''use client''.'
+  path: skills/brand-site-components/SKILL.md
+  capabilities:
+  - component-library
+  - wcag-contrast
+  - brand-tuning
+  - rsc-boundary
+  dependencies:
+  - node
+  - pnpm
+  - python
+  tags:
+  - components
+  - untitled-ui
+  - wcag
+  - contrast
+  - react-aria
+  - rsc
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-deploy
+  description: 'Stage 7 of build-brand-site: deploy the static Next app to Vercel, verify it live by curl,
+    and extract the reusable component/token and section kits so the next brand starts from them. Carries
+    the Vercel monorepo trap — the build context is web/ only, so brand-tokens.json must be vendored there
+    or the prebuild fails ENOENT.'
+  path: skills/brand-site-deploy/SKILL.md
+  capabilities:
+  - vercel-deploy
+  - live-verify
+  - monorepo-tokens
+  - kit-extraction
+  - multi-brand-proof
+  dependencies:
+  - node
+  - pnpm
+  - vercel-cli
+  tags:
+  - deploy
+  - vercel
+  - monorepo
+  - verify
+  - extract
+  - nextbase
+  - reuse
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-map
+  description: 'Stage 3 of build-brand-site: define routes with ONE job each, add the sitemap.ts and robots.ts
+    Next does not scaffold, and build a real shop surface behind a SHOP_LIVE seam that shows an honest
+    ''opening soon'' rather than linking merch to nothing — the worst funnel defect on the original site.'
+  path: skills/brand-site-map/SKILL.md
+  capabilities:
+  - sitemap
+  - information-architecture
+  - seo-routes
+  - commerce-surface
+  - anti-dead-end
+  dependencies:
+  - node
+  tags:
+  - sitemap
+  - routes
+  - seo
+  - robots
+  - commerce
+  - funnel
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-pages
+  description: 'Stage 5 of build-brand-site: compose each page from the section library, de-slop the copy,
+    wire the conversion funnels, and drop in the fail-safe email form as a Next route handler. Carries
+    the a11y contract — route field errors through the component''s hint/isInvalid so aria-describedby
+    is wired, and darken error red to pass AA on a warm ground.'
+  path: skills/brand-site-pages/SKILL.md
+  capabilities:
+  - page-composition
+  - humanizer-copy
+  - email-capture
+  - form-a11y
+  - funnel-wiring
+  dependencies:
+  - node
+  - python
+  tags:
+  - pages
+  - copy
+  - humanizer
+  - email-capture
+  - forms
+  - accessibility
+  - funnel
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-scaffold
+  description: 'Stage 0 of build-brand-site: scaffold the statically-rendered Next app and ship the brand
+    bridge — a generator turning brand-tokens.json into the @theme CSS that reskins the whole component
+    set. Enforces white-on-primary contrast, gamut-mapping by chroma compression, and surface-is-not-page-ground.
+    Wired into prebuild so it cannot drift.'
+  path: skills/brand-site-scaffold/SKILL.md
+  capabilities:
+  - scaffold
+  - brand-token-bridge
+  - oklch-theme
+  - supply-chain-vet
+  dependencies:
+  - node
+  - pnpm
+  tags:
+  - scaffold
+  - next
+  - tailwind
+  - untitled-ui
+  - brand-tokens
+  - oklch
+  - theme
+  version: 1.0.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: brand-site-templates
+  description: 'Stage 4 of build-brand-site: the reusable section library, with every section taking its
+    copy as PROPS from a content data file rather than inline strings. Server shells stay static and interactive
+    pieces are client islands, split at the section boundary. The proof: a second brand swaps content
+    and tokens with no component edits.'
+  path: skills/brand-site-templates/SKILL.md
+  capabilities:
+  - section-library
+  - content-as-data
+  - reuse-seam
+  - rsc-split
+  dependencies:
+  - node
+  tags:
+  - templates
+  - sections
+  - content-as-data
+  - reuse
+  - rsc
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: build-brand-site
+  description: 'Parent workflow for the multi-brand site pipeline: a new brand swaps brand-tokens.json
+    and fonts, with zero component edits. Dispatches to eight per-stage subskills, each built in isolation
+    then gated by an INDEPENDENT adversarial review. Verify by math, not eye. Use build-branded-web-page
+    instead for a one-off static page.'
+  path: skills/build-brand-site/SKILL.md
+  capabilities:
+  - multi-page-site
+  - brand-token-theme
+  - staged-methodology
+  - adversarial-gate
+  - skill-composition
+  - multi-brand-reuse
+  dependencies:
+  - node
+  - pnpm
+  - chromium
+  - python
+  tags:
+  - web
+  - site
+  - next
+  - tailwind
+  - untitled-ui
+  - brand-tokens
+  - multi-brand
+  - orchestrator
+  - accessibility
+  - vercel
+  version: 1.0.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: build-branded-web-page
+  description: 'Repeatable workflow plus reference scripts for shipping one branded static page. Four
+    gates: measure overflow by DOM metrics rather than screenshots (which render black headless), verify
+    every colour by WCAG math, make email capture fail-safe rather than silently dropping, and run a humanizer
+    plus an INDEPENDENT copy review before ship.'
+  path: skills/build-branded-web-page/SKILL.md
+  capabilities:
+  - web-page-build
+  - responsive-qa
+  - wcag-contrast
+  - email-capture
+  - serverless-form
+  - humanizer-copy
+  - deploy-verify
+  dependencies:
+  - node
+  - chromium
+  - python
+  tags:
+  - web
+  - landing-page
+  - responsive
+  - accessibility
+  - wcag
+  - overflow
+  - serverless
+  - email-capture
+  - humanizer
+  - deploy
+  - vercel
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: web
+- name: check-for-workspace-updates
+  description: Compares local workspace files (AGENTS.md, etc.) against team-lib canonical templates and
+    guides upgrades. Run periodically or after team-lib releases.
+  path: skills/check-for-workspace-updates/SKILL.md
+  capabilities:
+  - workspace-maintenance
+  - template-comparison
+  - upgrade-guidance
+  dependencies: []
+  tags:
+  - workspace
+  - updates
+  - templates
+  - maintenance
+  version: 1.1.0
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: check-workspace-consistency
+  path: skills/_workspace-developer/check-workspace-consistency/SKILL.md
+  source: team
+  provider: internal
+  version: 1.1.3
+  description: Three-pass validation protocol ensuring all workspace files (templates, docs, registry)
+    are mutually consistent. Run before releases or after structural changes.
+- name: choose-name
+  description: Onboarding ceremony for new AI teammates to choose their name, identity, and pronouns.
+    Run once at the start of a new agent's life — writes the identity block to the tool's global config
+    and scaffolds ~/ai-workspace/agents/<name>/.
+  path: skills/choose-name/SKILL.md
+  capabilities:
+  - onboarding
+  - agent-identity
+  - memory-bootstrap
+  dependencies: []
+  tags:
+  - onboarding
+  - identity
+  - ceremony
+  - new-agent
+  version: 1.2.2
+  source: team
+  provider: internal
+  listing: user-only
+  category: agent-memory
+- name: compose-branded-template
+  description: Takes a brand name and template type, loads the base template and type override (via $extends),
+    deep merges them, resolves all tokenRef dot-paths against brand-tokens.json, applies brand preferences
+    (font size, table style, etc.), and writes the fully resolved branded template.
+  path: skills/compose-branded-template/SKILL.md
+  capabilities:
+  - brand-composition
+  - design-tokens
+  - template-generation
+  - document-types
+  - starter-templates
+  dependencies:
+  - node
+  - '@google/clasp'
+  tags:
+  - brand
+  - tokens
+  - templates
+  - composition
+  - w3c
+  - documents
+  - slides
+  - presentations
+  - clasp
+  - apps-script
+  version: 2.1.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: brand
+- name: create-brand-guidelines
+  description: Interactive skill that produces a structured brand-guidelines.md by ingesting source materials
+    (style guides, PDFs, websites, logos), extracting brand tokens, validating coverage, and walking the
+    user through gap-filling. Supports create mode (new brand) and update mode (existing brand). Outputs
+    brand-guidelines.md and brand-tokens.json.
+  path: skills/create-brand-guidelines/SKILL.md
+  capabilities:
+  - branding
+  - design-tokens
+  - brand-guidelines
+  - content-pipeline
+  - brand-onboarding
+  dependencies:
+  - node
+  tags:
+  - brand
+  - tokens
+  - guidelines
+  - onboarding
+  - w3c
+  - content-pipeline
+  version: 1.3.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: brand
+- name: create-directive
+  description: 'Comprehensive guidelines for writing directives: template, anti-patterns, review criteria,
+    and the directive vs skill vs AGENTS.md distinction. Follow when creating or reviewing any directive.'
+  path: skills/create-directive/SKILL.md
+  capabilities:
+  - directive-design
+  - workflow-orchestration
+  - best-practices
+  dependencies: []
+  tags:
+  - directive
+  - documentation
+  - workflow
+  - templates
+  - best-practices
+  version: 1.1.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: create-handoff-docs
+  description: Synthesizes the session into a handoff brief that OPENS WITH THE STARTUP CHECKLIST (worktree,
+    memory cold-start, persona reload, debrief addendum), plus git state per touched repo, anti-patterns
+    and don't-redo calls. Runs a resume-safety check and auto-commits on feature branches. Owns the brief
+    FORMAT for every caller, /handoff included.
+  path: skills/create-handoff-docs/SKILL.md
+  capabilities:
+  - thread-handoff
+  - context-rotation
+  - session-wrapup
+  - memory-cold-start
+  dependencies:
+  - agent_paths.py
+  - dream_journal.py
+  version: 1.3.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: sessions
+- name: dream
+  description: 'The metacognitive entry point to the sleep cycle. meditate = awareness/instrumental contemplation
+    → dream-journal residue (+ proposed self-edit); consolidate = distill ungraduated short-term residue
+    into T2 then archive; groom = safe hygiene fixes; auto = run whatever dream_cycle state says is due.
+    The LLM act the deterministic scheduler (dream_cycle.py) cues but never performs itself. Backlog:
+    260712-memory-system-framework.md (Scheduler layer).'
+  path: skills/dream/SKILL.md
+  capabilities:
+  - memory-consolidation
+  - meditation
+  - reflective-wake
+  - residue-writing
+  - sleep-cycle
+  dependencies:
+  - python3
+  tags:
+  - memory
+  - dream
+  - meditation
+  - consolidation
+  - sleep-cycle
+  - reflection
+  - t1-t2
+  version: 1.0.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: agent-memory
+- name: find-skill
+  path: skills/find-skill/SKILL.md
+  source: team
+  provider: internal
+  version: 1.2.0
+  description: Searches all ~200 skills (harness links, both registries, disk, and the cwd project's own
+    skills) by free text and/or category. Prints each hit's invocation name, listing level, category,
+    summary, SKILL.md path and how to use it. Personas run it at startup with their skill_categories.
+  listing: 'on'
+  category: ai-tooling
+- name: findings
+  description: 'The pull side of the findings inbox. Loads open findings via findings.py, groups them,
+    and works them one at a time — propose, act, dismiss. Exists because findings must never be raised
+    inside another thread: this skill IS the thread.'
+  path: skills/findings/SKILL.md
+  capabilities:
+  - findings
+  - maintenance
+  - inbox
+  - worklist
+  dependencies:
+  - team-lib/executions/findings.py
+  version: 1.0.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: generate-brand-guide-site
+  description: 'Step 3 of the brand stack: consumes brand-tokens.json + the narrative sections of brand-guidelines.md
+    and produces a self-contained, brand-expressing HTML brand guide with color, typography, logo, voice,
+    and applied-example sections. LLM-designed, script-verified: a validator rejects any hex or font not
+    present in the tokens file.'
+  path: skills/generate-brand-guide-site/SKILL.md
+  capabilities:
+  - branding
+  - brand-documentation
+  - html-generation
+  - design-tokens
+  dependencies:
+  - node
+  tags:
+  - brand
+  - tokens
+  - html
+  - brand-guide
+  - documentation
+  - self-contained
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: brand
+- name: generate-deals-pack
+  description: Generate (or recalibrate) a consumer-deals domain pack — attribute extraction + value tables
+    + scoring — for any new product domain. Scrape-once-cache-iterate-offline so it never hits rate limits.
+  path: skills/generate-deals-pack/SKILL.md
+  capabilities:
+  - deal-mining
+  - domain-pack-generation
+  - valuation-calibration
+  - attribute-extraction
+  dependencies:
+  - consumer-deals
+  tags:
+  - deals
+  - offerup
+  - marketplace
+  - pack
+  - valuation
+  - extraction
+  - rate-limit-safe
+  version: 1.0.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: shopping
+- name: generate-release-notes
+  description: Generates release notes from git history and CHANGELOG.md. Supports --since, --last-run,
+    and --finalize flags. Run during the workspace release process.
+  path: skills/_workspace-developer/generate-release-notes/SKILL.md
+  capabilities:
+  - git-analysis
+  - changelog-generation
+  - smart-history
+  dependencies:
+  - git
+  - python3
+  tags:
+  - release
+  - changelog
+  - git
+  - documentation
+  - automation
+  version: 1.0.1
+  source: team
+  provider: internal
+- name: graduate
+  description: 'The judgment wrapper around graduate_capability.py. The tool refuses on four specific
+    pre-flight conditions and each refusal means something different — this skill says which are real
+    blockers, which are fix-then-retry, and which mean the item should not graduate at all. Enforces the
+    half that keeps getting skipped: after graduation the personal copy stops existing.'
+  path: skills/graduate/SKILL.md
+  capabilities:
+  - graduation
+  - layer-currency
+  - governance
+  dependencies:
+  - executions/graduate_capability.py
+  - executions/layer_drift_scan.py
+  - registry/mirror.yaml
+  - directives/graduate-to-team-library.md
+  tags:
+  - governance
+  - graduation
+  - promotion
+  - team-lib
+  - layers
+  version: 1.1.0
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: handoff
+  description: 'The session-rotate orchestrator: /create-handoff-docs writes the brief (it owns the format
+    and the startup checklist; this skill supplies only WORKTREE and PERSONA), handoff.sh spawns a new
+    seeded window, then /session-debrief runs in the old pane. Spawn before debrief so work continues
+    immediately. Requires WSL + Windows Terminal, or Hyprland (Omarchy) + foot.'
+  path: skills/handoff/SKILL.md
+  capabilities:
+  - session-rotation
+  - thread-handoff
+  - new-window-launch
+  - seeded-session
+  - persona-reload
+  - worktree-inherit
+  dependencies:
+  - create-handoff-docs
+  - session-debrief
+  - skills/handoff/handoff.sh
+  version: 2.5.5
+  source: team
+  provider: internal
+  listing: 'on'
+  category: sessions
+- name: humanizer-supplement
+  path: skills/humanizer-supplement/SKILL.md
+  source: team
+  provider: internal
+  version: 1.1.3
+  description: Three stance patterns the upstream humanizer misses, found after it had declared a page
+    clean, plus words its vocabulary list (pattern 12) lacks. Each has before/after pairs from real artifacts.
+    Retired pattern by pattern as upstream accepts them; UPSTREAM.md tracks what has been proposed.
+  listing: name-only
+  category: writing
+- name: list-sessions
+  description: Joins the tmux view (mylib-<pid>) to the Claude view (/rename name + sessionId) for every
+    open window, using live-client + WSL-relay-ancestry liveness so phantom/orphan windows are correctly
+    separated from genuinely-open ones. Read-only.
+  path: skills/list-sessions/SKILL.md
+  capabilities:
+  - tmux
+  - session-inventory
+  - observability
+  dependencies:
+  - ../team-lib/executions/list_claude_sessions.py
+  version: 1.0.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: sessions
+- name: markdown-to-branded-doc
+  description: Renders markdown to branded documents using branded-template-v2 schema. Loads pre-composed
+    templates from companies/{name}/brand/templates/{type}.json. Supports 7 document types across all
+    brands. Includes update-gdoc-section.js for surgical edits to existing docs.
+  path: skills/markdown-to-branded-doc/SKILL.md
+  capabilities:
+  - markdown-conversion
+  - docx-generation
+  - gdoc-generation
+  - gdoc-surgical-update
+  - branding
+  - document-formatting
+  - mermaid-excalidraw-embed
+  - html-presentation-pointer
+  dependencies:
+  - node
+  - npm
+  - marked
+  - docx
+  - gws
+  - poppler-utils
+  - excalidraw-cli
+  tags:
+  - docx
+  - gdoc
+  - conversion
+  - branding
+  - export
+  - formatting
+  - google-docs
+  - gws-cli
+  - surgical-update
+  - mermaid
+  - excalidraw
+  - html-presentation
+  - mobile-responsive
+  version: 4.9.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: documents
+- name: markdown-to-branded-html
+  path: skills/markdown-to-branded-html/SKILL.md
+  source: team
+  provider: internal
+  version: 1.1.3
+  description: 'Render markdown to a self-contained branded HTML document, the default for any
+    branded page read top to bottom: reports, walkthroughs, handoff pages, prez.example.com documents. Styling
+    comes only from the composed template. The build fails on off-token colors, sub-AA contrast, or copy
+    that trips the humanizer gate. Mermaid becomes zoomable inline SVG.'
+  listing: name-only
+  category: documents
+- name: mermaid-to-excalidraw
+  description: Render a COMPLETED (logic-locked) Mermaid diagram into a good-looking Excalidraw image
+    (.svg/.png/.excalidraw/.html) for a document, deck, or page, with a mandatory visual-verify loop.
+    Wraps the excalidraw-cli. Not for iterating diagram logic — that stays in Mermaid.
+  path: skills/mermaid-to-excalidraw/SKILL.md
+  capabilities:
+  - mermaid-to-excalidraw
+  - diagram-rendering
+  - visual-verification
+  - doc-injection
+  - svg-export
+  - png-export
+  - html-figure-embed
+  dependencies:
+  - excalidraw-cli
+  - node
+  - playwright
+  tags:
+  - mermaid
+  - excalidraw
+  - diagram
+  - flowchart
+  - svg
+  - png
+  - html
+  - visual-verify
+  - docs
+  - rendering
+  version: 1.1.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: design
+- name: mobile-overflow-audit
+  description: Headless Chromium walks every .slide of a branded HTML presentation at a phone-landscape
+    viewport (default 844x390) and measures slide.scrollHeight - slide.clientHeight per slide. Reports
+    overflow + identifies custom component classes per slide so CSS targeting decisions are deterministic.
+    Pairs with the html-presentation manual pathway documented in markdown-to-branded-doc/SKILL.md.
+  path: skills/mobile-overflow-audit/SKILL.md
+  capabilities:
+  - mobile-audit
+  - presentation-qa
+  - html-presentation
+  - layout-overflow-detection
+  dependencies:
+  - node
+  - playwright
+  tags:
+  - your-brand
+  - html-presentation
+  - mobile
+  - responsive
+  - audit
+  - playwright
+  - presentations
+  version: 1.0.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: testing
+- name: prepare-image-for-print
+  description: Method and scripts for print prep. Required DPI falls out of VIEWING DISTANCE, not a fixed
+    300; media differ enormously in how much reconstructed detail they expose; and soft regions have two
+    causes that must be told apart — dark-and-soft is compression loss a super-resolver can fill, bright-and-soft
+    is defocus nothing fixes. Always report percent reconstructed.
+  path: skills/prepare-image-for-print/SKILL.md
+  capabilities:
+  - image-upscaling
+  - super-resolution
+  - print-preparation
+  - detail-diagnostics
+  - dpi-sizing
+  - medium-selection
+  - framing-guidance
+  dependencies:
+  - python
+  - pillow
+  - numpy
+  - real-esrgan-ncnn
+  tags:
+  - image
+  - print
+  - upscaling
+  - real-esrgan
+  - photo
+  - dpi
+  - framing
+  - giclee
+  - restoration
+  version: 1.0.4
+  source: team
+  provider: internal
+  listing: name-only
+  category: design
+- name: reap-tmux
+  description: Invokes the deterministic tmux reaper and reports the result. Only manages mylib-<pid>
+    sessions (the proliferation source); never touches attached or the current session. Safe by design
+    — Claude conversation state persists to disk and is /resume-able even if a session is reaped.
+  path: skills/reap-tmux/SKILL.md
+  capabilities:
+  - tmux-cleanup
+  - session-hygiene
+  - reaper
+  dependencies:
+  - skills/reap-tmux/reap_tmux_sessions.sh
+  version: 1.0.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: sessions
+- name: registry-conformance
+  description: The judgment wrapper around build_registry.py and build_index.py (generate) and validate_registry.py
+    (validate). Decides which of a repo's manifests are frontmatter-derivable and which encode human grouping
+    judgement, interprets each refusal, and fixes the FILE rather than the index when they disagree.
+  path: skills/registry-conformance/SKILL.md
+  capabilities:
+  - registry
+  - manifest
+  - drift
+  - generated-artifact
+  - frontmatter
+  - governance
+  dependencies:
+  - executions/build_registry.py
+  - executions/validate_registry.py
+  - executions/repair_frontmatter.py
+  - harnesses/test_registry_gate.py
+  - context/indexed/progressive-disclosure-convention.md
+  tags:
+  - registry
+  - index
+  - drift
+  - generation
+  - validation
+  - repair
+  - governance
+  version: 1.5.0
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: render-product-image
+  description: 'Method + reference implementations for generating product/object images. Core rule: generative
+    image models (Gemini ''nano banana'' etc.) nail photorealism but CANNOT be driven to exact dimensions/ratios
+    — so use them for the marketing hero and use a deterministic, pixel-controlled render for the dimension-true
+    spec plate. Verify everything by measurement (color ΔE, self-calibrating orthographic geometry), never
+    by visual impression.'
+  path: skills/render-product-image/SKILL.md
+  capabilities:
+  - image-generation
+  - product-render
+  - dimension-accuracy
+  - self-review
+  dependencies:
+  - python
+  - pillow
+  - chromium
+  tags:
+  - image-generation
+  - gemini
+  - nano-banana
+  - product-mockup
+  - measurement
+  - self-review
+  version: 1.1.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: design
+- name: resume-sessions
+  description: 'Reopens every stored session in its own window and original cwd, labeled with its Claude
+    name: reattaches live tmux sessions or resumes dead ones from disk. Default fleet is the union of
+    the newest manual and debrief snapshots. Reconcile is opt-in. Preview with --dry-run, list the windows
+    in chat, launch only on the operator''s reply.'
+  path: skills/resume-sessions/SKILL.md
+  capabilities:
+  - tmux
+  - session-restore
+  - reboot-recovery
+  - window-launch
+  dependencies:
+  - ../team-lib/executions/session_snapshots.py
+  - ../team-lib/executions/list_claude_sessions.py
+  - skills/store-sessions/SKILL.md
+  version: 1.1.5
+  source: team
+  provider: internal
+  listing: name-only
+  category: sessions
+- name: run-deal-hunt
+  description: One-command marketplace deal hunt — 'find me the best <thing> under $X'. Drives the deals
+    CLI scrape→value→rank end-to-end and writes a ranked deal report with an in-person verify protocol
+    for too-good outliers. Read-only; scrape-once-cache-iterate-offline.
+  path: skills/run-deal-hunt/SKILL.md
+  capabilities:
+  - deal-mining
+  - deal-hunt
+  - valuation
+  - ranking
+  - deal-report
+  dependencies:
+  - consumer-deals
+  - generate-deals-pack
+  tags:
+  - deals
+  - offerup
+  - marketplace
+  - hunt
+  - valuation
+  - ranking
+  - verify-tier
+  - rate-limit-safe
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: shopping
+- name: scaffold-project-docs
+  description: Bootstraps the standard docs/ structure (specs, adrs, reference, archive, .tmp) in new
+    projects. Run when setting up a new project repository.
+  path: skills/scaffold-project-docs/SKILL.md
+  capabilities:
+  - project-scaffolding
+  - docs-structure
+  - template-generation
+  dependencies:
+  - python3
+  tags:
+  - scaffolding
+  - project-setup
+  - docs
+  - templates
+  version: 1.0.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: scan-for-malware
+  description: 'Deterministic scanner for the npm/git blob-malware family: matches known malicious blob
+    SHAs and behavioural signatures, recursively decodes multi-layer obfuscation and re-scans each layer,
+    across every git object plus the working tree. Classifies actionable hits against benign residuals
+    with a coverage block, so there are no silent gaps. eradicate.sh then cleans one infected repo end-to-end,
+    dry-run by default.'
+  path: skills/scan-for-malware/SKILL.md
+  capabilities:
+  - security-scan
+  - malware-detection
+  - incident-response
+  - supply-chain-audit
+  - malware-eradication
+  - git-history-rewrite
+  - exposure-assessment
+  - credential-rotation
+  dependencies:
+  - python3
+  - git
+  - gh
+  - git-filter-repo
+  tags:
+  - security
+  - malware
+  - incident-response
+  - scan
+  - eradicate
+  - supply-chain
+  - exposure
+  - credentials
+  version: 2.3.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: security
+- name: self-check
+  description: On-demand memory-substrate hygiene check via executions/memory_self_check.py. Detection-only
+    by default; --fix-safe applies deterministic frontmatter backfills. The manual entry point to the
+    self-maintenance 'dream cycle' (backlog/260712-memory-system-framework.md, Scheduler layer).
+  path: skills/self-check/SKILL.md
+  capabilities:
+  - memory-hygiene
+  - linting
+  - safe-autofix
+  - index-consistency
+  dependencies:
+  - python3
+  tags:
+  - memory
+  - hygiene
+  - linter
+  - maintenance
+  - self-check
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: agent-memory
+- name: send-pulse
+  description: Posts a concise work pulse to the Pulse channel. Can also register the current Claude thread
+    as linked to a ClickUp task for downstream activity correlation.
+  path: skills/send-pulse/SKILL.md
+  capabilities:
+  - messaging
+  - clickup
+  - pulse
+  - task-registration
+  dependencies: []
+  tags:
+  - pulse
+  - clickup
+  - activity-tracking
+  - manual-update
+  version: 2.1.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: messaging
+- name: session-debrief
+  description: 'Run at end of a work session to persist learnings, check index health, update workspace
+    current state, and propagate improvements to team-lib. A short router: preflight script, three parallel
+    subagents that read their own instructions, on-disk verification, postflight script, one-line close.'
+  path: skills/session-debrief/SKILL.md
+  capabilities:
+  - debrief
+  - memory-capture
+  - registry-validation
+  - workspace-hygiene
+  - transcript-extraction
+  - handoff-enrichment
+  dependencies:
+  - executions/clean_zone_identifiers.sh
+  - executions/extract_session_transcripts.py
+  - executions/dump_system_state.py
+  - executions/archive_old_transcripts.sh
+  - executions/extract_touched_files.py
+  - executions/session_snapshots.py
+  - executions/list_claude_sessions.py
+  - executions/regen_current_state.py
+  - executions/sweep_workstreams.py
+  tags:
+  - session
+  - debrief
+  - memory
+  - maintenance
+  - published-from-my-lib
+  version: 3.1.1
+  source: team
+  provider: internal
+  listing: 'on'
+  category: sessions
+- name: skill-autoresearch
+  description: 'Faithful, reusable implementation of karpathy/autoresearch: program.md-driven loop (branch
+    per run, one editable file, immutable evaluator, fixed budget, one metric, commit-then-run, keep or
+    git-reset, results.tsv ledger, simplicity criterion, NEVER STOP), plus a ledger/revert helper, two
+    scripted evaluators, and two ready programs (output-style, skill-clarity). Departures from the original
+    are listed and justified.'
+  path: skills/skill-autoresearch/SKILL.md
+  capabilities:
+  - skill-testing
+  - quality-improvement
+  - autoresearch
+  - self-improvement
+  dependencies: []
+  tags:
+  - meta-skill
+  - quality
+  - testing
+  - autoresearch
+  - improvement-loop
+  version: 2.1.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: ai-tooling
+- name: store-sessions
+  description: Captures the current open-session fleet to ~/.claude/session-snapshots/YYMMDD-HHMM-sessions.json
+    (manual snapshots kept forever; nightly --auto ones pruned). The bridge across a reboot, which kills
+    the tmux server and every claude process — only the on-disk JSONL + this snapshot survive. Read-only.
+  path: skills/store-sessions/SKILL.md
+  capabilities:
+  - tmux
+  - session-snapshot
+  - reboot-recovery
+  dependencies:
+  - ../team-lib/executions/session_snapshots.py
+  - ../team-lib/executions/list_claude_sessions.py
+  version: 1.0.2
+  source: team
+  provider: internal
+  listing: name-only
+  category: sessions
+- name: team-lib-currency
+  description: The resolver half of layer-drift detection. layer_drift_scan.py finds divergence deterministically
+    every night; this skill supplies the judgment the scan deliberately withholds — which layer is right
+    for each item — and applies the fix under the graduation-is-a-move convention. Detection is scheduled;
+    resolution is task-triggered.
+  path: skills/team-lib-currency/SKILL.md
+  capabilities:
+  - drift-resolution
+  - graduation
+  - layer-currency
+  - governance
+  dependencies:
+  - executions/layer_drift_scan.py
+  - registry/mirror.yaml
+  - harnesses/test_layer_drift_scan.py
+  tags:
+  - governance
+  - currency
+  - drift
+  - graduation
+  - team-lib
+  - maintenance
+  version: 1.0.1
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: team-post
+  path: skills/team-post/SKILL.md
+  source: team
+  provider: internal
+  version: 1.2.1
+  description: The register for agent-written posts to teammates. Five rules that survive the reader skimming
+    on a phone (outcome first, short paragraphs, a hard cap with no audience exception, references named,
+    no self-narration), a checker script that fails a draft before it is posted, and before/after pairs
+    from real posts that ran long.
+  listing: name-only
+  category: messaging
+- name: update-ai-workspace-children
+  description: The judgment half of the promotion chain. executions/workspace_chain_audit.py runs every
+    deterministic gate; this skill decides what the gates cannot — which layer an item belongs in, what
+    should graduate, what to document — and drives the chain end to end to a pushed, proven state.
+  path: skills/update-ai-workspace-children/SKILL.md
+  capabilities:
+  - layer-sync
+  - graduation
+  - publication
+  - release-readiness
+  - governance
+  dependencies:
+  - workspace_chain_audit.py
+  - layer_drift_scan.py
+  - publish_public_reference.py
+  - graduate_capability.py
+  version: 1.0.4
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: update-drive-index
+  description: Refreshes the Google Drive index at team-lib/context/indexed/google-drive-index.md
+    by enumerating all Shared Drives and their root-level contents via the Google Drive API. Run periodically
+    or when drives/folders are reorganized.
+  path: skills/update-drive-index/SKILL.md
+  capabilities:
+  - google-drive
+  - index-refresh
+  - api-enumeration
+  dependencies:
+  - google-drive-mcp
+  tags:
+  - google-drive
+  - index
+  - automation
+  version: 1.1.3
+  source: team
+  provider: internal
+  listing: name-only
+  category: workspace
+- name: who
+  description: Shows which other Claude Code sessions are live right now, what each is doing (busy/idle
+    + repo@branch + cwd) and whether it is reachable for messaging — the active-query companion to the
+    passive PreToolUse roster advisory.
+  path: skills/who/SKILL.md
+  capabilities:
+  - session-awareness
+  - multi-agent-coordination
+  - observability
+  dependencies:
+  - list_claude_sessions
+  - session_activity
+  version: 1.0.0
+  source: team
+  provider: internal
+  listing: name-only
+  category: sessions
+retired:
+- ids:
+  - ext-humanizer
+  note: 'ext-humanizer — file no longer on disk at skills/_external/blader-humanizer/SKILL.md; tombstoned
+    automatically by build_registry.py. Last recorded: {''name'': ''ext-humanizer'', ''description'':
+    ''Detect and rewrite AI writing patterns in deliverables. 24-pattern checklist based on Wikipedia
+    AI Cleanup.'', ''path'': ''skills/_external/blader-humanizer/SKILL.md'', ''capabilities'': [''ai-detection'',
+    ''writing-quality'', ''humanization'', ''content-review''], ''dependencies'': [], ''tags'': [''writing'',
+    ''quality-gate'', ''deliverables'', ''content''], ''source'': ''external'', ''provider'': ''blader'',
+    ''version'': ''2.1.1''}'
+- ids:
+  - trace
+  note: 'trace — file no longer on disk at skills/mobile-overflow-audit/scripts/node_modules/playwright-core/lib/tools/trace/SKILL.md;
+    tombstoned automatically by build_registry.py. Last recorded: {''name'': ''trace'', ''path'': ''skills/mobile-overflow-audit/scripts/node_modules/playwright-core/lib/tools/trace/SKILL.md'',
+    ''source'': ''team'', ''provider'': ''internal'', ''description'': ''Inspect Playwright trace files
+    from the command line — list actions, view requests, console, errors, snapshots and screenshots.''}'

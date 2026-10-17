@@ -1,0 +1,6 @@
+{
+  "style": "Concise",
+  "prompt_id": "quick-yesno",
+  "run": 2,
+  "text": "Yes \u2014 `find_logs` uses `p.is_file()` (line 12), which follows symlinks, so a symlink pointing at a regular file is treated as a log and compressed (`compress` reads through it, then `unlink()` deletes the link, leaving the target).\n\nCaveat if you use a `**` pattern: `Path.glob` does not recurse *into* symlinked directories, so only symlinks matched directly at a walked level show up."
+}

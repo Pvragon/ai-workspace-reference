@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "explain-script",
+  "run": 1,
+  "elapsed_s": 66.6,
+  "rc": 0,
+  "text": "I read the script, its tests, and the README. I made no changes.\n\n## What it does\n\n`fixture/rotate_logs.py` is a ~60-line log rotation helper. One run does two separate jobs.\n\n**Job 1 \u2014 compress.** It globs `--pattern` (default `*.log`) in the directory you name. The glob is not recursive. For each match, it compares the file mtime against `--days` (default 7). Older files go through `compress()` at `rotate_logs.py:19`: the script gzips the file to `<name>.gz`, then deletes the original.\n\n**Job 2 \u2014 prune.** `prune_archives()` at `rotate_logs.py:27` then globs `*.gz`, sorts by mtime, and deletes everything except the newest `--keep` (default 10).\n\n`--dry-run` prints a `would compress` line per candidate. It skips both the compress step and the prune step.\n\n## What to know before you point it at production\n\nThe two jobs do not share a scope. That is the root of most of the risk below.\n\n1. **Prune deletes any `.gz` file, not only the archives this script creates.** `prune_archives` globs `*.gz` and ignores `--pattern` entirely. A database dump, a config backup, or another tool's archive in the same directory counts toward `--keep` and gets deleted. Check the directory for unrelated `.gz` files first.\n\n2. **Prune runs even when the script compresses nothing.** The prune step is outside the loop. Point the script at a directory of 50 old archives with no fresh logs, and it still deletes 40 of them.\n\n3. **`--dry-run` hides the deletions.** Dry-run reports only the compress candidates. It prints nothing about the prune step, which is the destructive half. A clean dry-run is not evidence that the real run is safe.\n\n4. **A second rotation of the same log name overwrites the first archive.** `compress()` derives one fixed target name from the source name. `app.log` always becomes `app.log.gz`. There is no counter and no date in the name. `gzip.open(target, \"wb\")` truncates an existing `app.log.gz` without warning. Yesterday's archive is gone.\n\n5. **An open file handle survives the unlink.** On Linux, a daemon that still holds the log open keeps its writes on the deleted inode. You lose those log lines. The disk space does not come back until the daemon closes the file or restarts. Standard rotation tools solve this with `copytruncate` or a `SIGHUP` to the daemon. This script does neither.\n\n6. **`--keep 0` deletes nothing.** The slice `archives[:-keep]` becomes `archives[:0]` when `keep` is 0, which is empty. The result is the opposite of the plain reading of the flag.\n\n7. **There is no error handling and no lock.** One permission error aborts the run part-way. Originals that the script already deleted stay deleted. Two overlapping cron runs can race on the same files.\n\n8. **The archives get new ownership, new permissions, and a new mtime.** The `.gz` file takes your umask and your uid, not the attributes of the source log. A group-readable log can come back private. The fresh mtime also means the prune order reflects rotation time, not the age of the log content.\n\n9. **Symlinks break.** `p.is_file()` follows a symlink. The script compresses the target content, then unlinks the link. The real file stays behind, and it never rotates.\n\n10. **Compression needs headroom.** The original and the `.gz` coexist on disk until the unlink. Confirm free space before a run over large logs.\n\n## The test suite does not cover this\n\n`tests/test_rotate_logs.py` has 3 tests. Each one builds a `tmp_path` that holds nothing except the logs under test. So the tests never exercise the case that matters most in production: a directory with foreign `.gz` files, a pre-existing archive of the same name, or an active writer. `test_prunes_to_keep` passes precisely because every `.gz` present is one the script just made.\n\n## If you want to run it anyway\n\nCopy a production directory to scratch space. Run it there first. Then, for the real directory, confirm the two things dry-run will not tell you: the full `*.gz` inventory, and whether any archive name collides with a log the script is about to compress.",
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 22923,
+    "cache_read_input_tokens": 129615,
+    "output_tokens": 4390,
+    "output_tokens_details": {
+      "thinking_tokens": 2381
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 22923,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1646,
+        "cache_read_input_tokens": 32273,
+        "cache_creation_input_tokens": 894,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 894
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.40484050000000005,
+  "num_turns": 6,
+  "is_error": false
+}

@@ -1,0 +1,23 @@
+# {PROJECT_NAME} Documentation Registry
+# ------------------------------------------
+# Agent-consumable index of all docs in this folder.
+# Read this FIRST to decide which documents to load into context.
+# Excludes: .tmp/ (transient), archive/ (historical), README.md files.
+#
+# Schema:
+#   sections:
+#     <section_name>:
+#       description: <string>
+#       trust_level: <string>
+#       documents:
+#         <relative-path>:
+#           summary: <string>     # 1-2 sentences answering "should I read this?"
+#           status: <string>      # accepted | proposed | draft | final | active
+#           tags: [<string>, ...] # Discovery keywords
+#
+# ------------------------------------------
+
+last_updated: ""
+version: "1.0.0"
+
+sections: {}

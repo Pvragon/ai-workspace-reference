@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "bug-hunt",
+  "run": 2,
+  "elapsed_s": 90.5,
+  "rc": 0,
+  "text": "## The bug: `prune_archives` deletes `.gz` files the tool never created\n\n`fixture/rotate_logs.py:27-30`\n\n```python\ndef prune_archives(log_dir: Path, keep: int):\n    archives = sorted(log_dir.glob(\"*.gz\"), key=lambda p: p.stat().st_mtime)\n    for old in archives[:-keep]:\n        old.unlink()\n```\n\nThree things compound here:\n\n1. **The glob ignores `--pattern`.** `rotate()` has `pattern` and honors it in `find_logs` (`:35`), but hands `prune_archives` only `log_dir` and `keep` (`:43`). Pruning claims *every* `*.gz` in the directory as its own to delete.\n2. **There is no age filter.** `--days` gates compression only. Pruning deletes by rank in an mtime sort, so a file from an hour ago dies if enough newer `.gz` files exist.\n3. **`compress()` resets mtime.** The archive written at `:20-24` is a brand-new file, so it always sorts as \"newest\" no matter how old the log inside it was. Fresh archives crowd pre-existing ones out of the keep window.\n\n### The realistic case\n\n`/var/log/myapp` \u2014 the README's own example \u2014 holds `app-*.log`, `audit-*.log`, and a nightly `db-dump.sql.gz`. Two cron lines:\n\n```\nrotate_logs.py /var/log/myapp --pattern 'app-*.log'   --keep 10\nrotate_logs.py /var/log/myapp --pattern 'audit-*.log' --keep 10\n```\n\nThe second run compresses 10 audit logs, all stamped *now*, then prunes the shared directory to the 10 newest `.gz` files \u2014 unlinking every `app-*.log.gz` the first run just made, and `db-dump.sql.gz` with them. Each invocation destroys the other's output, nightly, forever.\n\n**Why it's silent:** `unlink()` logs nothing. `--dry-run` skips pruning entirely (`:42`), so a rehearsal can never expose it. And stdout prints `compressed N file(s)` (`:58`) \u2014 a count of files *created*, never of files deleted. Afterwards the directory holds exactly 10 archives, which is what `--keep 10` is supposed to produce, so the end state looks right.\n\n**Why the tests miss it:** `test_prunes_to_keep` puts five same-pattern logs in an otherwise empty `tmp_path`. Foreign archives and cross-pattern collisions never occur there.\n\n## A second real one, same file\n\n`compress()` at `:20-21` \u2014 `gzip.open(target, \"wb\")` truncates. For a fixed-name log that the app recreates after rotation (the default `*.log` case), `app.log` always compresses to `app.log.gz`, so each run silently overwrites the previous run's archive. `--keep 10` can never hold more than one generation, because the older nine were overwritten rather than pruned.\n\nMinor and non-destructive: `--keep 0` is a no-op, since `archives[:-0]` is `archives[:0]` \u2014 empty. \"Keep nothing\" deletes nothing.\n\nFull write-up in the plan file. Per your instruction I've proposed no fix \u2014 say the word if you want one.",
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 21370,
+    "cache_read_input_tokens": 131695,
+    "output_tokens": 6561,
+    "output_tokens_details": {
+      "thinking_tokens": 3443
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 21370,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1083,
+        "cache_read_input_tokens": 32027,
+        "cache_creation_input_tokens": 2834,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2834
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.4446425,
+  "num_turns": 6,
+  "is_error": false
+}

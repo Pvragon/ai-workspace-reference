@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "error-triage",
+  "run": 2,
+  "elapsed_s": 22.1,
+  "rc": 0,
+  "text": "## What happened\n\nYour local `main` and the remote `main` have diverged \u2014 the remote has at least one commit that isn't in your local history. Git refuses the push because it would be a non-fast-forward: completing it would drop those remote commits.\n\nTwo common causes:\n\n1. **Someone else pushed** to `main` after your last fetch (most likely, given a shared `acme/widgets` repo).\n2. **You rewrote history locally** \u2014 `git commit --amend`, `git rebase`, or a reset \u2014 so your commits no longer descend from what's on the remote. In this case the \"work you do not have locally\" may be your own pre-rewrite commits.\n\nThe distinction matters, because the fix differs.\n\n## What to do\n\n**First, look before you act:**\n\n```bash\ngit fetch origin\ngit log --oneline --graph --all -20\ngit log --oneline HEAD..origin/main   # commits on remote you don't have\ngit log --oneline origin/main..HEAD   # your commits not yet pushed\n```\n\nIf `HEAD..origin/main` shows other people's commits, it's case 1. If it shows commits that look like earlier versions of your own, it's case 2 and you should stop and think before proceeding.\n\n**For case 1 (someone else pushed), pick one:**\n\n```bash\ngit pull --rebase origin main    # replays your commits on top; linear history\n# or\ngit pull origin main             # creates a merge commit\n```\n\n`--rebase` is the usual choice for a feature-less `main` workflow and keeps history readable. Either way, resolve any conflicts, then `git push`.\n\nNote that `git pull --rebase` rewrites your local commit SHAs. That's fine for commits you've never pushed; it's a problem if anyone else has already based work on them.\n\n**For case 2 (you rewrote history):** don't rebase again \u2014 you'd be layering a rewrite on a rewrite. Work out what the remote commits are first, and whether they're safe to discard.\n\n## What not to do\n\nDon't reach for `git push --force`. On a shared `main` it deletes whoever else's commits are on the remote, and they'll only find out when their next pull does something strange.\n\nIf you genuinely do need to force (case 2, you're certain the remote commits are your own superseded ones, and nobody else has pulled them), use:\n\n```bash\ngit push --force-with-lease\n```\n\nThat aborts if the remote moved since your last fetch, which is the exact scenario `--force` would silently destroy. Many repos also protect `main` against force pushes, so this may be rejected anyway \u2014 which would be the branch protection doing its job.",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 11426,
+    "cache_read_input_tokens": 13491,
+    "output_tokens": 1315,
+    "output_tokens_details": {
+      "thinking_tokens": 494
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 11426,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1315,
+        "cache_read_input_tokens": 13491,
+        "cache_creation_input_tokens": 11426,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11426
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.15492650000000002,
+  "num_turns": 1,
+  "is_error": false
+}

@@ -1,0 +1,255 @@
+{
+    "$schema": "type-template-v2",
+    "$extends": "_base-doc",
+    "templateType": "doc-legal",
+    "templateVersion": "2.1.0",
+    "description": "Legal document template for contracts, MSAs, SOWs. Nearly all branding removed per legal convention: dark text headings, restrained tables, no accent colors, natural page flow. Based on ABA/Butterick/Weagree legal formatting standards.",
+
+    "documentSettings": {
+        "defaultFontSize": 10,
+        "defaultFontSizeUnit": "pt"
+    },
+
+    "renderOptions": {
+        "subtitleDetection": false
+    },
+
+    "titleBlock": {
+        "title": {
+            "namedStyle": "HEADING_1",
+            "fontSize": 14,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "alignment": "center",
+            "spaceBefore": 0,
+            "spaceAfter": 12,
+            "spaceUnit": "pt",
+            "keepWithNext": false,
+            "allCaps": true
+        },
+        "subtitle": null,
+        "metadataLabel": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true
+        },
+        "metadataValue": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "bold": false
+        }
+    },
+
+    "headings": {
+        "h1": {
+            "fontSize": 12,
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "allCaps": true,
+            "spaceBefore": 18,
+            "spaceAfter": 6,
+            "numbering": "article",
+            "numberingNote": "ARTICLE I, ARTICLE II, etc."
+        },
+        "h2": {
+            "fontSize": 10,
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "spaceBefore": 12,
+            "spaceAfter": 3,
+            "numbering": "section",
+            "numberingNote": "1.1, 1.2, 2.1, etc."
+        },
+        "h3": {
+            "fontSize": 10,
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "italic": false,
+            "spaceBefore": 8,
+            "spaceAfter": 2,
+            "numbering": "subsection",
+            "numberingNote": "1.1.1, 1.1.2, etc."
+        },
+        "h4": {
+            "fontSize": 10,
+            "color": { "tokenRef": "color.text.default" },
+            "bold": false,
+            "italic": true,
+            "spaceBefore": 6,
+            "spaceAfter": 2,
+            "numbering": "clause",
+            "numberingNote": "(a), (b), (c), etc."
+        },
+        "h5": {
+            "fontSize": 10,
+            "color": { "tokenRef": "color.text.default" },
+            "italic": true,
+            "bold": false,
+            "spaceBefore": 6,
+            "spaceAfter": 2
+        },
+        "h6": null
+    },
+
+    "bodyText": {
+        "normal": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "spaceBefore": 6,
+            "spaceAfter": 0
+        },
+        "definition": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "spaceBefore": 3,
+            "spaceAfter": 3,
+            "spaceUnit": "pt",
+            "indent": 36,
+            "indentUnit": "pt"
+        }
+    },
+
+    "inlineStyles": {
+        "boldLabel": {
+            "bold": true,
+            "color": { "tokenRef": "color.text.default" },
+            "_note": "Legal documents suppress accent colors — labels use dark text"
+        },
+        "link": {
+            "color": { "tokenRef": "color.text.default" },
+            "underline": true,
+            "_note": "Links use body text color in legal docs — no brand color"
+        },
+        "definedTerm": {
+            "bold": true,
+            "_note": "Defined terms in legal text are bolded on first use"
+        }
+    },
+
+    "lists": {
+        "legalNumbering": {
+            "enabled": true,
+            "level0Format": "(a)",
+            "level1Format": "(i)",
+            "level2Format": "(A)"
+        }
+    },
+
+    "tables": {
+        "headerRow": {
+            "background": { "tokenRef": "color.background.subtle" },
+            "fontColor": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "fontSize": 9,
+            "fontSizeUnit": "pt",
+            "_note": "Restrained headers — subtle bg + dark text, not branded"
+        },
+        "bodyRow": {
+            "fontSize": 9,
+            "fontSizeUnit": "pt"
+        },
+        "alternateRowBackground": null,
+        "borders": {
+            "color": { "tokenRef": "color.border.subtle" },
+            "width": 0.5,
+            "widthUnit": "pt",
+            "style": "solid"
+        },
+        "alignment": "left"
+    },
+
+    "callouts": null,
+    "horizontalRule": null,
+
+    "signatureBlock": {
+        "enabled": true,
+        "spaceBefore": 36,
+        "spaceBeforeUnit": "pt",
+        "lineWidth": 200,
+        "lineWidthUnit": "pt",
+        "lineColor": { "tokenRef": "color.text.default" },
+        "lineThickness": 0.5,
+        "lineThicknessUnit": "pt",
+        "labels": {
+            "signatureLine": "Signature",
+            "printedName": "Printed Name",
+            "title": "Title",
+            "date": "Date"
+        },
+        "labelFontSize": 8,
+        "labelFontSizeUnit": "pt",
+        "labelColor": { "tokenRef": "color.text.subtle" },
+        "spacing": {
+            "betweenSignatures": 36,
+            "betweenFields": 18,
+            "unit": "pt"
+        },
+        "companyName": {
+            "font": { "tokenRef": "typography.font.primary" },
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "color": { "tokenRef": "color.text.default" },
+            "bold": true,
+            "allCaps": true
+        }
+    },
+
+    "headerFooter": {
+        "header": {
+            "logo": { "tokenRef": "logo.full" },
+            "logoAlignment": "right",
+            "showOnFirstPage": true,
+            "showOnSubsequentPages": true,
+            "subsequentLogo": { "tokenRef": "logo.icon" },
+            "text": null
+        },
+        "footer": {
+            "pageNumbers": true,
+            "pageNumberFormat": "Page {current} of {total}",
+            "pageNumberAlignment": "center",
+            "pageNumberFontSize": 8,
+            "pageNumberFontSizeUnit": "pt",
+            "confidentialityNotice": {
+                "enabled": true,
+                "text": "CONFIDENTIAL",
+                "fontSize": 7,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.text.subtle" },
+                "alignment": "left"
+            }
+        }
+    },
+
+    "pageBreaks": {
+        "orphanDetection": true,
+        "headingChainAwareness": false
+    },
+
+    "tocSupport": {
+        "enabled": true,
+        "title": "TABLE OF CONTENTS",
+        "titleStyle": "h1"
+    },
+
+    "themeColors": {
+        "dark1": { "tokenRef": "color.text.default" },
+        "dark2": { "tokenRef": "color.text.default" },
+        "accent1": { "tokenRef": "color.text.default" },
+        "accent2": { "tokenRef": "color.text.subtle" },
+        "accent3": { "tokenRef": "color.text.subtle" },
+        "accent4": { "tokenRef": "color.text.default" },
+        "accent5": { "tokenRef": "color.background.subtle" },
+        "accent6": { "tokenRef": "color.text.subtle" },
+        "hyperlink": { "tokenRef": "color.text.default" },
+        "followedHyperlink": { "tokenRef": "color.text.subtle" },
+        "_note": "Legal theme suppresses all brand colors"
+    }
+}

@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "explain-script",
+  "run": 1,
+  "elapsed_s": 118.8,
+  "rc": 0,
+  "text": "I read the file (63 lines), plus its README and test suite.\n\n## What it does\n\n`python3 rotate_logs.py <dir> [--pattern '*.log'] [--days 7] [--keep 10] [--dry-run]`, non-recursive:\n\n1. Globs `--pattern` in the directory, files only (`rotate_logs.py:11`)\n2. Selects those whose **mtime** is older than `--days` (`:15`)\n3. Gzips each to `<name>.gz`, then `unlink()`s the original (`:19`)\n4. Globs **`*.gz`** and deletes all but the newest `--keep` by mtime (`:27`)\n\n## What you should know before pointing it at production\n\n**The pruning step ignores `--pattern` and has no notion of provenance** (`:28`). It globs `*.gz` across the whole directory, so logrotate's `syslog.1.gz` or a stray `backup.tar.gz` is ranked and deleted alongside archives this run created. That's the one that destroys files you never asked it to touch.\n\n**`--dry-run` doesn't cover the deleting half** (`:42`). Pruning is skipped entirely in dry-run mode, so it only ever prints \"would compress\". A clean dry run tells you nothing about what would be deleted \u2014 the destructive step is the unpreviewable one.\n\n**It unlinks without `copytruncate` or signalling the writer** (`:23`). A daemon holding an open fd keeps appending to the deleted inode: those lines are unreachable and the space isn't reclaimed until it restarts. Selection is by mtime, so this hits open-but-idle files rather than busy ones.\n\nThen a set of smaller ones:\n\n- **Archive permissions come from your umask, not the source.** A `0640 root:adm` log becomes a `0644` archive \u2014 a widening on files that may hold PII.\n- **Silent overwrite.** If `app.log.gz` exists it's truncated and rewritten, then the source is unlinked. The earlier archive is gone with no warning.\n- **`--keep 0` is a silent no-op** \u2014 I verified `archives[:-0]` evaluates to `archives[:0]`, i.e. empty. Asking to keep zero archives deletes nothing; negatives delete from the wrong end. No validation.\n- **Symlinks:** followed for reading, but `unlink()` removes the link, not the target \u2014 you get a copy plus a destroyed symlink.\n- **No locking, no per-file error handling.** Overlapping cron runs race; one `EACCES` aborts the rest of the pass mid-way.\n\nOne deliberate safety property: it uses `glob`, not `rglob`, so subdirectories are untouched.\n\n**The tests don't cover the worst bug.** Every fixture in `tests/test_rotate_logs.py` is built inside an empty `tmp_path`, so no test directory ever holds a `.gz` the script didn't create. The foreign-archive deletion is structurally invisible to the suite \u2014 it passes green.\n\nI wrote up both the hardening changes and a safe-invocation checklist for running it unmodified. I haven't changed any code.",
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 22976,
+    "cache_read_input_tokens": 160752,
+    "output_tokens": 8349,
+    "output_tokens_details": {
+      "thinking_tokens": 3680
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 22976,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1021,
+        "cache_read_input_tokens": 32790,
+        "cache_creation_input_tokens": 3677,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 3677
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.5199239999999999,
+  "num_turns": 8,
+  "is_error": false
+}

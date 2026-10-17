@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "concept",
+  "run": 2,
+  "elapsed_s": 31.1,
+  "rc": 0,
+  "text": "**Prompt caching** lets you pay to store the KV-cache of a prompt prefix on Anthropic's servers so repeated requests don't re-process those tokens. Think of it as memoizing prefill.\n\n**The one invariant:** it's a *prefix match on exact bytes*. The cache key is the rendered prompt up to each `cache_control` breakpoint. One byte different at position N \u2014 a timestamp, a reordered JSON key, an added tool \u2014 and everything from N onward is a miss. There's no fuzzy or partial matching.\n\n**Why order matters.** The prompt renders in a fixed sequence: `tools` \u2192 `system` \u2192 `messages`. Because invalidation cascades forward, content must be laid out in order of *decreasing stability*:\n\n- Never changes (frozen system prompt, deterministically-sorted tool list) \u2192 first\n- Changes per session (user's document, retrieved corpus) \u2192 middle\n- Changes per turn/request (the actual question, timestamps, request IDs) \u2192 last, after the final breakpoint\n\nInterpolating `Current date: {datetime.now()}` into the top of your system prompt is the classic backend-engineer mistake: it sits at position ~0, so nothing downstream ever caches, no matter how many `cache_control` markers you add. Same for tools built per-user, `json.dumps` without `sort_keys=True`, or conditional system sections.\n\n**Mechanics:**\n- `\"cache_control\": {\"type\": \"ephemeral\"}` on a content block. Max 4 breakpoints per request.\n- TTL is 5 minutes by default; `\"ttl\": \"1h\"` for an hour. A read refreshes the timer for free, measured from request *start* \u2014 so a 4-minute generation leaves ~1 minute of headroom on a 5-min entry.\n- Minimum cacheable prefix is model-dependent (512 tokens on Opus 5, 1024 on Opus 4.8/Sonnet 5, 4096 on Opus 4.6/Haiku 4.5). Below it, caching silently no-ops.\n\n**Economics:** reads cost ~0.1\u00d7 base input price; writes cost 1.25\u00d7 (5-min TTL) or 2\u00d7 (1-hour). Break-even is 2 requests on 5-min, 3 on 1-hour. If your prefix genuinely differs from byte 0 every request, don't cache \u2014 you'd only pay the write premium.\n\n**Verify, don't assume.** Check `usage.cache_read_input_tokens` on the response. If it's zero across identical repeated requests, something upstream is mutating the prefix. Note that `input_tokens` is only the *uncached remainder* \u2014 total prompt size is `input_tokens + cache_creation_input_tokens + cache_read_input_tokens`.\n\nTwo things that surprise people coming from ordinary caching:\n\n1. **Concurrency doesn't help.** An entry is only readable once the first response *begins streaming*. Fire N parallel requests with the same prefix and all N pay full price. Send one, await the first token, then fan out.\n2. **Not all changes invalidate equally.** There are three tiers \u2014 tools, system, messages. Changing `tool_choice` or message content leaves the tools+system cache intact; changing tool definitions or switching models forces a full rebuild (caches are model-scoped).\n\nOne practical escape hatch: when an operator instruction arrives mid-conversation, don't edit the top-level `system` field \u2014 that rewrites the prefix ahead of your entire history. On Opus 5 / Opus 4.8 / Fable 5.x you can append `{\"role\": \"system\", \"content\": \"...\"}` to `messages[]` instead, which sits after the cached history and preserves it.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 60079,
+    "cache_read_input_tokens": 103485,
+    "output_tokens": 1871,
+    "output_tokens_details": {
+      "thinking_tokens": 461
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 60079,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1335,
+        "cache_read_input_tokens": 62070,
+        "cache_creation_input_tokens": 11950,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11950
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.7003395000000001,
+  "num_turns": 4,
+  "is_error": false
+}

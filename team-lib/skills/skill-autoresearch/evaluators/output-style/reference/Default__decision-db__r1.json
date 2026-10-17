@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "decision-db",
+  "run": 1,
+  "elapsed_s": 113.6,
+  "rc": 0,
+  "text": "## Recommendation: SQLite\n\nNot a close call. The deciding fact is that **Postgres is a server and you'd have to ship it.** A desktop app can't assume a database daemon exists, so you'd be bundling an embedded Postgres \u2014 hundreds of MB of per-platform binaries, `initdb` on first launch, port conflicts, orphaned processes after a crash \u2014 or telling users to install it themselves. Either one costs more than the rest of the app.\n\nEverything else points the same way:\n\n- `sqlite3` is stdlib \u2014 no driver, no native-build surprises when you freeze with PyInstaller.\n- Single-user is precisely SQLite's workload. WAL gives you one writer + concurrent readers, plenty for a UI thread and a background sync thread.\n- FTS5 is compiled in and genuinely good for notes. I verified it on this machine (Python 3.10.12, SQLite 3.37.2, FTS5 + JSON1 present).\n\n**The sync argument cuts toward SQLite too, not against it.** Offline-first sync is application-level reconciliation over a change log, not database replication \u2014 so matching engines locally and remotely buys you nothing. SQLite on device, Postgres on the server is the normal shape, and the two schemas stay independent.\n\nPostgres would win if you had multiple concurrent writer *processes*, a working set needing real query planning, or wanted logical replication. None apply. The one caveat worth stating: don't design the local schema expecting to port it to Postgres later \u2014 it never needs to.\n\n## What actually deserves the thought\n\nEngine choice is the easy half. The expensive-to-retrofit half is three schema decisions that make sync additive rather than a migration:\n\n1. **Client-generated UUIDv7/ULID text keys.** With autoincrement, two offline devices both mint id 47 and first sync is unresolvable.\n2. **Soft deletes.** A hard `DELETE` can't sync \u2014 the peer can't tell \"deleted remotely\" from \"not yet created here,\" so deleted notes resurrect.\n3. **`rev` / `server_rev` dirty tracking.** `rev != server_rev` is the entire client half of a sync protocol, and it's testable a year before the server exists.\n\nPlan written to `/home/<user>/.claude/plans/i-m-building-a-single-user-elegant-puffin.md` \u2014 schema, PRAGMAs, the FTS5 external-content trigger trap, the `cp`-under-WAL backup trap, and a verification section.\n\nTwo notes on it: I checked the working directory and it's greenfield (the `fixture/` dir is an unrelated log-rotation sample), so file paths in the plan are proposals. And I scoped out the sync protocol itself \u2014 say the word if you'd rather design it now, since it changes whether the change log is a per-row watermark or an append-only operation log.\n\n`ExitPlanMode` isn't available in this session, so I can't formally hand the plan back for approval \u2014 the plan file is ready for your review, and I'll hold here until you tell me to build.",
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 20966,
+    "cache_read_input_tokens": 156316,
+    "output_tokens": 7699,
+    "output_tokens_details": {
+      "thinking_tokens": 2487
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 20966,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 992,
+        "cache_read_input_tokens": 30704,
+        "cache_creation_input_tokens": 3753,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 3753
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.481368,
+  "num_turns": 6,
+  "is_error": false
+}

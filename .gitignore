@@ -1,0 +1,4 @@
+# Runtime scratch — never published. These carry absolute home paths, private
+# project names and session ids; they leaked into publish commit 5a817c7 on
+# 2026-08-27 and were caught by a pre-push scrub before reaching origin.
+runtime/

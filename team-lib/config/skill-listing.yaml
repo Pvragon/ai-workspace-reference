@@ -1,0 +1,133 @@
+# summary: Hand-authored listing + category for skills whose own files we may NOT edit — today the
+#   third-party `_external/` packs. Keyed by HARNESS name (the folder name the harness lists, e.g.
+#   `ext-pdf`, as minted by link_skills.py). Read by build_registry.py and build_skill_overrides.py.
+# ---------------------------------------------------------------------------------------------
+# ⚑ ONE OWNER PER FACT. A skill we own carries `listing:` and `category:` in its own SKILL.md
+#   frontmatter; this file exists only because progressive-disclosure-convention.md forbids editing
+#   `_external/` files. Do not add an internal skill here — put the fields in its frontmatter.
+#
+# Resolution order (first hit wins), implemented once in build_registry.resolve_listing():
+#   1. the skill's own frontmatter
+#   2. my-lib/config/skill-listing.yaml   (personal overrides; my-lib's registry only)
+#   3. THIS file
+#   4. `listing_defaults` in the repo's config/registry-map.yaml, by provenance
+#      (external -> user-only, so an entry here with no `listing:` is hidden from the model but
+#      still runs when the user types /<name>)
+#
+# Values:
+#   listing:  on | name-only | user-only | off
+#             (`off` is sidecar-only: it also removes /<name> for the user. Never in frontmatter.)
+#   category: one key of config/skill-categories.yaml
+#
+# Day-one exception: ext-blader-humanizer is `name-only` because my-lib AGENTS.md's humanizer gate
+# requires it on every human-facing deliverable.
+# Called-by-internal exception (2026-10-16): the externals that an internal skill tells the model to
+# invoke are `name-only`, because the Skill tool refuses a user-only skill ("disabled for model
+# invocation"). Callers: build-brand-site and its brand-site-* stages (frontend-design,
+# ui-design-system, theme-factory, senior-architect/-frontend/-security/-qa/-devops,
+# webapp-testing, code-reviewer, content-creator, marketing-strategy-pmm), one-mahjong taste-judge
+# (frontend-design) and my-lib paper-game-printable (web-artifacts-builder). Re-check with
+#   grep -rlE '\bext-[a-z0-9-]+' --include=SKILL.md <skills trees> (excluding _external/)
+# when a new caller names an external. The office packs (ext-docx/pdf/xlsx/pptx) stay at
+# the external default; a layer with a visible twin (synced `anthropic-skills:*`) covers them.
+# ---------------------------------------------------------------------------------------------
+
+template: config
+version: 1.1.0
+summary: Listing level and category for third-party external skills, keyed by harness name; read by build_registry and build_skill_overrides.
+created: 2026-10-16
+last_updated: 2026-10-16
+maintainer: your-agent
+
+skills:
+  ext-academic-cv-builder: {category: career}
+  ext-agile-product-owner: {category: business}
+  ext-alexwortega-paper-review: {category: research}
+  ext-algorithmic-art: {category: design}
+  ext-app-store-optimization: {category: business}
+  ext-application-form-filler: {category: career}
+  ext-arxiv-paper-writer: {category: research}
+  ext-aws-solution-architect: {category: engineering}
+  ext-blader-humanizer: {category: writing, listing: name-only}
+  ext-brand-guidelines: {category: brand}
+  ext-canvas-design: {category: design}
+  ext-capa-officer: {category: compliance}
+  ext-career-changer-translator: {category: career}
+  ext-ceo-advisor: {category: business}
+  ext-code-reviewer: {category: engineering, listing: name-only}
+  ext-cold-email-writer: {category: career}
+  ext-content-creator: {category: business, listing: name-only}
+  ext-cover-letter-generator: {category: career}
+  ext-creative-portfolio-resume: {category: career}
+  ext-critique: {category: career}
+  ext-cto-advisor: {category: business}
+  ext-doc-coauthoring: {category: writing}
+  ext-docx: {category: documents}
+  ext-edit-resume: {category: career}
+  ext-executive-resume-writer: {category: career}
+  ext-fda-consultant-specialist: {category: compliance}
+  ext-frontend-design: {category: web, listing: name-only}
+  ext-gdpr-dsgvo-expert: {category: compliance}
+  ext-information-security-manager-iso27001: {category: security}
+  ext-internal-comms: {category: writing}
+  ext-interview-prep-generator: {category: career}
+  ext-isms-audit-expert: {category: security}
+  ext-job-description-analyzer: {category: career}
+  ext-latex-rhythm-refiner: {category: writing}
+  ext-linkedin-profile-optimizer: {category: career}
+  ext-make-cl: {category: career}
+  ext-make-resume: {category: career}
+  ext-marketing-demand-acquisition: {category: business}
+  ext-marketing-strategy-pmm: {category: business, listing: name-only}
+  ext-mcp-builder: {category: ai-tooling}
+  ext-mdr-745-specialist: {category: compliance}
+  ext-ms365-tenant-manager: {category: system}
+  ext-offer-comparison-analyzer: {category: career}
+  ext-pdf: {category: documents}
+  ext-portfolio-case-study-writer: {category: career}
+  ext-pptx: {category: documents}
+  ext-product-manager-toolkit: {category: business}
+  ext-product-strategist: {category: business}
+  ext-qms-audit-expert: {category: compliance}
+  ext-quality-documentation-manager: {category: compliance}
+  ext-quality-manager-qmr: {category: compliance}
+  ext-quality-manager-qms-iso13485: {category: compliance}
+  ext-reference-list-builder: {category: career}
+  ext-regulatory-affairs-head: {category: compliance}
+  ext-resume-ats-optimizer: {category: career}
+  ext-resume-bullet-writer: {category: career}
+  ext-resume-formatter: {category: career}
+  ext-resume-quantifier: {category: career}
+  ext-resume-section-builder: {category: career}
+  ext-resume-tailor: {category: career}
+  ext-resume-version-manager: {category: career}
+  ext-risk-management-specialist: {category: compliance}
+  ext-salary-negotiation-prep: {category: career}
+  ext-senior-architect: {category: engineering, listing: name-only}
+  ext-senior-backend: {category: engineering}
+  ext-senior-computer-vision: {category: data-ml}
+  ext-senior-data-engineer: {category: data-ml}
+  ext-senior-data-scientist: {category: data-ml}
+  ext-senior-devops: {category: engineering, listing: name-only}
+  ext-senior-frontend: {category: web, listing: name-only}
+  ext-senior-fullstack: {category: engineering}
+  ext-senior-ml-engineer: {category: data-ml}
+  ext-senior-prompt-engineer: {category: ai-tooling}
+  ext-senior-qa: {category: testing, listing: name-only}
+  ext-senior-secops: {category: security}
+  ext-senior-security: {category: security, listing: name-only}
+  ext-setup-build-kb: {category: career}
+  ext-setup-extract: {category: career}
+  ext-skill-creator: {category: ai-tooling}
+  ext-slack-gif-creator: {category: design}
+  ext-social-media-analyzer: {category: business}
+  ext-tdd-guide: {category: testing}
+  ext-tech-resume-optimizer: {category: career}
+  ext-tech-stack-evaluator: {category: engineering}
+  ext-template: {category: ai-tooling}
+  ext-theme-factory: {category: design, listing: name-only}
+  ext-ui-design-system: {category: design, listing: name-only}
+  ext-ux-researcher-designer: {category: design}
+  ext-web-artifacts-builder: {category: web, listing: name-only}
+  ext-webapp-testing: {category: testing, listing: name-only}
+  ext-xlsx: {category: documents}

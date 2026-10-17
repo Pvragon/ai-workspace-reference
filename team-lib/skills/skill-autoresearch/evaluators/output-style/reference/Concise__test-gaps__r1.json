@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "test-gaps",
+  "run": 1,
+  "elapsed_s": 73.8,
+  "rc": 0,
+  "text": "The plan orders the work so the four tests that expose apparent bugs (prune ordering, `keep=0`, cross-pattern pruning, archive clobbering) are written and run *before* any source change, so the failures document themselves.\n\nNote: `ExitPlanMode` isn't available in this session, so I can't formally hand the plan back for approval \u2014 say the word and I'll implement it.",
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 20695,
+    "cache_read_input_tokens": 133350,
+    "output_tokens": 5335,
+    "output_tokens_details": {
+      "thinking_tokens": 2061
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 20695,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 182,
+        "cache_read_input_tokens": 34424,
+        "cache_creation_input_tokens": 212,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 212
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.40804700000000005,
+  "num_turns": 6,
+  "is_error": false
+}

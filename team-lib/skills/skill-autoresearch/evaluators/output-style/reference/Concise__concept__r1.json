@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "concept",
+  "run": 1,
+  "elapsed_s": 39.1,
+  "rc": 0,
+  "text": "## What prompt caching is\n\nEvery request to an LLM re-sends the whole prompt, and the server re-runs the prefill pass (attention over all input tokens) before it generates anything. If your 50K-token system prompt is identical across 10,000 requests, you pay full input price and full prefill latency for it 10,000 times.\n\nPrompt caching lets the server store the computed KV state for a prefix of your prompt and reuse it. Mark a content block with `cache_control: {\"type\": \"ephemeral\"}`; the server hashes the exact rendered bytes up to that point, stores the state under that key, and on a later request with the same bytes it skips prefill for that span.\n\nTwo things change:\n- **Cost** \u2014 cache reads are ~0.1\u00d7 base input price (0.025\u00d7 on Claude Fable 5.1). Writes cost 1.25\u00d7 (5-min TTL) or 2\u00d7 (1-hour TTL). Break-even is 2 requests on 5-min, 3 on 1-hour.\n- **Latency** \u2014 prefill for the cached span disappears, which dominates TTFT on large prompts.\n\nThink of it as memoizing the prefill of a pure function whose argument is the byte string of your prompt.\n\n## Why order matters\n\nThe cache is a **prefix match**, not a set lookup. The key is the exact byte sequence from position 0 to the breakpoint. There's no way to say \"these three chunks in any order\" \u2014 one byte differing at position N invalidates every cache entry at position \u2265 N.\n\nRender order is fixed: `tools` \u2192 `system` \u2192 `messages`. So anything volatile placed early poisons everything after it. The canonical bug:\n\n```python\nsystem = f\"You are a helpful assistant. Current time: {datetime.now()}.\\n\\n{HUGE_MANUAL}\"\n```\n\nThat timestamp sits at byte ~40. Your 50K-token manual after it never caches \u2014 no error, no warning, just a bigger bill. Same for a `uuid4()`, a per-user ID f-stringed into the system prompt, `json.dumps()` without `sort_keys=True` (Python dict ordering is stable but library-produced dicts aren't always), or a tool list built per-user so tools at position 0 differ.\n\n**The design rule:** sort your prompt content by rate of change, most-stable first.\n\n| Changes | Where it goes |\n|---|---|\n| Never (tool defs, frozen system prompt) | Front, before the first breakpoint |\n| Per session (user profile, retrieved docs) | After the global prefix, own breakpoint |\n| Per turn (conversation history) | Later still |\n| Per request (timestamp, request ID, the question) | After the **last** breakpoint |\n\nThe second most common bug is putting the breakpoint at the *end* of a prompt whose tail is unique per request. Every request then writes a distinct cache entry and reads none \u2014 you pay the 1.25\u00d7 write premium forever with zero hits. Put the marker at the end of the **shared** portion:\n\n```python\nmessages=[{\"role\": \"user\", \"content\": [\n    {\"type\": \"text\", \"text\": SHARED_CONTEXT, \"cache_control\": {\"type\": \"ephemeral\"}},\n    {\"type\": \"text\", \"text\": user_question},  # no marker \u2014 differs every time\n]}]\n```\n\n## Practical details\n\n- Max 4 breakpoints per request. Earlier breakpoints stay valid read points, so hits accrue incrementally in a growing conversation.\n- Minimum cacheable prefix is model-dependent and **not monotonic**: 512 tokens on Opus 5, 1024 on Opus 4.8/Sonnet 5, 4096 on Opus 4.6/Haiku 4.5. Below the minimum it silently doesn't cache.\n- TTL: 5 minutes default, `\"ttl\": \"1h\"` optional. A read refreshes the timer for free, and the clock starts at *request start* \u2014 so a 4-minute generation leaves ~1 minute of the 5-minute window. Continuous traffic keeps the 5-minute TTL warm indefinitely; only a 5\u201360 minute gap justifies the doubled 1-hour write price.\n- Caches are model-scoped and workspace-scoped. Switching models mid-conversation, or splitting identical traffic across workspaces, silently rebuilds from scratch.\n- Not all changes invalidate everything \u2014 there are three tiers (tools / system / messages), and a change invalidates its tier and below. You can vary `tool_choice` per request without losing the tools+system cache. Changing tool definitions or the model forces a full rebuild.\n- On Opus 5 / Opus 4.8 / Fable 5.x, mid-conversation operator instructions go as `{\"role\": \"system\", ...}` appended to `messages[]` rather than editing top-level `system` \u2014 editing `system` re-processes the entire cached history.\n\n**Always verify empirically.** `response.usage` gives you `cache_creation_input_tokens`, `cache_read_input_tokens`, and `input_tokens` (the uncached remainder only \u2014 total prompt size is the sum of all three). If `cache_read_input_tokens` is zero across repeated identical requests, something is silently invalidating; log two consecutive request bodies and diff the overlapping region. Worth an integration test asserting `cache_read_input_tokens > 0` on a second identical request \u2014 caching regressions are invisible, and the failure mode is a quietly larger bill months later, not an exception.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 60245,
+    "cache_read_input_tokens": 101493,
+    "output_tokens": 2588,
+    "output_tokens_details": {
+      "thinking_tokens": 606
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 60245,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1975,
+        "cache_read_input_tokens": 62205,
+        "cache_creation_input_tokens": 11981,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11981
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.7189235,
+  "num_turns": 4,
+  "is_error": false
+}

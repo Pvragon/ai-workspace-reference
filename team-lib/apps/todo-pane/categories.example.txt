@@ -1,0 +1,6 @@
+# todo pane category colors. Copy to ~/.config/todo-pane/categories.txt
+# One "<category> <color>" per line. The color is a theme color name
+# (accent, orange, muted, foreground, ...) or a hex color like #e5c07b.
+# Categories without a line here are drawn in the muted color.
+work accent
+home #e5c07b

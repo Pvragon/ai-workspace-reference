@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "concept",
+  "run": 1,
+  "elapsed_s": 54.0,
+  "rc": 0,
+  "text": "Here's the mental model, drawn from Anthropic's current caching docs.\n\n## The problem it solves\n\nThe Messages API is **stateless**. There's no server-side session \u2014 every request resends the entire conversation: your system prompt, your tool definitions, and every prior turn. Turn 20 of a chat re-uploads turns 1\u201319.\n\nInternally, the model has to do a forward pass over all those input tokens before it can generate the first output token (the \"prefill\"). That work is deterministic: the same input bytes always produce the same internal state. So it's cacheable \u2014 that's what prompt caching stores. On a hit, the server skips prefill for the cached span and charges you roughly a tenth of the input price for it.\n\nThink of it as an HTTP cache where the key is the literal byte-prefix of your request body, not a URL.\n\n## The one invariant\n\n> **Caching is a prefix match. Any change anywhere in the prefix invalidates everything after it.**\n\nThe cache key is the exact bytes of the rendered prompt up to each breakpoint. One byte differing at position N invalidates every cache entry at position \u2265 N. Not \"mostly reuses\" \u2014 invalidates. This is the same reason a Docker layer cache busts: layers are chained, so touching an early one rebuilds every layer below.\n\n## Why order matters\n\nThe API renders your request in a fixed order:\n\n```\ntools  \u2192  system  \u2192  messages\n```\n\nThat order is not negotiable, so it defines what \"early in the prefix\" means. Your job is to make **physical order match stability order**: things that never change go first, things that change every request go last.\n\nThe classic bug:\n\n```python\nsystem = f\"You are a support agent. Current time: {datetime.now()}.\\n\\n{TEN_K_TOKEN_PLAYBOOK}\"\n```\n\nThat timestamp sits near byte 40. Every request produces a unique prefix, so the 10K-token playbook *and the entire conversation after it* are re-billed at full price, forever. You'll see no error \u2014 just a bigger invoice. The fix isn't a better cache marker; it's moving the timestamp to the end, into a message.\n\nSame failure mode, less obvious:\n\n- `json.dumps(schema)` without `sort_keys=True` \u2014 key order wobbles between processes, tools render at position 0, nothing ever caches.\n- `tools=build_tools_for(user)` \u2014 a per-user tool list means a per-user prefix and no sharing across users.\n- `if beta_flag: system += \"...\"` \u2014 each flag combination is a separate cache namespace.\n\nThere's a useful nuance: the API has **three cache tiers** (tools / system / messages) and a change only invalidates its own tier and below. So changing message content never touches the tools+system cache \u2014 but changing a tool definition rebuilds everything. Model switches also force a full rebuild, since caches are model-scoped.\n\n## Breakpoints\n\nNothing is cached unless you ask. You mark a content block with `cache_control`, which means \"cache everything from the start of the prompt up to here\":\n\n```python\nsystem=[{\n    \"type\": \"text\",\n    \"text\": LARGE_STABLE_PROMPT,\n    \"cache_control\": {\"type\": \"ephemeral\"},   # caches tools + system together\n}]\n```\n\nRules worth knowing up front:\n\n- **Max 4 breakpoints** per request.\n- Place the breakpoint at the end of the **shared** portion, not the end of the whole prompt. If your prompt is `[big shared context][unique question]` and you mark the end, every request writes a distinct entry that's never read \u2014 you pay the write premium for nothing.\n- There's a **minimum cacheable prefix**, model-dependent (512 tokens on Opus 5, up to 4096 on some others). Below it, caching silently no-ops.\n- There's also a top-level `cache_control` on the request that auto-places the breakpoint on the last cacheable block \u2014 good default for growing conversations, wrong when the prompt ends in per-request content.\n\n## TTL and pricing\n\nTwo TTLs: 5 minutes (default) and 1 hour (`\"ttl\": \"1h\"`). A read refreshes the timer for free, and the clock starts at the *beginning* of the request that touches it \u2014 so a 4-minute generation leaves only ~1 minute of headroom on a 5-minute entry.\n\n| | Cost vs. base input |\n|---|---|\n| Cache write, 5-min TTL | 1.25\u00d7 |\n| Cache write, 1-hour TTL | 2\u00d7 |\n| Cache read | ~0.1\u00d7 |\n\nBreak-even is 2 requests on the 5-minute TTL, 3 on the 1-hour. Pick by the **start-to-start gap** between requests sharing a prefix: under 5 minutes, stay on the default (each request refreshes it, so the 1-hour TTL buys you nothing but a doubled write); 5\u201360 minutes is the only window where 1-hour pays off.\n\n## Verify it, and keep verifying it\n\nEvery response carries the ground truth:\n\n```python\nr.usage.cache_read_input_tokens      # served from cache (~0.1\u00d7)\nr.usage.cache_creation_input_tokens  # written this request (1.25\u00d7/2\u00d7)\nr.usage.input_tokens                 # full price \u2014 the uncached remainder only\n```\n\nTotal prompt size is the **sum** of all three, which surprises people reading `input_tokens` alone.\n\nThe failure mode to design against is a silent regression: caching works when you build it, then six months later someone adds a dynamic field to the system prompt. Nothing breaks, no error fires, the bill just goes up. Worth an integration test asserting that a second identical request shows `cache_read_input_tokens > 0`.\n\nOne more thing you'll hit as a backend engineer: **concurrent requests don't share a warm cache**. An entry becomes readable only once the first response starts streaming, so N parallel requests with identical prefixes all pay full price. For fan-out, fire one request, wait for its first token, then release the rest.\n\nIf you want, I can walk through the caching layout for a specific service you're designing \u2014 the placement decisions get concrete fast once there's a real prompt-assembly path to look at.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 60379,
+    "cache_read_input_tokens": 101979,
+    "output_tokens": 3305,
+    "output_tokens_details": {
+      "thinking_tokens": 1106
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 60379,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2325,
+        "cache_read_input_tokens": 61501,
+        "cache_creation_input_tokens": 12369,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 12369
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.7384315,
+  "num_turns": 4,
+  "is_error": false
+}

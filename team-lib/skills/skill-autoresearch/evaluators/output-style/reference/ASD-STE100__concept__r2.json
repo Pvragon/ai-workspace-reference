@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "concept",
+  "run": 2,
+  "elapsed_s": 72.2,
+  "rc": 0,
+  "text": "## What prompt caching is\n\nEvery request to the Messages API sends the whole prompt again. The model then processes every token of that prompt. A token is the unit the model reads. One token is about 3 to 4 characters of English.\n\nPrompt caching stores the processed state of a leading part of your prompt on Anthropic's servers. A later request that starts with the same bytes reads that stored state instead. The server skips the work for those tokens. You pay less, and the first token comes back sooner.\n\nThink of it as an HTTP cache whose key is a byte prefix, not a URL. You mark where the prefix ends with a `cache_control` marker on a content block.\n\n## The one rule that explains everything\n\n**Prompt caching is a prefix match. A change at byte N invalidates the cache from byte N to the end.**\n\nThe cache key is the exact rendered bytes from the start of the prompt up to each marker. One different byte early in the prompt breaks every cache entry after it. No error appears. The request just costs full price.\n\n## Why the order matters\n\nThe API renders your request in a fixed order:\n\n1. `tools`\n2. `system`\n3. `messages`\n\nYour content sits on one line of bytes in that order. Anything you put early is a parent of everything after it. So the position of a value decides how much it can destroy.\n\nThis gives the design rule: **stable content first, volatile content last.**\n\n| What you change | What stays cached |\n| --- | --- |\n| A tool definition, or the model | Nothing |\n| The `system` prompt text | The tools cache only |\n| Message content (a new turn) | The tools cache and the system cache |\n\nA new user turn is cheap, because it lands at the end. A new tool is not, because tools render at position 0.\n\n## The failure this causes in real code\n\nThese are the common invalidators. Each one lives in the prefix and changes on every request:\n\n- `datetime.now()` interpolated into the system prompt.\n- A request ID or a UUID near the front of the content.\n- `json.dumps(d)` without `sort_keys=True`, or iteration over a `set`.\n- A tool list built per user, as in `tools=build_tools(user)`.\n- Conditional system sections, as in `if flag: system += ...`.\n\nEach one costs you the whole cache. Move the dynamic value after the last marker. Make the serialization deterministic. Delete the value if nothing depends on it.\n\n## Breakpoints\n\nA breakpoint is one `cache_control` marker. The rules are short:\n\n- Maximum 4 breakpoints per request.\n- A marker goes on a content block: a system text block, a tool definition, or a message block.\n- A marker on the last system block caches the tools and the system together.\n- A top-level `cache_control` field on `messages.create()` places the marker automatically on the last cacheable block.\n\nPlace the marker at the end of the **shared** part, not at the end of the whole prompt. This point traps most people. If your prompt is a big shared preamble plus a different question each time, and the marker sits at the very end, then every request writes a new entry and reads none.\n\nThe minimum cacheable prefix depends on the model. A shorter prefix does not cache, and no error tells you:\n\n| Model | Minimum |\n| --- | ---: |\n| Claude Opus 5, Fable 5, Fable 5.1 | 512 tokens |\n| Opus 4.8, Sonnet 5, Sonnet 4.6 | 1024 tokens |\n| Opus 4.7, Haiku 3.5 | 2048 tokens |\n| Opus 4.6, Haiku 4.5 | 4096 tokens |\n\n## TTL and price\n\nTTL is the lifetime of a cache entry. Two values exist: 5 minutes (the default) and 1 hour (`\"ttl\": \"1h\"`).\n\n| Operation | Cost against the base input price |\n| --- | --- |\n| Cache read | about 0.1\u00d7 |\n| Cache write, 5-minute TTL | 1.25\u00d7 |\n| Cache write, 1-hour TTL | 2\u00d7 |\n\nThe write premium sets the break-even point. With the 5-minute TTL, two requests pay it back. With the 1-hour TTL, you need three.\n\nA cache read resets the entry's timer at no extra cost. The timer starts at the **start** of the request, so generation time counts against it. Choose the TTL by the start-to-start gap between requests that share the prefix:\n\n- Under 5 minutes: use the default. Each request refreshes the entry.\n- 5 to 60 minutes: use the 1-hour TTL. This is the only case where the 2\u00d7 write pays off.\n- Over 1 hour: neither TTL helps. Re-warm on a schedule, or accept the miss.\n\n## How to verify it works\n\nRead the `usage` object on the response:\n\n- `cache_read_input_tokens` \u2014 tokens served from cache, at about 0.1\u00d7.\n- `cache_creation_input_tokens` \u2014 tokens written to cache, at the write premium.\n- `input_tokens` \u2014 the uncached remainder only.\n\nThe total prompt size is the sum of all three. If `cache_read_input_tokens` stays at zero across repeated requests with the same prefix, an invalidator is at work. Log two consecutive request bodies. Strip the `cache_control` markers. Diff the overlap. The first difference inside the overlap is the invalidation point.\n\nAdd a standing check, not a one-time look. The usual production failure is a regression: caching works when you write it, then a later change to prompt assembly breaks it silently. Nothing fails. The bill just goes up.\n\n## One escape hatch worth knowing\n\nYou will want to inject an operator instruction mid-conversation \u2014 a mode switch, or fresh context. Do not edit the top-level `system` field for this. That change sits ahead of the entire history, so every cached turn dies.\n\nOn Claude Opus 5, Opus 4.8, and the Fable models, append a `{\"role\": \"system\", \"content\": \"...\"}` entry to `messages[]` instead. It sits after the cached history. The prefix stays intact. It is also the non-spoofable operator channel, unlike text inside a user turn.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 60369,
+    "cache_read_input_tokens": 106173,
+    "output_tokens": 4554,
+    "output_tokens_details": {
+      "thinking_tokens": 2370
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 60369,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 3586,
+        "cache_read_input_tokens": 62966,
+        "cache_creation_input_tokens": 12259,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 12259
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.7716535,
+  "num_turns": 4,
+  "is_error": false
+}

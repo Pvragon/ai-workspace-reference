@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "tradeoff-pins",
+  "run": 2,
+  "elapsed_s": 21.7,
+  "rc": 0,
+  "text": "**Split the two roles: loose ranges for the library, a fully-pinned lockfile for the service.** They're different artifacts with opposite goals, so don't make one file serve both.\n\n**Library side** (`pyproject.toml`, not `requirements.txt`): declare compatible ranges \u2014 `requests>=2.31,<3`. Exact pins in an installed package poison your consumers' resolvers: two libraries pinning different patch versions of the same dep make the environment unsolvable. Use a lower bound for the oldest version you actually test against and an upper bound only at the next major (or on deps with a real history of breaking minors).\n\n**Service side**: a lockfile with exact pins *and* hashes, generated not hand-written \u2014 `uv lock`, `pip-compile` (pip-tools), or Poetry. Deploys become reproducible and auditable, and the pins live in a file nobody edits by hand.\n\nConcretely: `pyproject.toml` holds ranges; `requirements.txt` becomes generated output (`uv pip compile pyproject.toml -o requirements.txt`) with a \"DO NOT EDIT\" header; the Docker build installs from it with `--require-hashes`. CI tests the library against both the lock and the loosest resolution (`--resolution lowest-direct` in uv) so your declared lower bounds stay honest \u2014 that check is what keeps the ranges from being fiction.\n\nThe one thing to avoid is what you likely have now: a hand-maintained `requirements.txt` that's `install_requires` and deploy manifest at once. Either it's pinned and your consumers fight it, or it's loose and your prod deploys aren't reproducible.\n\nIf you tell me which tool you'd prefer (uv, pip-tools, or Poetry) and whether the service is containerized, I can write the plan for the actual migration.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 14130,
+    "cache_read_input_tokens": 69247,
+    "output_tokens": 1027,
+    "output_tokens_details": {
+      "thinking_tokens": 136
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 14130,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 593,
+        "cache_read_input_tokens": 27832,
+        "cache_creation_input_tokens": 239,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 239
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.20263650000000002,
+  "num_turns": 3,
+  "is_error": false
+}

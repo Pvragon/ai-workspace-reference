@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "tradeoff-pins",
+  "run": 2,
+  "elapsed_s": 73.1,
+  "rc": 0,
+  "text": "**Recommendation: no \u2014 do not pin exact versions in `requirements.txt`. Split the two roles into two files.**\n\nThe two roles need opposite things. A library must stay flexible, because an exact pin propagates to every team that imports it. Two libraries that pin two different exact versions of one dependency make the importer's environment unresolvable. A service must stay reproducible, because an unpinned dependency lets a new upstream release enter a deploy that no person changed.\n\nOne file cannot serve both roles. Use two.\n\n| Role | File | Form |\n| --- | --- | --- |\n| Library | `pyproject.toml` \u2192 `[project].dependencies` | Ranges, such as `httpx>=0.27,<0.29` |\n| Service | `requirements.lock.txt` | Exact pins with hashes, generated |\n\nGenerate the lock file from `pyproject.toml` with `uv pip compile --generate-hashes` or with `pip-compile`. Commit it. Install the deploy image from the lock file only. Then delete `requirements.txt`, or reduce it to `-e .`, so that one authority holds each fact.\n\nRun two CI jobs. The locked job tests what you deploy. The floating job installs from the ranges with no lock, and tests what an importer gets. A weekly recompile job tells you when a range needs a new bound.\n\nTwo notes on scope:\n\n- This directory holds `fixture/rotate_logs.py`, its README, and one test only. It has no `requirements.txt`, no `pyproject.toml`, and no lock file. I wrote the plan for the real project you described. Adjust the paths.\n- `ExitPlanMode` is not available in this session, so I cannot call it. The plan is at `/home/<user>/.claude/plans/should-i-pin-exact-silly-quokka.md`. It holds the full file list, the tool commands, and a six-step verification procedure.",
+  "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 18851,
+    "cache_read_input_tokens": 163600,
+    "output_tokens": 5285,
+    "output_tokens_details": {
+      "thinking_tokens": 1961
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 18851,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 615,
+        "cache_read_input_tokens": 31509,
+        "cache_creation_input_tokens": 2198,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2198
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.40348799999999996,
+  "num_turns": 7,
+  "is_error": false
+}

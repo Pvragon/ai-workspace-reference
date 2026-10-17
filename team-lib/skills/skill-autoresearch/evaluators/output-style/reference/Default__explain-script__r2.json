@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "explain-script",
+  "run": 2,
+  "elapsed_s": 68.8,
+  "rc": 0,
+  "text": "## What it does\n\n`fixture/rotate_logs.py` is a ~60-line logrotate-alike. One pass over a directory:\n\n1. `find_logs` \u2014 glob `--pattern` (default `*.log`) in `log_dir`, files only.\n2. For each, `is_older_than` \u2014 mtime older than `--days` (default 7)?\n3. `compress` \u2014 stream through gzip to `<name>.gz`, then **unlink the original**.\n4. `prune_archives` \u2014 glob **`*.gz`** in the directory, sort by mtime, delete all but the newest `--keep` (default 10).\n\nInvocation: `rotate_logs.py /var/log/myapp [--pattern '*.log'] [--days 7] [--keep 10] [--dry-run]`.\n\n## What you should know before pointing it at production\n\nRoughly in order of how much it can cost you:\n\n**1. `prune_archives` deletes `.gz` files it never created.** `rotate_logs.py:28` globs `*.gz` \u2014 not `pattern + \".gz\"`, and with no age check. Any pre-existing archive in that directory is in scope: logrotate's own `.gz` output, a `db-dump.sql.gz`, a `backup.tar.gz` someone parked there. Point this at `/var/log/myapp` where anything else keeps compressed files and the oldest ones are unlinked on the first run.\n\n**2. Re-running silently destroys history.** Archive names carry no counter or timestamp \u2014 `app.log` always compresses to `app.log.gz` (`rotate_logs.py:20`), and `gzip.open(target, \"wb\")` truncates an existing file without complaint. Rotate today, let the app recreate `app.log`, rotate again next week: yesterday's archive is gone. In a one-log directory you can only ever hold a single archive, which also makes `--keep 10` largely decorative.\n\n**3. `--dry-run` doesn't cover the deleting half.** `rotate_logs.py:42` skips `prune_archives` entirely under dry-run rather than printing what it would remove. So the dry run shows you two \"would compress\" lines, looks harmless, and tells you nothing about the unlinks in points 1 and 2. This is the specific trap \u2014 the preview is not a preview of the destructive behavior.\n\n**4. `--keep 0` is inverted.** `archives[:-0]` is `archives[:0]`, i.e. empty (verified). Asking to keep zero archives keeps *all* of them. Harmless direction, but it means the flag doesn't do what a reader assumes at either extreme.\n\n**5. It doesn't handle live writers.** Compress-then-unlink with no `copytruncate` and no post-rotate signal. If a process has the log open, it keeps writing to the unlinked inode: those lines are lost, and the disk space isn't reclaimed until it reopens. Safe only for logs whose writer reopens by name, or if you SIGHUP/restart afterward. Partial mitigation is accidental \u2014 an actively-appended log has a fresh mtime, so `--days` usually skips it.\n\n**Also worth knowing:** no locking, so two overlapping cron runs race on the same files; the gzip output is created under the default umask, so an archive of a `0600` log can land world-readable; one `PermissionError` aborts mid-run with some files rotated and no pruning done; and `is_file()` follows symlinks, so a symlinked log gets copied into a `.gz` and then only the symlink is unlinked, leaving the real file uncompressed.\n\n## If you want to run it anyway\n\nCopy a snapshot of the directory to scratch and run it there first \u2014 the dry-run won't show you the deletions. Or at minimum, inventory the existing `.gz` files (`ls -la *.gz`) before the first real run so you know what point 1 puts at risk.\n\nHappy to fix any of these \u2014 the highest-value three are scoping the prune to `pattern + \".gz\"`, timestamping archive names, and making `--dry-run` print the deletions.",
+  "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 17753,
+    "cache_read_input_tokens": 96491,
+    "output_tokens": 4592,
+    "output_tokens_details": {
+      "thinking_tokens": 2748
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 17753,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1650,
+        "cache_read_input_tokens": 28531,
+        "cache_creation_input_tokens": 2713,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2713
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.34161849999999994,
+  "num_turns": 4,
+  "is_error": false
+}

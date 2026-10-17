@@ -1,0 +1,44 @@
+{
+  "style": "Default",
+  "prompt_id": "bug-hunt",
+  "run": 1,
+  "elapsed_s": 85.5,
+  "rc": 0,
+  "text": "## The bug: `compress()` overwrites an existing archive without checking\n\n`fixture/rotate_logs.py:19-24`\n\n```python\ndef compress(path: Path) -> Path:\n    target = path.with_suffix(path.suffix + \".gz\")   # app.log -> app.log.gz\n    with open(path, \"rb\") as src, gzip.open(target, \"wb\") as dst:\n        shutil.copyfileobj(src, dst)\n    path.unlink()\n```\n\nThe archive name is a pure function of the source name \u2014 `app.log` always maps to `app.log.gz`. `gzip.open(target, \"wb\")` truncates an existing file, and nothing checks `target.exists()` first. So if `app.log.gz` is already there from a previous rotation, its contents are destroyed the moment the new one is written. Then the source is unlinked, and `main()` prints `compressed 1 file(s)` \u2014 no error, no warning, exit 0.\n\n### The realistic case\n\nA weekly batch job writing `job.log`, with `rotate_logs.py /var/log/myapp --days 7 --keep 10` in cron:\n\n1. **Week 1** \u2014 job writes `job.log`, then goes idle. Rotate sees mtime > 7 days, compresses to `job.log.gz`. Correct.\n2. **Week 2** \u2014 job runs again, recreates `job.log`, goes idle. Rotate compresses it to `job.log.gz` \u2014 **week 1's archive is silently overwritten**.\n\nEvery cycle destroys the prior one. `--keep 10` never protects anything, because there is only ever one `.gz` per log name for `prune_archives` to count. The operator thinks they have ten weeks of history; they have the most recent week, and the loss is invisible from the tool's output.\n\nNote the aging is on mtime, so this only bites logs that go idle between rotations \u2014 which is exactly the batch-job / restarted-service / dated-then-quiet case, and exactly what this tool is aimed at. A continuously-written log has the opposite failure: it never rotates at all.\n\n### Secondary, also destructive\n\n`prune_archives` (`:27-30`) globs `log_dir.glob(\"*.gz\")` and ignores `pattern` entirely. Point it at a directory holding `db-backup.sql.gz` or a vendored `data.json.gz` and it will delete files it never created. The `keep` budget is global rather than per log stream too, so a noisy stream's archives evict a quiet stream's entire history.\n\n### Why the tests don't catch it\n\n`tests/test_rotate_logs.py` rotates each log name exactly once into a fresh `tmp_path`. The collision only exists on the second cycle over the same name, which no test reaches.\n\nI've written this up to `/home/<user>/.claude/plans/there-is-a-bug-glowing-anchor.md`. No code changed, as you asked.",
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 21112,
+    "cache_read_input_tokens": 129098,
+    "output_tokens": 6166,
+    "output_tokens_details": {
+      "thinking_tokens": 3690
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 21112,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 976,
+        "cache_read_input_tokens": 31823,
+        "cache_creation_input_tokens": 2780,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2780
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.430884,
+  "num_turns": 6,
+  "is_error": false
+}

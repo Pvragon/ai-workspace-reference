@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "test-gaps",
+  "run": 2,
+  "elapsed_s": 125.4,
+  "rc": 0,
+  "text": "The `ExitPlanMode` tool is not available in this session, so I cannot signal plan completion through it. The plan sits at `/home/<user>/.claude/plans/look-at-fixture-tests-test-rotate-logs-p-nested-bee.md` for your review.\n\nSummary of the answer above:\n\n- **Covered:** the age filter, the `dry_run` branch, and the archive count after the prune step. Three tests, happy path only.\n- **The sharpest miss:** no test reads an archive back, and `test_prunes_to_keep` asserts a count instead of the survivor names. Together they hide a prune step that keeps the wrong files.\n- **Next:** tell me to proceed and I will write the tests first, confirm each one fails for the right reason, then apply the source fixes.",
+  "usage": {
+    "input_tokens": 16,
+    "cache_creation_input_tokens": 25089,
+    "cache_read_input_tokens": 242339,
+    "output_tokens": 9126,
+    "output_tokens_details": {
+      "thinking_tokens": 4329
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 25089,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 350,
+        "cache_read_input_tokens": 39789,
+        "cache_creation_input_tokens": 156,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 156
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.6012865000000001,
+  "num_turns": 9,
+  "is_error": false
+}

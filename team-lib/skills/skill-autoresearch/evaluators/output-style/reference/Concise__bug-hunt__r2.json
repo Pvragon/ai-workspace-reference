@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "bug-hunt",
+  "run": 2,
+  "elapsed_s": 56.9,
+  "rc": 0,
+  "text": "**The bug: `compress()` silently overwrites an existing archive of the same name, and then deletes the source \u2014 so the previous archive's contents are unrecoverable.**\n\n`fixture/rotate_logs.py:19-24`:\n\n```python\ntarget = path.with_suffix(path.suffix + \".gz\")\nwith open(path, \"rb\") as src, gzip.open(target, \"wb\") as dst:\n    shutil.copyfileobj(src, dst)\npath.unlink()\n```\n\n`gzip.open(target, \"wb\")` truncates an existing file. There is no existence check, no uniqueness suffix, no timestamp in the target name \u2014 the archive name is a pure function of the log name.\n\n**Realistic case:** an app writes to a fixed path, `app.log`, and the rotator runs on a cron.\n\n1. Run 1: `app.log` is older than `--days` \u2192 compressed to `app.log.gz`, source unlinked. Correct.\n2. The app recreates `app.log` and keeps appending.\n3. Run 2 (some weeks later, `app.log` again old enough): target is *again* `app.log.gz`. The existing archive \u2014 the only remaining copy of run 1's log data \u2014 is truncated and overwritten with run 2's content, and then run 2's `app.log` is unlinked too.\n\nNet effect: one full rotation period of logs is destroyed, with no error, no warning, and `--dry-run` gives no hint either (it prints `would compress app.log` and never mentions that a target already exists). The exit message still says `compressed 1 file(s)`.\n\nThis also quietly defeats the script's stated purpose: `prune_archives` is supposed to retain the newest `--keep` archives, but with a fixed log filename there is only ever *one* archive, so `--keep 10` retains one generation instead of ten. The bug hides inside the feature meant to prevent it.\n\nTwo related problems in the same area, worth knowing but less severe:\n\n- `prune_archives` (line 28) globs `*.gz` over the whole directory, not just archives this script produced. Any unrelated compressed file living in the log dir \u2014 `db-backup.sql.gz`, a vendor drop \u2014 is a deletion candidate once the `.gz` count exceeds `--keep`. Also silent.\n- `archives[:-keep]` with `--keep 0` is `archives[:0]`, i.e. the empty list, so `--keep 0` prunes *nothing* rather than everything. That one fails safe, but it's the opposite of what the flag says.\n\nThe first of these three is the data-destroying one; the fix would need the target name to be unique (timestamp/counter) plus an explicit refusal to clobber an existing target \u2014 but you asked me not to change it, so I haven't.",
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 14626,
+    "cache_read_input_tokens": 41420,
+    "output_tokens": 3838,
+    "output_tokens_details": {
+      "thinking_tokens": 2847
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 14626,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 3727,
+        "cache_read_input_tokens": 27479,
+        "cache_creation_input_tokens": 1088,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1088
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.26396,
+  "num_turns": 2,
+  "is_error": false
+}

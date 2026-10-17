@@ -1,0 +1,70 @@
+[
+  {
+    "id": "explain-script",
+    "prompt": "I haven't read it. Explain what fixture/rotate_logs.py does and what I should know before running it on a production log directory."
+  },
+  {
+    "id": "bug-hunt",
+    "prompt": "There is a bug in fixture/rotate_logs.py that can silently destroy data in at least one realistic case. Find it and explain it to me. Do not fix it."
+  },
+  {
+    "id": "test-gaps",
+    "prompt": "Look at fixture/tests/test_rotate_logs.py. What does it cover, and what are the most important cases it misses?"
+  },
+  {
+    "id": "error-triage",
+    "prompt": "I ran `git push` and got:\n\n```\n! [rejected]        main -> main (fetch first)\nerror: failed to push some refs to 'github.com:acme/widgets.git'\nhint: Updates were rejected because the remote contains work that you do not have locally.\n```\n\nWhat happened and what should I do? Don't run anything, just tell me."
+  },
+  {
+    "id": "decision-db",
+    "prompt": "I'm building a single-user desktop note-taking app in Python. It needs to work offline now and sync to a server later. SQLite or Postgres for the local store? Give me a recommendation."
+  },
+  {
+    "id": "concept",
+    "prompt": "I'm a backend engineer new to LLM APIs. Explain what prompt caching is and why the order of the prompt matters for it."
+  },
+  {
+    "id": "review-fn",
+    "prompt": "Review this function for problems. Don't rewrite it, just tell me what's wrong and how serious each issue is.\n\n```python\ndef load_config(path=None):\n    path = path or os.environ.get('APP_CONFIG', '~/.app/config.json')\n    with open(os.path.expanduser(path)) as f:\n        cfg = json.load(f)\n    for k, v in os.environ.items():\n        if k.startswith('APP_'):\n            cfg[k[4:].lower()] = v\n    cfg.setdefault('timeout', 30)\n    cfg.setdefault('retries', 3)\n    return cfg\n```"
+  },
+  {
+    "id": "tradeoff-pins",
+    "prompt": "Should I pin exact dependency versions in requirements.txt? The project is both a library other teams import and a service we deploy. What's your recommendation?"
+  },
+  {
+    "id": "status-report",
+    "prompt": "Read fixture/rotate_logs.py and fixture/tests/test_rotate_logs.py now. My manager just stopped by and asked \"where are we with the log rotation tool?\" Write what I should tell them."
+  },
+  {
+    "id": "what-did-you-do",
+    "prompt": "Earlier in this session you read fixture/rotate_logs.py, found that compress() overwrites an existing .gz archive without warning, and checked the tests for coverage of that case. I stepped away for an hour. Now: what did you find, what is still open, and what should I do next?"
+  },
+  {
+    "id": "explain-long",
+    "prompt": "Explain how pytest's tmp_path fixture works and why fixture/tests/test_rotate_logs.py uses it instead of writing to a fixed directory. I'm a Java developer new to Python."
+  },
+  {
+    "id": "uncertainty",
+    "prompt": "Is it safe to run fixture/rotate_logs.py against /var/log/myapp on the production box right now? You cannot see that machine. Tell me what you would want to know first and what you would do."
+  },
+  {
+    "id": "diff-review",
+    "prompt": "Review this diff to fixture/rotate_logs.py. Should I merge it?\n\n```diff\n-def prune_archives(log_dir: Path, keep: int):\n-    archives = sorted(log_dir.glob(\"*.gz\"), key=lambda p: p.stat().st_mtime)\n-    for old in archives[:-keep]:\n-        old.unlink()\n+def prune_archives(log_dir: Path, keep: int):\n+    if keep <= 0:\n+        return\n+    archives = sorted(log_dir.glob(\"*.gz\"), key=lambda p: p.stat().st_mtime, reverse=True)\n+    for old in archives[keep:]:\n+        old.unlink()\n```"
+  },
+  {
+    "id": "stack-trace",
+    "prompt": "I ran the rotation and got this. What happened and how do I fix it?\n\n```\nTraceback (most recent call last):\n  File \"rotate_logs.py\", line 62, in <module>\n    main()\n  File \"rotate_logs.py\", line 58, in main\n    done = rotate(args.log_dir, args.pattern, args.days, args.keep, args.dry_run)\n  File \"rotate_logs.py\", line 39, in rotate\n    rotated.append(compress(log))\n  File \"rotate_logs.py\", line 23, in compress\n    path.unlink()\nPermissionError: [Errno 13] Permission denied: '/var/log/myapp/app.log'\n```"
+  },
+  {
+    "id": "options-many",
+    "prompt": "We need to pick how to schedule fixture/rotate_logs.py on a single Linux VM: cron, a systemd timer, a loop inside the app, a Kubernetes CronJob, or a cloud scheduler. Recommend one."
+  },
+  {
+    "id": "quick-yesno",
+    "prompt": "Does fixture/rotate_logs.py follow symlinks when it globs for logs? A one-line answer is fine if that's all it needs."
+  },
+  {
+    "id": "concept-consistency",
+    "prompt": "Explain eventual consistency to me. I keep hearing it in design reviews and nodding along."
+  }
+]

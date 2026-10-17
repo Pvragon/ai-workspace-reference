@@ -1,0 +1,55 @@
+{
+    "$schema": "type-template-v2",
+    "$extends": "_base-doc",
+    "templateType": "doc-report",
+    "templateVersion": "2.0.0",
+    "description": "Standard branded report — full-featured document with headings, tables, bullets, callouts, decorative rules, and TOC support. Extends _base-doc with titleBlock and enabled TOC.",
+
+    "titleBlock": {
+        "title": {
+            "namedStyle": "HEADING_1",
+            "fontSize": 26,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.primary" },
+            "bold": true,
+            "spaceBefore": 0,
+            "spaceAfter": 6,
+            "spaceUnit": "pt",
+            "keepWithNext": false
+        },
+        "subtitle": {
+            "namedStyle": "SUBTITLE",
+            "fontSize": 14,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.accent" },
+            "bold": true,
+            "spaceBefore": 0,
+            "spaceAfter": 6,
+            "spaceUnit": "pt"
+        },
+        "metadataLabel": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.brand.accent" },
+            "bold": true
+        },
+        "metadataValue": {
+            "fontSize": 10,
+            "fontSizeUnit": "pt",
+            "font": { "tokenRef": "typography.font.primary" },
+            "color": { "tokenRef": "color.text.default" },
+            "bold": false
+        }
+    },
+
+    "renderOptions": {
+        "subtitleDetection": true
+    },
+
+    "tocSupport": {
+        "enabled": true
+    }
+}

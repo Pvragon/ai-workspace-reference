@@ -1,0 +1,15 @@
+# summary: Team apps manifest — human-facing workspace applications (TUIs, panes, desktop tools) under apps/. GENERATED from each app's README.md frontmatter by executions/build_registry.py; do not hand-edit rows.
+apps:
+- name: music-pane
+  path: apps/music-pane/README.md
+  version: 2.5.1
+  description: 'Audio-only terminal music player for a tiling desktop: plays followed YouTube channels
+    or a search through mpv with no video, with shuffle, favorites, audio-reactive waves and live Omarchy
+    theme colors. README covers install per distro, keys and platform support.'
+- name: todo-pane
+  path: apps/todo-pane/README.md
+  version: 1.1.1
+  description: 'Sticky-note to-do list for a corner of a tiling desktop: one plain markdown file that
+    you and your AI agents both write to, shown in a small themed terminal pane. Type or dictate to add,
+    click to check off, free categories, colored due dates, word wrap, and a CLI for agents. README covers
+    install, keys and the file format.'

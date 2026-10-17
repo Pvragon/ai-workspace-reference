@@ -1,0 +1,5 @@
+# music pane channel list. Copy to ~/.config/music-pane/channels.txt
+# One YouTube channel link per line. Lines starting with "#" are ignored.
+# https://www.youtube.com/@SomeChannel
+# https://www.youtube.com/@AnotherChannel
+# https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx

@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "tradeoff-pins",
+  "run": 1,
+  "elapsed_s": 24.0,
+  "rc": 0,
+  "text": "No requirements.txt or pyproject.toml exists here yet (just `fixture/`), so this is general advice.\n\n**Recommendation: split the two roles. Don't let one file serve both.**\n\n**Library surface** \u2014 declare in `pyproject.toml` `[project.dependencies]` with permissive ranges:\n```toml\ndependencies = [\"requests>=2.28\", \"pydantic>=2.0,<3\"]\n```\nLower bound = oldest version whose API you actually use. Upper bound only where you have a concrete reason (a known-breaking major, e.g. pydantic 1\u21922). Exact pins here are the failure mode: two of your consumers pin conflicting versions and the install becomes unresolvable, and there's no way for them to route around a CVE without forking you.\n\n**Service deploy** \u2014 pin everything exactly in a lockfile, including transitive deps with hashes:\n```\n# requirements.txt \u2014 generated, do not edit\n# uv pip compile requirements.in -o requirements.txt --generate-hashes\n```\nUse `uv pip compile` (or `pip-compile`) from a hand-written `requirements.in` that just says `-e .` plus service-only deps (gunicorn, the driver, observability). The service then gets byte-identical builds while the library metadata stays loose.\n\n**CI**: test the library against both the lockfile *and* an unpinned resolve (`--upgrade`) on a scheduled job. The unpinned run is what tells you a range has gone stale before a consumer discovers it.\n\nThe one thing to avoid: exact pins in `install_requires`/`[project.dependencies]`. That's the choice that's hard to walk back once teams depend on you.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 14401,
+    "cache_read_input_tokens": 69559,
+    "output_tokens": 1369,
+    "output_tokens_details": {
+      "thinking_tokens": 529
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 14401,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 805,
+        "cache_read_input_tokens": 28144,
+        "cache_creation_input_tokens": 198,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 198
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.2140325,
+  "num_turns": 3,
+  "is_error": false
+}

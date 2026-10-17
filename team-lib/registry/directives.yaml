@@ -1,0 +1,111 @@
+# summary: Team directives registry. Lists available shared directives with paths, scope, and priority.
+# Directives Registry (team)
+# ------------------------------------------
+# This manifest catalogs available team agent directives.
+#
+# Schema:
+#   directives:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to directive file
+#       scope: global|task|project  # Applicability scope
+#       priority: high|medium|low   # Enforcement priority
+#       version: <string>        # Semantic version
+#
+# Example:
+#   directives:
+#     - name: team-code-review
+#       description: Team code review guidelines
+#       path: directives/team-code-review.md
+#       scope: global
+#       priority: medium
+#       version: "1.0.0"
+#
+# ------------------------------------------
+
+directives:
+  agent-mailbox:
+    path: directives/agent-mailbox.md
+    description: Cross-machine agent-to-agent messaging over a shared git repo. How to send, poll, and
+      reply to agents running on OTHER people's machines (e.g. Your Agent ↔ Peer), addressed by stable agent
+      name. The judgment layer over integrations/agent-mailbox/agent_mailbox.py — the cross-machine sibling
+      of the machine-local session mailbox in multi-agent-coordination.md.
+    scope: global
+    priority: medium
+    tags:
+    - multi-agent
+    - coordination
+    - mailbox
+    - git
+    - cross-machine
+    - agent-to-agent
+    version: 0.1.2
+  graduate-to-team-library:
+    path: directives/graduate-to-team-library.md
+    description: 'How a capability graduates from the personal layer to the shared one. Graduation is
+      a MOVE, never a copy: skills move and are symlinked back, files move and the personal copy is archived
+      behind a pointer. Pre-flight refuses a graduation that would leave the shared layer holding a fragment.
+      Run team-lib/executions/graduate_capability.py.'
+    tags:
+    - graduation
+    - governance
+    - move-not-copy
+    - split-capability
+    version: 2.1.0
+  multi-agent-coordination:
+    path: directives/multi-agent-coordination.md
+    version: 1.0.0
+    description: 'When and how to coordinate with your other concurrent Claude Code sessions: read peer
+      updates each turn (automatic hook), set your status when your focus changes, check /who before parallel
+      edits, and send/reply to peers via the async disk mailbox. The judgment layer over executions/session_activity.py.'
+  run-deal-hunt:
+    path: directives/run-deal-hunt.md
+    description: SOP for a one-command marketplace deal hunt — 'find me the best <thing> under $X'. Drives
+      the deals CLI scrape→value→rank end-to-end and produces a ranked deal report with an in-person verify
+      protocol for too-good outliers.
+    scope: task
+    priority: medium
+    tags:
+    - deals
+    - offerup
+    - marketplace
+    - hunt
+    - valuation
+    - verify-tier
+    - rate-limit-safe
+    version: 1.0.0
+  team-library-governance:
+    path: directives/team-library-governance.md
+    description: 'Governance rules for team-lib: naming conventions, graduation requirements, PR process,
+      and quality standards. Required reading before any graduation to team-lib.'
+    scope: global
+    priority: high
+    tags:
+    - governance
+    - quality
+    - naming-conventions
+    - graduation
+    version: 1.2.0
+  workspace-release-process:
+    path: directives/workspace-release-process.md
+    description: 'End-to-end workspace release workflow: validation, git commits, CHANGELOG updates, release
+      notes, and GitHub release creation. Follow when cutting a new workspace release.'
+    scope: global
+    priority: high
+    tags:
+    - release
+    - versioning
+    - changelog
+    - github
+    version: 1.3.1
+  workspace-validation:
+    path: directives/workspace-validation.md
+    description: How to validate the workspace end to end — which gates exist, what each one actually
+      measures, and the order to run them in. Read before trusting a green result from any single check.
+    required_context:
+    - global
+    allowed_tools:
+    - bash
+    - read_file
+    - write_file
+    version: 1.0.0

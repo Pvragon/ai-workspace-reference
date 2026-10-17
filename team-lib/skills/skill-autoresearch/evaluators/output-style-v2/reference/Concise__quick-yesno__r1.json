@@ -1,0 +1,6 @@
+{
+  "style": "Concise",
+  "prompt_id": "quick-yesno",
+  "run": 1,
+  "text": "Yes \u2014 `find_logs` filters with `p.is_file()` (fixture/rotate_logs.py:12), which stats through symlinks, so a symlink matching the pattern is treated as a log: `compress` reads the target's contents, writes a real `.gz`, and unlinks only the link. (`Path.glob` itself won't descend into symlinked subdirectories, but that only matters for recursive `**` patterns, not the default `*.log`.)"
+}

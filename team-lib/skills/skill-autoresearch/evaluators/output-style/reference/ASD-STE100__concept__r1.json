@@ -1,0 +1,44 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "concept",
+  "run": 1,
+  "elapsed_s": 45.2,
+  "rc": 0,
+  "text": "## What prompt caching is\n\nEvery request re-sends the full prompt. The server must process all of it again. Prompt caching removes most of that repeated work.\n\nThe server stores the processed form of the start of your prompt. This stored part is the **prefix**. On the next request, the server reads the prefix from the cache. It processes only the new part at full price.\n\nYou mark the end of the cached part with a **breakpoint**. A breakpoint is the field `cache_control: {\"type\": \"ephemeral\"}` on a content block. You get a maximum of 4 breakpoints per request.\n\n## The one rule\n\nPrompt caching is a **prefix match**, not a fuzzy match. The cache key comes from the exact bytes of the prompt up to each breakpoint.\n\nOne byte of difference at position N kills the cache from position N forward. A timestamp does this. A reordered JSON key does this. An extra tool in the tool list does this.\n\nThis is why order matters. The rule is byte-exact and position-based, so the physical order of your prompt is the whole design.\n\n## Render order\n\nThe API renders your request in this fixed order:\n\n1. `tools`\n2. `system`\n3. `messages`\n\nTools sit at position 0. If you add, remove, or reorder one tool, the cache for everything after it is dead. The `system` block comes next. The conversation comes last.\n\nA breakpoint on the last `system` block therefore caches the tools and the system prompt together.\n\n## Why order matters \u2014 the practical consequence\n\nSort your prompt content by how often it changes. Put the most stable content first.\n\n- Content that never changes: put it in `tools` and `system`, before the breakpoint.\n- Content that changes per session: put it after the global prefix.\n- Content that changes per turn: put it at the end of `messages`.\n- Content that changes per request, such as a timestamp or a UUID: put it at the very end, or delete it.\n\nHere is the classic failure. An engineer writes `f\"Current date: {datetime.now()}\"` at the top of the system prompt. The prompt is now unique on every request. No part of it ever caches. The `cache_control` marker is still there, so the code looks correct. The bill just stays high.\n\nThe fix is an order change, not a marker change. Move the date into a message near the end. A change at turn 5 invalidates nothing before turn 5.\n\nThe same trap appears with `json.dumps(d)` without `sort_keys=True`. Python may serialize the same dictionary in a different key order. The bytes differ. The cache misses.\n\n## Cost and TTL\n\n**TTL** is the lifetime of a cache entry. The default is 5 minutes. You can request 1 hour with `\"ttl\": \"1h\"`.\n\n- A cache **read** costs about 0.1\u00d7 the base input price.\n- A cache **write** costs 1.25\u00d7 for the 5-minute TTL, and 2\u00d7 for the 1-hour TTL.\n\nThe 5-minute TTL breaks even at 2 requests. The 1-hour TTL breaks even at 3 requests. A read refreshes the timer at no extra cost. Continuous traffic therefore keeps a 5-minute entry alive forever, and the 1-hour TTL only wastes money there.\n\nOne more limit is easy to miss. The minimum cacheable prefix depends on the model. It is 512 tokens on Claude Opus 5, and 4096 tokens on Opus 4.6 and Haiku 4.5. A shorter prefix does not cache. You get no error.\n\n## How to verify\n\nNever assume the cache works. Read the `usage` object on the response:\n\n- `cache_creation_input_tokens` \u2014 tokens written this request, at the ~1.25\u00d7 premium.\n- `cache_read_input_tokens` \u2014 tokens served from the cache, at ~0.1\u00d7.\n- `input_tokens` \u2014 the uncached remainder only.\n\nThe total prompt size is the sum of all three fields.\n\nIf `cache_read_input_tokens` stays at zero across repeated requests, a silent invalidator is in your prompt. To find it, log two consecutive request payloads. Diff them. Strip the `cache_control` markers first, because the marker legitimately moves between requests. The first difference inside the overlapping region is your invalidator.\n\nAdd this as a standing assertion in an integration test. The costly failure mode is a regression: caching works on the day you write it, then a later change to prompt assembly breaks it. Nothing raises an error. Requests keep succeeding. Only the bill moves.",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 60056,
+    "cache_read_input_tokens": 106206,
+    "output_tokens": 2684,
+    "output_tokens_details": {
+      "thinking_tokens": 1050
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 60056,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2016,
+        "cache_read_input_tokens": 62997,
+        "cache_creation_input_tokens": 11915,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11915
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.7217800000000001,
+  "num_turns": 4,
+  "is_error": false
+}

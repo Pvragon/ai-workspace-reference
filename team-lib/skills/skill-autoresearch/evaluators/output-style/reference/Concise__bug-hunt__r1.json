@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "bug-hunt",
+  "run": 1,
+  "elapsed_s": 73.9,
+  "rc": 0,
+  "text": "**Bug: `rotate()` prunes the archives it just created, after already deleting their plaintext originals \u2014 so `--keep K` silently destroys logs that were never kept.**\n\nThe sequence in `rotate()` (`fixture/rotate_logs.py:33-44`):\n\n1. `compress(log)` writes `app.log.gz` and then **unlinks `app.log`** (line 23). The only copy of that data is now the fresh `.gz`.\n2. `prune_archives(log_dir, keep)` (line 43) globs **all** `*.gz` in the directory \u2014 including the ones just written \u2014 sorts by mtime, and unlinks everything outside the newest `keep` (lines 28-30).\n\nSo on any run where more than `keep` files get compressed, the excess is compressed and then immediately deleted. The plaintext is already gone at that point, so nothing is recoverable.\n\n**Realistic case:** nightly cron `rotate_logs.py /var/log/myapp --days 7 --keep 10`, one log file per day. The cron job is disabled (or the host is down, or someone fixes a broken unit file) for a month. On the next run, 23 logs are older than 7 days: all 23 are gzipped, all 23 originals unlinked, then prune keeps 10 and deletes 13. Thirteen days of logs are gone. The process exits 0 and prints `compressed 23 file(s)` \u2014 which is true and is exactly the wrong number to report.\n\nTwo things make it silent rather than noisy:\n\n- `prune_archives` has no logging and no return value; the only stdout line counts compressions, not deletions.\n- `--dry-run` never exercises the destructive path at all \u2014 line 42 skips `prune_archives` entirely, and the loop `continue`s before compressing, so a dry run prints `would compress \u2026` for all 23 files and gives zero indication that 13 will be deleted. The safety check is blind to the only step that loses data.\n\nTwo aggravating defects in the same function, worth knowing since they widen the blast radius:\n\n- `prune_archives` globs `*.gz` unconditionally, ignoring `pattern`. Point it at a directory holding `db-backup-2026-08.sql.gz` or `crashdump.tar.gz` and those are eligible for deletion by mtime \u2014 they're older than today's archives, so they're deleted *first*. Nothing in the tool ever created them.\n- `compress` derives the target as `path.suffix + \".gz\"` with no uniqueness, and `gzip.open(target, \"wb\")` truncates. If `app.log.gz` already exists from a prior rotation and `app.log` has since been recreated and aged out, the new archive silently overwrites the old one.\n\nNote that `tests/test_rotate_logs.py::test_prunes_to_keep` already encodes the primary bug as correct behavior: it makes 5 old logs, rotates with `keep=2`, and asserts 2 `.gz` files remain \u2014 i.e. it asserts that 3 logs were destroyed. A fix will have to change that test, not just the module.\n\nI haven't changed anything, per your instruction.",
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 19016,
+    "cache_read_input_tokens": 132868,
+    "output_tokens": 4999,
+    "output_tokens_details": {
+      "thinking_tokens": 3388
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 19016,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1828,
+        "cache_read_input_tokens": 31928,
+        "cache_creation_input_tokens": 1029,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1029
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.38263400000000003,
+  "num_turns": 5,
+  "is_error": false
+}

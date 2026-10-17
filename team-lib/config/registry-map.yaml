@@ -1,0 +1,207 @@
+# summary: THE MAP for team-lib — which manifests are GENERATED from the frontmatter of the files
+#   they index, and which are deliberately left out. Read by team-lib/executions/build_registry.py
+#   and by version_gate's push-boundary registry pass.
+# ---------------------------------------------------------------------------------------------
+# A registry is a BUILD ARTIFACT. Every field below is either DERIVED (owned by the indexed file's
+# frontmatter, regenerated every run) or PRESERVED (real knowledge living nowhere else).
+#
+# ⚑ WHAT IS DELIBERATELY *NOT* HERE, and why. Absence in this file is a DECISION, not a gap —
+#   the whole point of the derivable/validate split. These are validated by validate_registry.py:
+#
+#   * mirror.yaml            — the publication contract: pairs, exclusions, portability
+#                              exemptions. Pure judgement, recorded nowhere else.
+#   * workspace.yaml         — topology, scopes and run() signatures. Not 1:1 with any tree.
+#   * skills-scan-state.yaml — scanner STATE (allowlist, pins), not an index of files.
+#   * context-packs.yaml     — currently empty; a pack is a curated grouping, not a file listing.
+#   * integrations.yaml      — 16 files, 13 with a summary, and entries group by INTEGRATION
+#                              rather than by file. Candidate once the tree is 1:1.
+# ---------------------------------------------------------------------------------------------
+
+template: registry-map
+version: 1.0.0
+summary: Per-registry spec of indexed files, derived vs preserved fields, and the summary budget.
+created: 2026-08-08
+last_updated: 2026-08-08
+maintainer: pvragon
+
+summary_budget_words: 60
+
+# ⚑ GENERATION IS ENABLED (2026-08-08). Homogeneity of method beats a locally-better index:
+#   a hand-tuned manifest nobody can regenerate is the thing this whole capability exists to end.
+#   Where the old registry text was better than a file's `summary:`, the fix is to put it in the
+#   FILE — that is a content job the generator now makes visible instead of hiding.
+#
+#   Superseded note, kept because the measurement is the expensive part:  NOT-YET-ENABLED. The specs below are correct and dry-run clean, but turning
+#   them on makes version_gate rewrite these manifests on the next push, and that is not safe yet:
+#
+#   Measured 2026-08-08, read-only: 43 SUMMARY drifts across executions/directives/personas/
+#   context, and 972 diff lines in executions alone. The direction is the problem. In my-lib the
+#   registry had drifted AWAY from the files, so the file winning was a clear repair. Here the
+#   opposite is true — the registry descriptions are TIGHTER than the file summaries
+#   (layer_drift_scan: 51 words in the registry against 117 in the file) and 25 file summaries
+#   are over the 60-word budget. Generating would replace curated index text with longer prose
+#   and make the index worse.
+#
+#   The migration is therefore not "apply". It is, per registry-conformance step 2: for each of
+#   the 43, decide which text is better and put the winner IN THE FILE, shorten the 25 that are
+#   over budget, and only then move `pending_registries:` to `registries:`.
+#
+#   Kept here rather than deleted because the specs, the exclusions above, and this measurement
+#   are the expensive part; re-deriving them later is the waste this file exists to prevent.
+registries:
+
+  executions:
+    file: registry/executions.yaml
+    key: executions
+    shape: map
+    globs: ["executions/*.py", "executions/*.sh"]
+    field: description
+    derived: [path, version, description]
+    exclude: ["**/__pycache__/**", "**/*_test.py"]
+
+  directives:
+    file: registry/directives.yaml
+    key: directives
+    shape: map
+    globs: ["directives/*.md"]
+    exclude: ["**/index.md"]
+    field: description
+    derived: [path, version, description]
+
+  skills:
+    file: registry/skills.yaml
+    key: skills
+    shape: list
+    id: name
+    globs: ["skills/**/SKILL.md"]
+    # One external pack vendors every skill TWICE — under `.agents/skills/` and under `skills/`.
+    # Indexing both makes seven ids collide; the generator now REPORTS a collision rather than
+    # letting the last file win, so this exclusion is the real fix rather than a way to silence it.
+    # node_modules: a skill's vendored npm deps can ship their own SKILL.md (playwright-core ships
+    # `trace` and `skill`); they are gitignored, not ours, and not linked into the harness.
+    exclude: ["**/.agents/**", "**/node_modules/**"]
+    # 85 external skills live at skills/_external/<pack>/<skill>/ and are exposed to the harness as
+    # ext-<skill>. Derived from the PATH, not the name: the location is what is true.
+    id_rules:
+      - when_path_contains: "/_external/"
+        prefix: "ext-"
+    field: description
+    derived: [path, version, description, source, provider, listing, category]
+    # ⚑ LISTING + CATEGORY (2026-10-16). `listing` is what the harness shows the model (rendered into
+    # Claude Code `skillOverrides` by build_skill_overrides.py); `category` is one key of the
+    # controlled vocabulary. Resolved by build_registry.resolve_listing(), first hit wins:
+    # frontmatter -> each sidecar below, in order -> listing_defaults[source].
+    # `off` is accepted from a sidecar only; in frontmatter it is reported as listing_invalid.
+    listing_values: ["on", name-only, user-only]
+    listing_sidecars: [config/skill-listing.yaml]
+    category_vocabulary: config/skill-categories.yaml
+    # Internal skills default to name-only (Amendment B2: the listing budget is 8k chars at a 200k
+    # window, so `on` is a small curated set) — but a MISSING value on a provenance named in
+    # listing_required is reported as `listing_missing` drift, never accepted silently.
+    # This stanza is ALSO the default listing policy for the harness tree: when my-lib's own
+    # registry-map declares none (every fresh teammate or public install), build_skill_overrides
+    # and install_skill_overrides fall back to it. `bundled` is here for that use.
+    listing_defaults: {external: user-only, synced: user-only, system: name-only,
+                       team: name-only, local: name-only, project: name-only, bundled: name-only}
+    listing_required: [team, local, project]
+    # Indexed but never linked into the harness by link_skills.py, so a listing would describe
+    # nothing: archived skills and the workspace-developer bundle.
+    listing_not_linked: ["/_archived/", "/_workspace-developer/"]
+
+  personas:
+    file: registry/personas.yaml
+    key: personas
+    shape: list
+    id: name
+    globs: ["personas/*.md"]
+    exclude: ["**/index.md"]
+    field: description
+    # skill_categories: what the persona passes to find-skill (2026-10-16). Checked against the
+    # same vocabulary as a skill's `category:`, so a persona cannot ask for a category no skill carries.
+    derived: [path, version, description, skill_categories]
+    category_vocabulary: config/skill-categories.yaml
+
+  context:
+    file: registry/context.yaml
+    key: context
+    shape: map
+    globs: ["context/indexed/*.md"]
+    exclude: ["**/index.md"]
+    field: description
+    derived: [path, description]
+
+  # Human-facing workspace applications (TUIs, panes, desktop tools). Each app is a FOLDER, and
+  # its human README.md is the indexed entry point, so the id comes from the folder name.
+  # Added 2026-10-15 with the music pane, the first app.
+  apps:
+    file: registry/apps.yaml
+    key: apps
+    shape: list
+    id: name
+    id_from: dir
+    globs: ["apps/*/README.md"]
+    field: description
+    derived: [path, version, description]
+
+  people:
+    file: registry/people.yaml
+    key: people
+    shape: map
+    globs: ["context/indexed/people/*.md"]
+    exclude: ["**/index.md"]
+    field: description
+    derived: [path, description]
+
+# Which trees validate_registry should diff in BOTH directions, and what to skip in each.
+validate:
+  docs_root: context/indexed
+  # The default key list plus `apps` (added 2026-10-15). Extended HERE, per the validator's own
+  # instruction, rather than by editing its built-in default.
+  collection_keys: [sections, skills, sources, executions, directives, personas, context,
+                    integrations, packs, apps]
+  coverage:
+    skills: {dir: skills, skip_prefixes: [".", "_"]}
+    apps: {dir: apps, skip_prefixes: [".", "_"]}
+  # this layer names the pointer field `description:`; acme-health-main says `summary:`
+  required_any: [description, summary]
+  # DECLARED not-an-index. Each is a real artifact, just not a listing of files — and declaring
+  # them is what lets the validator fail honestly on a manifest that IS an index and is empty.
+  non_index:
+    - mirror.yaml             # publication contract: pairs, exclusions, portability exemptions
+    - workspace.yaml          # topology, scopes, run() signatures
+    - skills-scan-state.yaml  # scanner state: allowlist and pins
+    - context-packs.yaml      # curated groupings, currently empty
+
+  # ⚑ AN EXCLUSION IS A DELETION DECISION — it removes a tree from the gate permanently, so each
+  # entry carries its reason. Ruled by the operator 2026-08-08 ("exclude backlog, runtime, and skill
+  # bundle files"); this layer has no backlog/, so only two of the three apply.
+  census_exclude:
+    - path: runtime
+      reason: >-
+        Ephemeral by design — logs and generated run output, regenerated rather than authored.
+        Not agent-consumable reference material.
+    - path: skills/*/evaluators
+      reason: >-
+        Skill-internal evaluator fixtures (judge briefs, prompts, frozen reference outputs). The
+        autoresearch loop requires evaluators to be IMMUTABLE, so adding frontmatter would change the
+        measured inputs; SKILL.md is the indexed entry point.
+    - path: skills/*/references
+      reason: >-
+        Skill-internal bundle resource. SKILL.md is the agent-consumable entry point and is
+        indexed; its references/ are read only once that skill is already loaded.
+    - path: skills/*/agents
+      reason: Skill-internal bundle resource — sub-agent prompts, reached only via their SKILL.md.
+    - path: skills/*/scenarios
+      reason: Skill-internal bundle resource — test scenarios, reached only via their SKILL.md.
+    - path: skills/*/strategies
+      reason: Skill-internal bundle resource — strategy files, reached only via their SKILL.md.
+    - path: skills/*/reference
+      reason: >-
+        The SINGULAR sibling of `skills/*/references`. Both spellings exist on disk and a glob
+        naming only the plural leaves the other unbounded — the narrow-glob shape. Same rule.
+    - path: context/indexed/templates
+      reason: >-
+        TEMPLATE SKELETONS, copied into other projects. Giving these frontmatter would be actively
+        wrong: AGENTS.md's metadata standard says an instance built from a template gets FRESH
+        frontmatter and must never inherit the template's values, so frontmatter here is exactly
+        what would get copied and become false. The skeleton is scaffolding, not reference.

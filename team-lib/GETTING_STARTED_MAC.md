@@ -1,0 +1,62 @@
+---
+template: onboarding-guide
+version: 2.1.0
+summary: "macOS Phase 1 for GETTING_STARTED.md: Xcode CLT + Homebrew + package installs (setup_system.sh is Debian/Ubuntu-only and will not run on a Mac). Rejoin GETTING_STARTED.md at Phase 2; covers both the on-your-own and joining-a-team paths."
+created: 2026-02-18
+last_updated: 2026-10-16
+maintainer: pvragon
+---
+
+# Onboarding, Phase 1 (macOS)
+
+This file replaces **only Phase 1** of [GETTING_STARTED.md](./GETTING_STARTED.md) for Mac users. macOS is already Unix, so there's no WSL to install, but the system-setup script won't help you either: `_admin/setup_system.sh` is **Debian/Ubuntu-only** (it uses `apt-get` and exits immediately on macOS). Install its package list with Homebrew instead, below.
+
+Do Phase 0 (Accounts and Access) from GETTING_STARTED.md first, then:
+
+## 1. Xcode Command Line Tools
+
+Open **Terminal** (Cmd+Space, then type "Terminal") and run:
+
+```bash
+xcode-select --install
+```
+
+Click **Install** in the popup and wait for it to finish.
+
+## 2. Homebrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Follow the on-screen instructions at the end to add `brew` to your PATH (it prints two commands to copy and paste). Verify with `brew --version`.
+
+## 3. Install the toolchain packages
+
+This is the macOS equivalent of `setup_system.sh`: same tools, Homebrew names.
+
+```bash
+brew install git gh python@3.12 node jq ripgrep sqlite tree wget bash
+```
+
+Notes:
+- **No `sudo`:** Homebrew refuses to run as root.
+- **`bash` matters:** macOS ships bash 3.2 (2007), and the setup scripts use features that need bash 4+. Homebrew's bash installs alongside the system one, and the scripts pick it up via `/usr/bin/env bash` as long as your PATH prefers Homebrew (the PATH commands from step 2 handle this). Verify: `bash --version` shows 5.x.
+
+## 4. Verify
+
+```bash
+git --version && gh --version && python3 --version && node --version && jq --version
+```
+
+All five print versions: **✓ Checkpoint passed.**
+
+---
+
+## Continue in GETTING_STARTED.md
+
+Rejoin **[GETTING_STARTED.md at Phase 2](./GETTING_STARTED.md#phase-2-connect-your-terminal-to-github)** (Connect Your Terminal to GitHub) and follow it to the end. Three Mac adjustments as you go:
+
+- **Phase 2 step 1:** skip the `apt-get` line; Homebrew already installed `git` and `gh`. Just run `gh auth login`.
+- **Phase 3, system setup step (3A step 2 or 3B step 2):** skip the `sudo ... setup_system.sh` command entirely. You just did its job with Homebrew. Run the workspace setup step as written.
+- **Phase 5 step 4:** your workspace file is at `~/ai-workspace/ai-workspace.code-workspace` (no `\\wsl$` path, no WSL extension needed).

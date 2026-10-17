@@ -1,0 +1,6 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "quick-yesno",
+  "run": 1,
+  "text": "Yes. `find_logs` filters with `p.is_file()` (`fixture/rotate_logs.py:12`), which follows the link and returns True for a symlink to a regular file. Two consequences: the glob keeps such symlinks, and `compress` then reads the target, writes a `.gz` beside the link, and unlinks the link only."
+}

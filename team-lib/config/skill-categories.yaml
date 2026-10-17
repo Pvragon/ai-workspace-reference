@@ -1,0 +1,54 @@
+# summary: THE controlled vocabulary for a skill's `category:` — one value per skill, chosen from
+#   the keys below. Read by build_registry.py (derives `category` into registry/skills.yaml and
+#   reports values outside this list as `category_invalid`), validate_registry.py (enum check) and
+#   build_skill_overrides.py. find-skill filters on it; persona skills declare the categories
+#   relevant to them.
+# ---------------------------------------------------------------------------------------------
+# ⚑ WHY A CLOSED LIST. Free-form `tags:` grew to 357 distinct values in team-lib's registry and
+#   cannot be filtered on: two skills about the same thing rarely share a tag. A category is the
+#   ONE coarse bucket a skill belongs to, so "show me the messaging skills" has an answer.
+#   `tags:` stays as the fine-grained, free-form field; it is not replaced.
+#
+# ⚑ GENERIC NAMES ONLY. This file publishes with team-lib (and from there to the public reference
+#   repo), so no client, company or product names appear in a key or a meaning. A skill specific
+#   to one client picks the generic bucket its WORK belongs to.
+#
+# Adding a category: add the key + a one-line meaning here, in the same commit as the first skill
+# that uses it. Renaming or removing one is a migration: grep every SKILL.md `category:` and both
+# config/skill-listing.yaml sidecars first, or the validator will report them invalid.
+# Derived from what the 178 harness-visible skills actually do (2026-10-16 survey).
+# ---------------------------------------------------------------------------------------------
+
+template: config
+version: 1.0.0
+summary: Controlled vocabulary for the skill `category:` field — 25 generic buckets, each with a one-line meaning.
+created: 2026-10-16
+last_updated: 2026-10-16
+maintainer: your-agent
+
+categories:
+  writing: Drafting, editing and de-AI-ing prose — internal comms, co-authored docs, copy polish.
+  documents: Creating, converting or reading document files — docx, pdf, xlsx, pptx, branded docs, shared docs.
+  design: Visual design and imagery — art, themes, UI design systems, diagrams, image generation and print prep.
+  brand: Brand guidelines, design tokens and brand-composed templates.
+  web: Building, polishing and deploying websites, landing pages, frontends and web artifacts.
+  engineering: Software architecture and development — backend, fullstack, cloud, DevOps, code review, stack choice.
+  testing: QA, test-driven development, test automation and browser-driven test harnesses.
+  data-ml: Data engineering, analytics, data science, machine learning and computer vision.
+  ai-tooling: Prompts, skills, MCP servers and other LLM / agent tooling.
+  security: Application and information security, ISMS, malware and credential incident response.
+  compliance: Regulatory affairs, quality management systems, privacy law and compliance audits.
+  career: Resumes, cover letters, job applications, interviews, offers and negotiation.
+  business: Executive strategy, product management, agile delivery, marketing and product listings.
+  research: Multi-source research, academic papers, literature review and paper writing.
+  messaging: Sending or posting messages for the user — email, chat DMs, status pulses, tickets.
+  personal-admin: The user's own day-to-day admin — inbox triage, calendar, time logging, briefs.
+  sessions: Managing agent sessions — handoff, debrief, snapshot and resume, find, list, clean up.
+  agent-memory: The agent's own memory — reflection cycles, consolidation, memory hygiene, imports.
+  workspace: Maintaining the workspace itself — registries, graduation, templates, directives, rule currency, shell setup.
+  review: Structured multi-pass or multi-reviewer critique of specs, schemas, decisions and findings.
+  personas: Loading a role persona (a domain expert or an always-on assistant) for the session.
+  billing-audit: Claims, billing-chain integrity and audit-row matching for a healthcare transport operation.
+  shopping: Finding and pricing things to acquire — retail deals, marketplaces, verification, download search.
+  games: Designing, building, testing and producing games, digital or print-and-play.
+  system: Operating the computer itself — desktop/OS configuration, crash diagnosis, hardware, browser and app automation, IT tenant admin.

@@ -1,0 +1,215 @@
+{
+    "$schema": "base-template-v2",
+    "baseType": "slides",
+    "baseVersion": "2.0.0",
+    "description": "Universal slide formatting rules — shared across all slides-* template types. Override files extend this base and only specify differences.",
+
+    "presentationSettings": {
+        "slideWidth": 960,
+        "slideHeight": 540,
+        "sizeUnit": "pt",
+        "aspectRatio": "16:9",
+        "backgroundColor": { "tokenRef": "color.background.default" },
+        "defaultFont": { "tokenRef": "typography.font.primary" },
+        "fallbackFont": { "tokenRef": "typography.font.fallback" },
+        "defaultTextColor": { "tokenRef": "color.text.default" }
+    },
+
+    "slideTypes": {
+        "title": {
+            "background": { "tokenRef": "color.brand.primary" },
+            "logo": {
+                "ref": { "tokenRef": "logo.fullOnDark" },
+                "position": "top-center",
+                "marginTop": 60,
+                "marginTopUnit": "pt",
+                "scaleFactor": 1.5
+            },
+            "title": {
+                "fontSize": 36,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.onPrimary" },
+                "bold": true,
+                "alignment": "center",
+                "marginTop": 40,
+                "marginTopUnit": "pt"
+            },
+            "subtitle": {
+                "fontSize": 18,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.background.accent" },
+                "bold": false,
+                "alignment": "center",
+                "marginTop": 12,
+                "marginTopUnit": "pt"
+            },
+            "date": {
+                "fontSize": 12,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.background.accent" },
+                "alignment": "center",
+                "italic": true,
+                "marginTop": 24,
+                "marginTopUnit": "pt"
+            },
+            "accentBar": {
+                "color": { "tokenRef": "color.brand.accent" },
+                "width": 100,
+                "height": 3,
+                "widthUnit": "pt",
+                "heightUnit": "pt",
+                "position": "center",
+                "marginTop": 16,
+                "marginTopUnit": "pt"
+            }
+        },
+
+        "sectionDivider": {
+            "background": { "tokenRef": "color.text.default" },
+            "title": {
+                "fontSize": 30,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.onDark" },
+                "bold": true,
+                "alignment": "center"
+            },
+            "accentLine": {
+                "color": { "tokenRef": "color.brand.accent" },
+                "width": 60,
+                "height": 2,
+                "widthUnit": "pt",
+                "heightUnit": "pt",
+                "position": "center",
+                "marginBottom": 16,
+                "marginBottomUnit": "pt"
+            }
+        },
+
+        "content": {
+            "background": { "tokenRef": "color.background.default" },
+            "padding": { "top": 50, "bottom": 40, "left": 50, "right": 50, "unit": "pt" },
+            "heading": {
+                "fontSize": 22,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.brand.primary" },
+                "bold": true,
+                "marginBottom": 12,
+                "marginBottomUnit": "pt"
+            },
+            "body": {
+                "fontSize": 14,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.default" },
+                "lineSpacing": 140,
+                "lineSpacingUnit": "percentage"
+            },
+            "bullets": {
+                "fontSize": 14,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.default" },
+                "markerColor": { "tokenRef": "color.brand.accent" },
+                "markerStyle": "filled-circle",
+                "markerSize": 6,
+                "markerSizeUnit": "pt",
+                "spacing": 8,
+                "spacingUnit": "pt",
+                "indentPerLevel": 20,
+                "indentPerLevelUnit": "pt"
+            },
+            "logo": {
+                "ref": { "tokenRef": "logo.icon" },
+                "position": "top-right",
+                "opacity": 0.35,
+                "margin": 16,
+                "marginUnit": "pt"
+            },
+            "accentStripe": {
+                "enabled": true,
+                "color": { "tokenRef": "color.brand.primary" },
+                "width": 4,
+                "widthUnit": "pt",
+                "position": "left-edge"
+            }
+        },
+
+        "closing": {
+            "background": { "tokenRef": "color.brand.primary" },
+            "logo": {
+                "ref": { "tokenRef": "logo.fullOnDark" },
+                "position": "top-center",
+                "marginTop": 60,
+                "marginTopUnit": "pt",
+                "scaleFactor": 2.0
+            },
+            "heading": {
+                "fontSize": 30,
+                "fontSizeUnit": "pt",
+                "font": { "tokenRef": "typography.font.primary" },
+                "color": { "tokenRef": "color.text.onPrimary" },
+                "bold": true,
+                "alignment": "center",
+                "marginTop": 50,
+                "marginTopUnit": "pt"
+            },
+            "message": {
+                "fontSize": 16,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.background.accent" },
+                "alignment": "center",
+                "marginTop": 16,
+                "marginTopUnit": "pt"
+            },
+            "contactInfo": {
+                "fontSize": 12,
+                "fontSizeUnit": "pt",
+                "color": { "tokenRef": "color.background.accent" },
+                "alignment": "center",
+                "marginTop": 20,
+                "marginTopUnit": "pt",
+                "email": { "tokenRef": "company.email" },
+                "website": { "tokenRef": "company.website" }
+            }
+        }
+    },
+
+    "slideFooter": {
+        "enabled": true,
+        "slideNumbers": true,
+        "slideNumberAlignment": "right",
+        "slideNumberColor": { "tokenRef": "color.text.subtle" },
+        "slideNumberFontSize": 9,
+        "slideNumberFontSizeUnit": "pt",
+        "companyName": { "tokenRef": "company.name" },
+        "companyNameAlignment": "left",
+        "companyNameColor": { "tokenRef": "color.text.subtle" },
+        "companyNameFontSize": 9,
+        "companyNameFontSizeUnit": "pt",
+        "hideOnTitleSlide": true,
+        "hideOnClosingSlide": true
+    },
+
+    "transitions": {
+        "default": "none"
+    },
+
+    "themeColors": {
+        "dark1": { "tokenRef": "color.text.default" },
+        "dark2": { "tokenRef": "color.brand.primary" },
+        "light1": { "tokenRef": "color.background.default" },
+        "light2": { "tokenRef": "color.background.subtle" },
+        "accent1": { "tokenRef": "color.brand.primary" },
+        "accent2": { "tokenRef": "color.brand.accent" },
+        "accent3": { "tokenRef": "color.text.subtle" },
+        "accent4": { "tokenRef": "color.status.successDark", "fallback": "color.brand.primary" },
+        "accent5": { "tokenRef": "color.background.accent" },
+        "accent6": { "tokenRef": "color.status.warningDark", "fallback": "color.brand.accent" },
+        "hyperlink": { "tokenRef": "color.link.default", "fallback": "color.brand.primary" },
+        "followedHyperlink": { "tokenRef": "color.link.visited", "fallback": "color.text.subtle" }
+    }
+}

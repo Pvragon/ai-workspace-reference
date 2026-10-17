@@ -1,0 +1,46 @@
+# summary: Team personas registry. Lists available agent personas with traits and use cases.
+# Personas Registry (team)
+# ------------------------------------------
+# This manifest catalogs available team agent personas.
+#
+# Schema:
+#   personas:
+#     - name: <string>           # Unique identifier
+#       description: <string>    # Brief description
+#       path: <string>           # Relative path to persona file
+#       traits: [<string>, ...]  # Key personality traits
+#       use_cases: [<string>, ...]  # Recommended use cases
+#       version: <string>        # Semantic version
+#       skill_categories: [<string>, ...]  # DERIVED from the persona file's frontmatter (edit the
+#                                # file, never this entry). Categories from config/skill-categories.yaml;
+#                                # the persona passes them to find-skill instead of listing tools.
+#
+# Example:
+#   personas:
+#     - name: team-lead
+#       description: Team coordination and guidance persona
+#       path: personas/team-lead.md
+#       traits: [collaborative, strategic, supportive]
+#       use_cases: [planning, coordination, mentoring]
+#       version: "1.0.0"
+#
+# ------------------------------------------
+
+personas:
+- name: linkedin-writer
+  description: 'LinkedIn Content Specialist persona: generates posts from initial descriptions and social
+    one-pagers. Max 1500 chars, Hook/Context/Pitch/Offer/Question structure.'
+  path: personas/linkedin-writer.md
+  traits:
+  - professional
+  - conversational
+  - authentic
+  use_cases:
+  - social-media
+  - content-creation
+  - linkedin-posts
+  version: 1.0.2
+  skill_categories:
+  - writing
+  - business
+  - career

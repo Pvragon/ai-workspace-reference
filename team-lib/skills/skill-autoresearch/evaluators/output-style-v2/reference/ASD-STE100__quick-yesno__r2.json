@@ -1,0 +1,6 @@
+{
+  "style": "ASD-STE100",
+  "prompt_id": "quick-yesno",
+  "run": 2,
+  "text": "Yes. `find_logs` (line 12) filters with `p.is_file()`, which follows the symlink and returns `True` for a link to a regular file, so a matching symlink enters the rotation set.\n\nTwo related notes on that path:\n- `compress` reads through the link. It then calls `path.unlink()`, which removes the link only. The link target stays on disk.\n- `prune_archives` (line 28) does not filter by `is_file()` at all, so it can `unlink()` a `.gz` symlink or any other `.gz` entry."
+}

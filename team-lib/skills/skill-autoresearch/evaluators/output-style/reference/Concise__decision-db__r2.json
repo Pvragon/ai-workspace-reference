@@ -1,0 +1,44 @@
+{
+  "style": "Concise",
+  "prompt_id": "decision-db",
+  "run": 2,
+  "elapsed_s": 25.1,
+  "rc": 0,
+  "text": "**SQLite.** Not close, for this shape of app.\n\nPostgres is a server: you'd ship a daemon (or embedded fork) with a desktop app, manage its lifecycle, handle port conflicts and version-mismatched data dirs on upgrade \u2014 all to get concurrency and network access a single-user offline app doesn't use. SQLite is in `stdlib` (`sqlite3`), the DB is one file the user can back up or sync with Dropbox, and it's plenty fast for a personal note corpus. Its usual weakness (one writer at a time) is irrelevant when there's exactly one writer.\n\nThe later-sync requirement doesn't change this. Local store and server store are independent choices \u2014 the standard architecture is SQLite on the client, Postgres on the server, syncing over HTTP. Matching engines buys you nothing, because you can't replicate directly into a client behind NAT anyway; you need a sync protocol either way.\n\nWhat *does* need to be decided now, because retrofitting it is expensive:\n\n- **UUIDv7 primary keys, not autoincrement integers** \u2014 otherwise two devices both create note `id=5` and you can't merge.\n- **Every row carries `updated_at` and a `deleted_at` tombstone** \u2014 hard deletes are unsyncable; a delete must be a fact you can transmit.\n- **An outbox table** logging local changes since the last successful sync, so an offline session's edits survive to the next connection.\n- **Pick your conflict rule explicitly.** Last-write-wins is fine for notes and is one column; if you want concurrent edits to merge cleanly, a CRDT text type (`pycrdt`) is the real answer, but it's a much bigger commitment. LWW is the right default unless you know you need better.\n\n`sqlite3` is stdlib; add SQLAlchemy only if you want the ORM, and enable WAL mode (`PRAGMA journal_mode=WAL`) plus FTS5 for note search.\n\nWant me to write this up as a plan file with a concrete schema, or is the recommendation enough?",
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 14578,
+    "cache_read_input_tokens": 69535,
+    "output_tokens": 1341,
+    "output_tokens_details": {
+      "thinking_tokens": 416
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 14578,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 776,
+        "cache_read_input_tokens": 28104,
+        "cache_creation_input_tokens": 415,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 415
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_usd": 0.2151075,
+  "num_turns": 3,
+  "is_error": false
+}
