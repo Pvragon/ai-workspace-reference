@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.6.1
+# version: 1.6.2
 # summary: >-
 #   Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free
 #   passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank
@@ -118,7 +118,7 @@ def _finding(source, key, text, severity="normal"):
         pass
 
 
-CCUSAGE_PIN = "20.0.28"      # the version team-lib/_admin/statusline.sh is validated against
+CCUSAGE_PIN = "20.0.30"      # the version team-lib/_admin/statusline.sh is validated against (re-tested 2026-10-19)
 
 
 def _ccusage_prices() -> str:
@@ -557,7 +557,10 @@ def main() -> int:
             _finding("publication", "leak-blocked",
                      "publish refused: a scrubbed identifier survived generalization. "
                      "The public repo was NOT updated — add a generalization rule.",
-                     severity="high")
+                     # findings.py accepts only normal|critical. This said "high", argparse
+                     # rejected it, _finding swallowed the error, and refusals from 2026-09-24
+                     # to 10-15 never reached the inbox (finding 57ddf181c5, fixed 2026-10-19).
+                     severity="critical")
         elif p.get("written"):
             log.append(f"publication: regenerated {p['written']} file(s) (committed, not pushed)")
             _finding("publication", "regenerated",

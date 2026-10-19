@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.3.0
+# version: 1.3.1
 # summary: 'Deterministic pre-flight for session-debrief: collects git changes, checks registry consistency,
 #   detects sync needs, flags stale state, pre-stages today''s T1 facts/residue files, head-starts background
 #   transcript+state-dump jobs. Outputs structured JSON.'
@@ -280,6 +280,13 @@ fi
 session_start="unknown"
 _proj_dir="$HOME/.claude/projects/$(pwd | sed 's#/#-#g')"
 _sid="${CLAUDE_CODE_SESSION_ID:-}"
+# The JSONL lives under the LAUNCH cwd's project dir, which is not always $(pwd) (sessions
+# spawned into a worktree, or that cd'd). Missing it here fell through to the 48h-commit proxy
+# and reported another session's start (findings 4141507f6a, 5fd3cb2576; 2026-10-19).
+if [[ -n "$_sid" && ! -f "$_proj_dir/$_sid.jsonl" ]]; then
+  _found=$(find "$HOME/.claude/projects" -maxdepth 2 -name "$_sid.jsonl" -print -quit 2>/dev/null || true)
+  [[ -n "$_found" ]] && _proj_dir="$(dirname "$_found")"
+fi
 if [[ -n "$_sid" && -f "$_proj_dir/$_sid.jsonl" ]]; then
   session_start=$(python3 -c '
 import json, sys
@@ -518,7 +525,10 @@ session_marker="debrief_$(date +%s%N)_$$_$RANDOM"
 
 # The report is also saved to a file so subagents read it by path. Pasting the
 # JSON into three subagent prompts made the main agent generate it three times.
-report_path="$MYLIB/runtime/.tmp/$(date +%y%m%d)-debrief-preflight-${session_marker}.json"
+# Anchored on the personal layer, not the cwd repo: only my-lib has runtime/.tmp, so a debrief
+# run from personal/, team-lib/ or ~/Work used to tee into a missing dir and hand subagents a
+# dead path (findings 9ae22e6e61, 961f214fae, fba14948a6; fixed 2026-10-19).
+report_path="${WS_MYLIB:-$MYLIB}/runtime/.tmp/$(date +%y%m%d)-debrief-preflight-${session_marker}.json"
 
 # ============================================================
 # OUTPUT — Structured JSON report

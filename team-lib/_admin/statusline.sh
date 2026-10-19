@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.5
+# version: 1.0.6
 # summary: 'The Claude Code status line: location, context window used against the model''s ceiling,
 #   model, rate-limit clocks, and the ambient findings count. Graduated from the agent adapter layer
 #   2026-08-01 — team-lib''s findings skill documents a statusline segment, so the statusline itself
 #   belongs in the shared layer that ships it.'
 # created: 2026-08-01
-# last_updated: 2026-10-15
+# last_updated: 2026-10-19
 # maintainer: pvragon
 # ---
 #
@@ -96,7 +96,7 @@ rl7_at=$(echo "$input"   | jq -r '.rate_limits.seven_day.resets_at // empty')
 # 5h: ccusage's "active block" maps to Anthropic's 5h billing window.
 # 7d: ccusage is day-granular; prorate the oldest day to the fraction inside
 # the 168h rolling window so the value doesn't step at midnight.
-# REQUIRES ccusage >= 20 (pinned 20.0.28, 2026-10-10: `npm i -g ccusage@20.0.28`).
+# REQUIRES ccusage >= 20 (pinned 20.0.30, re-validated 2026-10-19: blocks/daily JSON shape unchanged, ~1 s; was 20.0.28).
 # v18 re-parsed the ~800 MB corpus in >120 s at ~4 GB RSS, never finished inside
 # the timeout, wrote no cache, and so respawned on every render: a parse loop
 # running for as long as any session worked. v20 does the same corpus in ~1.4 s

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.9.1
+# version: 1.9.2
 # summary: 'Deterministic post-flight for session-debrief: cleans Zone.Identifier junk, extracts session
 #   transcripts, dumps system state, runs adapters, AUTO-EXTRACTS touched files from JSONL, commits
 #   repos, posts pulse debrief. v1.6.0 adds the dream-cycle memory self-maintenance: an incremental
@@ -122,7 +122,7 @@ if [[ "$SKIP_COMMIT" == false && "$LEGACY_ADD_ALL" == false ]]; then
     # Need session-id to find the JSONL; resolve from marker if needed (replicate the
     # marker-resolution logic that the title-prepend step does later).
     if [[ -z "$SESSION_ID" && -n "$SESSION_MARKER" ]]; then
-      MARKED_JSONL=$(grep -l "$SESSION_MARKER" "$HOME/.claude/projects/"*/*.jsonl 2>/dev/null | head -1)
+      MARKED_JSONL=$( { grep -l "$SESSION_MARKER" "$HOME/.claude/projects/"*/*.jsonl 2>/dev/null || true; } | head -1)
       if [[ -n "$MARKED_JSONL" ]]; then
         SESSION_ID=$(basename "$MARKED_JSONL" .jsonl)
         echo "Auto-extract: resolved session from marker: $SESSION_ID"
@@ -176,7 +176,7 @@ fi
 # JSONL as the bash tool_result. grep -l identifies the matching JSONL
 # deterministically, regardless of how many concurrent sessions exist.
 if [[ -n "$SESSION_MARKER" && -z "$SESSION_ID" ]]; then
-  MARKED_JSONL=$(grep -l "$SESSION_MARKER" "$HOME/.claude/projects/"*/*.jsonl 2>/dev/null | head -1)
+  MARKED_JSONL=$( { grep -l "$SESSION_MARKER" "$HOME/.claude/projects/"*/*.jsonl 2>/dev/null || true; } | head -1)
   if [[ -n "$MARKED_JSONL" ]]; then
     SESSION_ID=$(basename "$MARKED_JSONL" .jsonl)
     echo "Resolved session from marker: $SESSION_ID"
@@ -360,6 +360,12 @@ if [[ -n "$SESSION_ID" ]]; then
       errors+=("session_title: --session-id JSONL not found under ~/.claude/projects/ for $SESSION_ID")
     fi
   fi
+elif [[ -n "$SESSION_MARKER" ]]; then
+  # A marker was given but no JSONL holds it (e.g. a session with no transcript). Guessing by
+  # mtime here retitled an unrelated concurrent session (2026-10-15, finding 5b3363d067), so
+  # skip the title step instead of guessing.
+  echo "  WARNING: --session-marker matched no JSONL; skipping the session title rather than guessing."
+  CURRENT_JSONL=""
 else
   echo "  WARNING: No --session-id provided. Guessing from mtime (unreliable with multiple terminals)."
   CURRENT_JSONL=$(ls -t "$CLAUDE_PROJECT"/*.jsonl 2>/dev/null | grep -v '/agent-' | head -1)

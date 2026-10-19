@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.3
+# version: 1.1.0
 # summary: >-
 #   Sweeps T2 workstream files for close signals and age-out: retires one whose `close_signal`
 #   has fired, and moves an untouched follow-on to dormant after the age threshold. Dry-run by
 #   default; --apply writes. Dormancy is a THIRD terminal status, touch-to-revive, so "quiet"
 #   never silently reads as "abandoned".
 # created: 2026-07-10
-# last_updated: 2026-10-07
+# last_updated: 2026-10-19
 # maintainer: pvragon
 # ---
 """sweep_workstreams.py — detect closed / aged-out T2 workstreams for the debrief.
@@ -45,8 +45,8 @@ Two pathways, run over EVERY project_*.md at each debrief (any thread, any time)
     on (26 such items on 2026-07-30).
 
   Pathway 3 — revival.
-    A dormant item whose `last_touched` moves past its `dormant_since` returns to
-    in-flight automatically. Working on it IS the revival signal — there is no
+    A dormant item whose `last_touched` moves past its `dormant_since` returns to the
+    status it had before going dormant (`dormant_from`; in-flight when unrecorded). Working on it IS the revival signal — there is no
     command to remember, which is the point. Closing on a 20-day timer is only
     safe because coming back is free.
 
@@ -303,6 +303,11 @@ def apply_dormant(path, today, age):
     long the item actually sat.
     """
     t = clear_cs(path.read_text())
+    # Remember what it was, so revival can restore it: a handed-off item revived as in-flight
+    # put a ball back in our court that was in someone else's (northwind-rbac-drift, 2026-10-07).
+    m_prev = re.search(r"^(\s*)status:\s*([\w-]+)", t, re.M)
+    if m_prev and m_prev.group(2) in OPEN_STATUSES and not re.search(r"^\s*dormant_from:", t, re.M):
+        t = re.sub(r"^(\s*)(status:.*)$", rf"\1\2\n\1dormant_from: {m_prev.group(2)}", t, count=1, flags=re.M)
     if re.search(r"^\s*status:.*$", t, re.M):
         t = re.sub(r"^(\s*)status:.*$", r"\1status: dormant", t, count=1, flags=re.M)
     else:
@@ -343,10 +348,14 @@ def apply_dormant(path, today, age):
 
 def apply_revive(path, today):
     t = path.read_text()
-    t = re.sub(r"^(\s*)status:.*$", r"\1status: in-flight", t, count=1, flags=re.M)
+    # Restore the pre-dormant status when it was recorded; in-flight only when it was not.
+    m_from = re.search(r"^\s*dormant_from:\s*([\w-]+)", t, re.M)
+    back = m_from.group(1) if m_from and m_from.group(1) in OPEN_STATUSES else "in-flight"
+    t = re.sub(r"^(\s*)status:.*$", rf"\1status: {back}", t, count=1, flags=re.M)
     t = re.sub(r"^\s*dormant_since:.*\n", "", t, count=1, flags=re.M)
+    t = re.sub(r"^\s*dormant_from:.*\n", "", t, count=1, flags=re.M)
     note = (f"\n## Revived {today}\n\nEdited after going dormant, so the sweep returned it to "
-            "in-flight.\n")
+            f"{back}.\n")
     if f"## Revived {today}" not in t:
         t = t.rstrip() + "\n" + note
     path.write_text(t)

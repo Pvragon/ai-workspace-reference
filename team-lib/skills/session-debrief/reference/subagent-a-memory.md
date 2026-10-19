@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 2.0.1
+version: 2.0.2
 summary: "Instructions for session-debrief Subagent A (memory capture): write T1 facts and residue, update T2 workstream lifecycle fields, run the close/age sweep, and return lens and reusable-method candidates. Read by the subagent itself."
 created: 2026-10-06
-last_updated: 2026-10-06
+last_updated: 2026-10-19
 maintainer: pvragon
 ---
 
@@ -59,7 +59,7 @@ For each workstream the session actively touched, find or create `memory/project
 
 Status meanings: `in-flight` is being driven this week; `handed-off` means someone else has the ball; `follow-on` is known cleanup with no external trigger; `archived` was resolved this session. If the session changed substantive state, also append a one-liner under the file's `## Recent activity` section.
 
-**You own the lifecycle fields; Subagent B owns the index fields** (`cs_section`, `cs_headline`). You both edit the same files at the same time, split by field. One exception: if you create a T2 file this run, set its `cs_section` and `cs_headline` yourself and say so in your return. B cannot see a file that did not exist when it started.
+**You own the lifecycle fields; Subagent B owns the index fields** (`cs_section`, `cs_headline`). You both edit the same files at the same time, split by field. One exception: if you create a T2 file this run, **or revive a dormant one** (status back to `in-flight`, by edit or `--revive`), set its `cs_section` and `cs_headline` yourself and say so in your return. B cannot see a file that did not exist, or was dormant, when it started.
 
 **Read the file body before writing `status`, `resolves_when` or `close_signal`.** Each is a claim about whether something has happened, and the body may already say otherwise. Never write one from the session summary alone.
 
@@ -72,7 +72,7 @@ python3 ~/ai-workspace/team-lib/executions/sweep_workstreams.py --apply
 It scans every `memory/project_*.md`:
 - **Close detection.** Checks each `close_signal` against live sources (ClickUp, GitHub, files) and archives anything satisfied.
 - **Dormancy.** Marks any open item whose `last_touched` is older than `--age-days` (default 20), and not `pin: true`, as `dormant`. Dormancy removes it from current-state, never from memory. It needs nothing from anyone: no backlog item, no disposition step.
-- **Revival.** A dormant item whose `last_touched` moves past `dormant_since` returns to `in-flight`. `--revive NAME` forces it without an edit.
+- **Revival.** A dormant item whose `last_touched` moves past `dormant_since` returns to the status it held before dormancy (`dormant_from`; `in-flight` if unrecorded). `--revive NAME` forces it without an edit.
 
 Report its `closed_by_signal`, `went_dormant`, `revived`, `needs_attention` and `errors` in your return.
 

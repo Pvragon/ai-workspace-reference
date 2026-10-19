@@ -166,7 +166,7 @@ executions:
     - cron
     - sleep-cycle
     - maintenance
-    version: 1.6.1
+    version: 1.6.2
   dream_journal:
     path: executions/dream_journal.py
     description: 'Dream-journal residue store for the sleep cycle''s reflective wakes. write() appends
@@ -613,7 +613,7 @@ executions:
     - sweep
     - dormancy
     - automation
-    version: 1.0.3
+    version: 1.1.0
   sync_people_from_baserow:
     path: executions/sync_people_from_baserow.py
     version: 1.0.0
