@@ -1,6 +1,6 @@
 ---
 template: skill-reference
-version: 2.0.2
+version: 2.0.3
 summary: "Instructions for session-debrief Subagent A (memory capture): write T1 facts and residue, update T2 workstream lifecycle fields, run the close/age sweep, and return lens and reusable-method candidates. Read by the subagent itself."
 created: 2026-10-06
 last_updated: 2026-10-19
