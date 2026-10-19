@@ -346,7 +346,7 @@ executions:
     - currency
     - graduation
     - linter
-    version: 1.2.12
+    version: 1.3.0
   link_skills:
     path: executions/link_skills.py
     description: 'Exposes shared skills to the harness: links ~/.claude/skills to the personal layer (a
@@ -491,7 +491,7 @@ executions:
     - current-state
     - concurrency
     - render
-    version: 1.1.1
+    version: 1.2.0
   repair_frontmatter:
     path: executions/repair_frontmatter.py
     description: Repair frontmatter blocks that are PRESENT but unparseable, by re-emitting them through
@@ -522,7 +522,7 @@ executions:
     - decay
     - roll-off
     - birth-grace
-    version: 2.4.0
+    version: 2.5.0
   scaffold_project_docs:
     path: executions/scaffold_project_docs.py
     description: Scaffolds the standard docs/ directory structure for a project in projects/, copying

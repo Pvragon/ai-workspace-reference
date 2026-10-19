@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 2.4.0
+# version: 2.5.0
 # summary: >-
 #   Regenerates MEMORY.md from the memory corpus on the two-strength model: score =
 #   (access_count+1) * exp(-days_since_last_access / stability) + importance. Emits Hot
@@ -138,6 +138,10 @@ NEWBORN_CHAR_BUDGET = 11000  # was 2500. Sized to the MEASURED birth rate (~95 i
 NEWBORN_SUMMARY_CHARS = 70   # newborn rows are triage ("worth opening?"), not the full
 # summary — and at this width the whole window fits. The filename already carries most of
 # the signal (`feedback_agents-md-is-rules-only-not-context`); 70 chars is confirmation.
+NEWBORN_MAX_ROWS = 15        # the operator 2026-10-19 (finding 6938bbf0c4): MEMORY.md is auto-loaded
+# ORIENTATION, and the birth band had grown to 58-75 rows (~69% of the auto-loaded table).
+# Only the newest 15 get a reserved row; older newborns compete for Cold on score like
+# everything else, or roll to MEMORY-archive.md.
 MEMORY_ARCHIVE = MEMORY_DIR / "MEMORY-archive.md"
 
 HEADER = """# Memory Index
@@ -470,7 +474,7 @@ def main() -> int:
     claimed = set()
     for e in newborns:
         row = f"| `{e['file']}` | {truncate(e['summary'], NEWBORN_SUMMARY_CHARS)} |\n"
-        if used_new + len(row) <= NEWBORN_CHAR_BUDGET:
+        if len(new) < NEWBORN_MAX_ROWS and used_new + len(row) <= NEWBORN_CHAR_BUDGET:
             new.append((e, row))
             used_new += len(row)
             claimed.add(e["file"])
@@ -522,8 +526,8 @@ def main() -> int:
     n_overflow = len(newborns) - len(new)
     parts += [f"\n## New (born within {int(GRACE_DAYS)} days — visible on birth, rank not yet earned)\n\n"
               f"**{len(new)} of {len(newborns)} born in the window are shown"
-              + (f"; {n_overflow} did not fit the band and are in Cold or "
-                 f"`MEMORY-archive.md`.**" if n_overflow else ".**")
+              + (f"; {n_overflow} are past the newest-"
+                 f"{NEWBORN_MAX_ROWS} cap and compete on score (Cold or `MEMORY-archive.md`).**" if n_overflow else ".**")
               + " Newest first. These have not been read enough to compete on score; they are here so "
               "they *can* be. Reading one reinforces it, and it graduates to Hot/Cold on merit when its "
               "grace window closes.\n\n| Topic File | Summary |\n|------------|---------|\n"]

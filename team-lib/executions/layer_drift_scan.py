@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.12
+# version: 1.3.0
 # summary: >-
 #   Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by
 #   comparing CONTENT HASHES, not version numbers — three shared skills once carried identical
@@ -255,6 +255,21 @@ def _compare_group(tree_id, group, unit, p_files, s_files, p_meta, s_meta) -> di
             files_differing=differing, only_personal=only_personal,
             only_shared=only_shared,
             reason=str(p_meta.get("mirror_reason", "") or s_meta.get("mirror_reason", "")),
+        )
+
+    # A person OVERLAY differs from its shared file by design: the personal copy holds only
+    # what the shared file must not (template: person-overlay, extends: <shared path>). The
+    # `extends:` pointer names its base explicitly, which is the declaration (the operator
+    # 2026-10-19, finding 2fb96bbade). Accepted only when it extends THIS group's shared file.
+    ext = str(p_meta.get("extends", "") or "")
+    if (str(p_meta.get("template", "")) == "person-overlay" and ext
+            and Path(ext).name == Path(str(group)).name):
+        return _finding(
+            "declared-divergent", "info", tree_id, group,
+            personal_version=p_ver, shared_version=s_ver,
+            files_differing=differing, only_personal=only_personal,
+            only_shared=only_shared,
+            reason=f"person-overlay extends {ext}",
         )
 
     one_sided = (p_decl == "divergent") ^ (s_decl == "divergent")

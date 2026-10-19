@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.1.1
+# version: 1.2.0
 # summary: >-
 #   Renders memory/current-state.md from the T2 topic files that declare a `cs_section` and a
 #   `status`. Single-writer under flock, so two debriefs finishing at once cannot interleave.
 #   The workstream sections of current-state.md are GENERATED — hand-edits there are discarded.
 # created: 2026-07-10
-# last_updated: 2026-10-15
+# last_updated: 2026-10-19
 # maintainer: pvragon
 # ---
 """regen_current_state.py — the SINGLE writer of current-state.md.
@@ -268,23 +268,27 @@ def main():
             line = f"- {n}" if not n.startswith("- ") else n
             if line.strip() not in {l.strip() for l in notes_lines}:
                 notes_lines.append(line)
-        if len(notes_lines) > NOTES_CAP:
+        # Pins do NOT count against the cap (the operator 2026-10-19, finding b6670dbd15): with 2 pins
+        # under a cap of 3, every debrief's new note evicted the previous session's note. The
+        # cap now applies to unpinned notes only; a warning still fires at 3+ pins.
+        unpinned = [l for l in notes_lines if not is_pinned(l)]
+        n_pins = len(notes_lines) - len(unpinned)
+        if len(unpinned) > NOTES_CAP:
             # Recent Decisions has had a cap since the start; Notes never did, so the section
-            # grew past its own stated 1-3 contract unnoticed (observed at 4, and 8 after a
-            # render that appended onto stale notes). Same discipline as the other two caps:
+            # grew past its own stated contract unnoticed. Same discipline as the other caps:
             # enforce it, but never silently. Notes carry no date, so "oldest" means earliest
             # in the section; pinned notes are never evicted.
-            over = len(notes_lines) - NOTES_CAP
-            evict = [l for l in notes_lines if not is_pinned(l)][:over]
+            evict = unpinned[:len(unpinned) - NOTES_CAP]
             for ln in evict:
                 print(f"  evicted (over notes cap {NOTES_CAP}): {ln.strip()}", file=sys.stderr)
-            print(f"WARNING: Notes for Next Session over cap — {len(evict)} entry(ies) evicted, "
-                  "listed above. Unpinned notes go oldest first; mark a note `[pin]` to keep it.",
-                  file=sys.stderr)
-            if len(evict) < over:
-                print(f"WARNING: {over - len(evict)} pinned note(s) over the cap were KEPT — "
-                      "unpin one the section no longer needs.", file=sys.stderr)
+            print(f"WARNING: Notes for Next Session over cap — {len(evict)} unpinned entry(ies) "
+                  "evicted, listed above. Unpinned notes go oldest first; mark a note `[pin]` to "
+                  "keep it.", file=sys.stderr)
             notes_lines = [l for l in notes_lines if l not in evict]
+        if n_pins >= NOTES_CAP:
+            print(f"WARNING: {n_pins} pinned note(s) in Notes for Next Session (pins do not count "
+                  f"against the cap of {NOTES_CAP}) — unpin any the section no longer needs.",
+                  file=sys.stderr)
         notes_body = ["", *(notes_lines or ["_None._"]), ""]
 
         # --- assemble ---
@@ -293,7 +297,7 @@ def main():
             parts += [header, "", *ws[header], ""]
         parts += ["## Blockers  <!-- on In Flight items only -->", *blockers_body]
         parts += ["## Recent Decisions  <!-- cap ~10, prune >14d -->", *dec_body]
-        parts += [f"## Notes for Next Session  <!-- cap {NOTES_CAP}, newest kept, [pin] survives -->", *notes_body]
+        parts += [f"## Notes for Next Session  <!-- cap {NOTES_CAP} unpinned, newest kept, [pin] survives and is not counted -->", *notes_body]
         rendered = "\n".join(parts).rstrip() + "\n"
 
         if args.dry_run:
