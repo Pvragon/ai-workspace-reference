@@ -44,7 +44,7 @@ fi
 
 out=$(restish figma "$@" -H "X-Figma-Token: ${FIGMA_TOKEN}" </dev/null 2>&1); rc=$?
 printf '%s\n' "$out"
-if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q -E '"status": ?(401|403)|Invalid token|Token expired|HTTP (401|403)'; then
+if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q -E '^(401|403)$|"status": ?(401|403)|Invalid token|Token expired|HTTP (401|403)'; then
   rotate_msg "expired or invalid (Figma answered 401/403; a 403 can also mean a missing scope)"
   exit 3
 fi

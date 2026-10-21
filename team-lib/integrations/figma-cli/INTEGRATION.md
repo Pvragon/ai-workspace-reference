@@ -1,14 +1,16 @@
 ---
 template: integration
-version: 1.1.0
+version: 1.1.1
 type: cli
-summary: "Figma CLI via Restish and Figma's official OpenAPI spec (54 operations): read files, export images, read and post comments. Auth via personal access token (90-day expiry) injected by the figma-cli wrapper, since Restish v2 cannot reference env vars in credentials. REST cannot edit canvas content."
+summary: "Figma CLI via Restish and Figma's official OpenAPI spec (54 operations): read files, export images, read and post comments. Auth via personal access token (90-day expiry) injected by the figma-cli wrapper, since Restish v2 cannot reference env vars in credentials. REST cannot edit canvas content. Public repo: github.com/<your-org>/figma-restish-cli (MIT, generic env-file version)."
 created: 2026-10-21
 last_updated: 2026-10-21
 maintainer: your-agent
 ---
 
 # Figma CLI (Restish)
+
+Public, generic version: https://github.com/<your-org>/figma-restish-cli (token from `FIGMA_TOKEN` or `FIGMA_ENV_FILE`, default `~/.config/figma-cli/env`).
 
 Use `figma-cli` (a thin wrapper over `restish figma ...`) to read Figma files, export node images and work with comments from the terminal.
 
