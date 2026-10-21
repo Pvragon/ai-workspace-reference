@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.1.1
+# version: 1.1.2
 # summary: 'The Claude Code status line: location, context window used against the model''s ceiling,
 #   model, rate-limit clocks, and the ambient findings count. Graduated from the agent adapter layer
 #   2026-08-01 — team-lib''s findings skill documents a statusline segment, so the statusline itself

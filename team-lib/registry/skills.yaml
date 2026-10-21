@@ -1159,7 +1159,7 @@ skills:
   - layer_drift_scan.py
   - publish_public_reference.py
   - graduate_capability.py
-  version: 1.0.4
+  version: 1.1.0
   source: team
   provider: internal
   listing: name-only

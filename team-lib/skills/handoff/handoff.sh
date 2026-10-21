@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # name: handoff.sh
-# version: 1.4.1
+# version: 1.4.2
 # summary: Launch worker for the /handoff (session-rotate) skill. Opens a NEW terminal window (Windows
 #   Terminal on WSL, foot on Hyprland/Omarchy) running a fresh tmux session + a fresh, nvm-loaded `claude -n <name>` that reads a
 #   handoff brief on startup and follows its instructions (re-load persona, confirm worktree, continue).

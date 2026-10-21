@@ -706,7 +706,7 @@ executions:
     - release
     - governance
     - chain
-    version: 1.0.6
+    version: 1.0.7
   workspace_discover:
     path: executions/workspace_discover.sh
     version: 1.2.3
