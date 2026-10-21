@@ -1,6 +1,6 @@
 ---
 template: agent-automation-user
-version: 2.19.0
+version: 2.19.1
 summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, the absolute runtime-file-location rule (write under my-lib/runtime/ from the first byte; the harness scratchpad is a /tmp path that systemd empties at every boot), self-annealing, file organization, metadata standards (skills carry listing + category; personas carry skill_categories; find-skill is the first move for skill discovery), sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), chat voice delegated to the output style in agents/<agent>/output-styles/ (this file governs artifacts only), session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), one-implementation-per-capability (graduation is a MOVE, not a copy), and targeted changes on large analyses (rerun only what a change can reach; full rebuild certifies before a publish). Loaded automatically at session start."
 last_updated: 2026-10-20
 mirror: derived
@@ -210,7 +210,7 @@ Prefer many small scoped commits over few large ones. **When in doubt, commit.**
 **12. Verification & evidence discipline**
 - **Test root-cause hypotheses against strong priors.** If a long history of clean runs contradicts your persistent-bug theory, that prior is evidence — investigate the environment first instead of defending the theory. Ask: "would this bug have broken every prior run?"
 - **Verify against external ground truth, not internal consistency.** Structural coverage gates (completeness, cross-field agreement) cannot catch wrong-binding errors; cross-check output against an external truth anchor.
-- **Verify by fresh recompute, never by reading cached results.** When checking a pipeline's output, re-run the logic against current inputs — the persisted values are exactly what's under audit. This governs verification. During iteration, an unchanged record may be reused only under Op #16's proof that it is current, and a cached value never answers "is it right?".
+- **Verify by fresh recompute, never by reading cached results.** When checking a pipeline's output, re-run the logic against current inputs — the persisted values are exactly what's under audit. This governs verification. During iteration, an unchanged record may be reused only under the proof in "rerun only what the change can reach" (Op #16), and a cached value never answers "is it right?".
 - **Spot-check a random sample before any bulk apply.** If a meaningful fraction fails the smell test, halt and diagnose.
 - **`status=ok` ≠ content-verified** (HTTP success is not payload completeness), and **missing data ≠ zero or adverse evidence** (NULL means "not collected", never a negative finding).
 
@@ -243,28 +243,35 @@ threshold: some work is just big, and a job that reruns in a few minutes should 
   believed "known good". A record being present
   does not mean it is unchanged: an incremental pull that skips records it already holds misses
   every record whose state moved.
-- **Take the cheapest reliable route, in this order:** edit just those records; else filter the
-  input down to them and run the same code on that subset; else rerun everything, when the
-  change reaches most records or the affected set cannot be bounded.
+  Expand to the whole unit a result is decided at: for example a customer journey with all its
+  related claims, because a key like an account number under-selects. If the change is to
+  shared code, every analysis that uses that code is affected too; name them.
+- **Take the cheapest reliable route, in this order:** rerun just those records from their owned
+  source; else filter the input down to them and run the same code on that subset; else rerun
+  everything, when the change reaches most records or the affected set cannot be bounded.
+  Totals, subtotals and any text computed from rows are always recomputed over the full set.
 - **Change a fact where it is owned:** the corrections register, rules file or config. Never
-  patch it in an output cell or a copy. After the fix, rerun that record. A fix made in one copy is how
-  errors kept spreading after they had been found.
-- **A rule change still re-decides every record.** Rerun the cheap deciding step (classifier,
+  patch it in an output cell or a copy. After the fix, rerun that record. A fix made in one copy
+  is how errors kept spreading after they had been found.
+- **A rule change still re-decides every record.** Rerun the deciding step (classifier,
   netting) over everything, diff its results against the previous run, and send only the records
   whose result changed through the slow steps (builders, workbook writes). Every decision is
-  then freshly computed, which is what Op #12 requires.
-- **Reusing an untouched record needs proof that it is current.** Today that proof is: the
-  deciding step's rerun shows its result unchanged, and its row is identical to the last
-  verified output. Where a pipeline records which rules version and inputs produced each row
-  (`context/indexed/execution-standard.md`, "Incremental Pipelines"), a matching record is the proof, and a
-  mismatch or a missing record means stale.
-- **A full fresh rebuild certifies before a publish,** and whenever the operator asks for one. A publish
-  is a deliverable leaving the working loop: sent outside the company, or handed over as final.
-  A routine write to a live working file (a shared spreadsheet) is not one. The full result must match the
-  targeted result exactly. Any difference is a finding about how the affected records were
-  chosen, not noise.
-- **Batch rulings** while the affected records are being worked out. Never start a run per
-  ruling.
+  then freshly computed, which is what the fresh-recompute rule in "Verification & evidence
+  discipline" requires. If the deciding step is itself most of the run, this is a full rerun.
+- **Skipping the rebuild of an untouched record needs proof that it is current.** Today that
+  proof is: the deciding step's rerun shows its result unchanged, and nothing else the row is
+  built from (its inputs, the builder code) changed. Where a pipeline records which rules
+  version and inputs produced each row (`context/indexed/execution-standard.md`, "Incremental Pipelines"), a
+  matching record is the proof, and a mismatch or a missing record means stale. This proof only
+  says the row need not be rebuilt. It never says the row is right; that is verification.
+- **Verification and certification are separate from this.** "Is it right?" gets a fresh
+  recompute of what it asks about, never a reused row. A full fresh rebuild certifies before a
+  publish, and whenever the operator asks for one. A publish is a deliverable leaving the working loop:
+  sent outside the company, or handed over as final. A routine write to a live working file
+  (a shared spreadsheet) is not one. The full result must match the targeted result exactly. Any
+  difference is a finding about how the affected records were chosen, not noise.
+- **Batch rulings that arrive together** while the affected records are being worked out. Never
+  start a run per ruling, and never hold ready work waiting for a ruling that has not come.
 
 ## File Organization
 
