@@ -1,6 +1,6 @@
 ---
 template: person-context
-version: 1.0.0
+version: 1.0.1
 summary: "<Full Name>: <role> at <organization>. <One sentence on why an agent needs this file: what to get right about them.>"
 entity_type: person
 full_name: "<Full Name>"
@@ -10,7 +10,7 @@ organization: "<employer or client org>"
 relation: "<team | client-stakeholder | vendor | partner>"
 projects: []
 created: "<YYYY-MM-DD>"
-last_updated: "<YYYY-MM-DD>"
+last_updated: 2026-10-20
 maintainer: "<team/person>"
 ---
 
