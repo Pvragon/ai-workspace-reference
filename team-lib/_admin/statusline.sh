@@ -87,6 +87,14 @@ mapfile -t -d $'\x1f' _f < <(printf '%s' "$input" | jq -j '[
 model=${_f[0]}; model_id=${_f[1]}; cwd=${_f[2]}; cost=${_f[3]}; session_id=${_f[4]}
 ctx_pct=${_f[6]}; ctx_in=${_f[7]}; ctx_cr=${_f[8]}; ctx_cc=${_f[9]}
 rl5_pct=${_f[10]}; rl5_at=${_f[11]}; rl7_pct=${_f[12]}; rl7_at=${_f[13]}; ctx_window_size=${_f[14]}
+# Persist the plan's usage windows for the long-run skill's `harness.py budget`: the payload is
+# the only place they are visible. Atomic replace; any failure is silent and never blocks a render.
+if [[ -n "$rl5_pct" || -n "$rl7_pct" ]]; then
+  _lr="${LONG_RUN_STATE_DIR:-$HOME/.local/state/long-run}"
+  mkdir -p "$_lr" 2>/dev/null && printf '{"five_hour_pct":%s,"five_hour_resets_at":"%s","seven_day_pct":%s,"seven_day_resets_at":"%s","written_at":"%s"}\n' \
+    "${rl5_pct:-null}" "$rl5_at" "${rl7_pct:-null}" "$rl7_at" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    > "$_lr/usage.json.$$" 2>/dev/null && mv -f "$_lr/usage.json.$$" "$_lr/usage.json" 2>/dev/null
+fi
 # Session name: newer builds may pass .session_name in the payload; otherwise
 # look it up in the live-session registry (~/.claude/sessions/<pid>.json,
 # written by 2.1.x builds and by /rename) via our session_id.

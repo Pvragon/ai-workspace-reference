@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.6
+# version: 1.0.7
 # summary: >-
 #   Runs every deterministic gate on the my-lib -> team-lib -> public promotion chain and
 #   returns one verdict: layer drift, registry resolution in all three layers, publication
@@ -106,24 +106,30 @@ def _scrub_released():
         import yaml
     except ImportError:
         return None, None, None
-    spec = yaml.safe_load((TEAM / "registry" / "mirror.yaml").read_text(encoding="utf-8")) or {}
-    terms = [t.lower() for ts in ((spec.get("publication") or {}).get("scrub") or {}).values()
-             for t in ts]
+    # The publisher's own matcher, so the two gates cannot disagree. Until 2026-10-20 this kept a
+    # private copy of the scan; when the publisher gained `scrub_allow` (2026-10-16) the copy did
+    # not, and the audit reported the public repo's own URL as 9 leaks.
+    from publish_public_reference import _blocked  # noqa: E402
+    pub = (yaml.safe_load((TEAM / "registry" / "mirror.yaml").read_text(encoding="utf-8"))
+           or {}).get("publication") or {}
+    blocklist = [(g, t) for g, ts in (pub.get("scrub") or {}).items() for t in ts]
+    allow = list(pub.get("scrub_allow") or [])
     files = [p for p in PUBLIC.rglob("*") if p.is_file() and ".git/" not in str(p)]
     leaked, unscannable = [], []
     for p in files:
+        rel = str(p.relative_to(PUBLIC))
         try:
-            low = p.read_text(encoding="utf-8").lower()
+            text = p.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             # Cannot be scrubbed, so cannot be cleared. Counted, not silently skipped:
             # a binary can carry a client logo no content gate would ever see.
-            unscannable.append(str(p.relative_to(PUBLIC)))
-            low = ""
-        if any(t in low for t in terms):
-            leaked.append(str(p.relative_to(PUBLIC)))
+            unscannable.append(rel)
+            text = ""
+        if _blocked(text, blocklist, allow):
+            leaked.append(rel)
         # Path names are published too, and carry client names as readily as bodies do.
-        if any(t in str(p.relative_to(PUBLIC)).lower() for t in terms):
-            leaked.append(str(p.relative_to(PUBLIC)) + " (in the PATH)")
+        if _blocked(rel, blocklist, allow):
+            leaked.append(rel + " (in the PATH)")
     return len(files), leaked, unscannable
 
 

@@ -1,8 +1,8 @@
 ---
 template: agent-automation-user
-version: 2.18.2
-summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, the absolute runtime-file-location rule (write under my-lib/runtime/ from the first byte; the harness scratchpad is a /tmp path that systemd empties at every boot), self-annealing, file organization, metadata standards (skills carry listing + category; personas carry skill_categories; find-skill is the first move for skill discovery), sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), chat voice delegated to the output style in agents/<agent>/output-styles/ (this file governs artifacts only), session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), and one-implementation-per-capability (graduation is a MOVE, not a copy). Loaded automatically at session start."
-last_updated: 2026-10-16
+version: 2.19.0
+summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, the absolute runtime-file-location rule (write under my-lib/runtime/ from the first byte; the harness scratchpad is a /tmp path that systemd empties at every boot), self-annealing, file organization, metadata standards (skills carry listing + category; personas carry skill_categories; find-skill is the first move for skill discovery), sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), chat voice delegated to the output style in agents/<agent>/output-styles/ (this file governs artifacts only), session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), one-implementation-per-capability (graduation is a MOVE, not a copy), and targeted changes on large analyses (rerun only what a change can reach; full rebuild certifies before a publish). Loaded automatically at session start."
+last_updated: 2026-10-20
 mirror: derived
 mirror_source: my-lib/AGENTS.md
 mirror_reason: >-
@@ -63,9 +63,9 @@ applied.*
 *   **Action**: If you find a tool or script in `archive/`, DO NOT USE IT. Search `team-lib/` or `my-lib/executions/` instead.
 *   **Exception**: You may READ files in `archive/` for context if explicitly asked, but never run them.
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
-
 ## The 3-Layer Architecture
+
+You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
 
 **Layer 1: Directive (What to do)**
 - Basically just SOPs written in Markdown, live in `directives/`
@@ -210,7 +210,7 @@ Prefer many small scoped commits over few large ones. **When in doubt, commit.**
 **12. Verification & evidence discipline**
 - **Test root-cause hypotheses against strong priors.** If a long history of clean runs contradicts your persistent-bug theory, that prior is evidence — investigate the environment first instead of defending the theory. Ask: "would this bug have broken every prior run?"
 - **Verify against external ground truth, not internal consistency.** Structural coverage gates (completeness, cross-field agreement) cannot catch wrong-binding errors; cross-check output against an external truth anchor.
-- **Verify by fresh recompute, never by reading cached results.** When checking a pipeline's output, re-run the logic against current inputs — the persisted values are exactly what's under audit.
+- **Verify by fresh recompute, never by reading cached results.** When checking a pipeline's output, re-run the logic against current inputs — the persisted values are exactly what's under audit. This governs verification. During iteration, an unchanged record may be reused only under Op #16's proof that it is current, and a cached value never answers "is it right?".
 - **Spot-check a random sample before any bulk apply.** If a meaningful fraction fails the smell test, halt and diagnose.
 - **`status=ok` ≠ content-verified** (HTTP success is not payload completeness), and **missing data ≠ zero or adverse evidence** (NULL means "not collected", never a negative finding).
 
@@ -230,6 +230,41 @@ A capability is **born** project-local (`projects/<p>/skills/` or `my-lib/`) and
 - **A shared copy must be standalone.** If it shells out to a personal-layer path, it is broken for everyone else, however current its text is. Graduating a capability means graduating what it calls.
 - **Detection exists, so use it:** `team-lib/executions/layer_drift_scan.py` compares body hashes (not versions) across the layers via `registry/mirror.yaml`, and runs in the nightly tick. Deliberate divergence must be declared two-sided as `mirror: divergent`, so an undeclared difference is always a bug.
 - Applies to **every** layered artifact, not just skills: executions, directives, context files, templates.
+
+**16. Before rerunning a large analysis to apply a change, rerun only what the change can reach**
+The moment this applies: a change (a ruling, a fix, a new rule) lands on an existing analysis or
+build, and the obvious next step is to rerun the whole pipeline. Large analyses can lose days per
+cycle recomputing 50,000 records to move 400. Size is a judgement, not a
+threshold: some work is just big, and a job that reruns in a few minutes should simply rerun.
+
+- **First, name the affected records.** Before running anything, say which records the change
+  can reach, how many there are, and what a full rerun would cost. Find them by what could have
+  changed (an input, a rule, the upstream data's state), never by which records are present or
+  believed "known good". A record being present
+  does not mean it is unchanged: an incremental pull that skips records it already holds misses
+  every record whose state moved.
+- **Take the cheapest reliable route, in this order:** edit just those records; else filter the
+  input down to them and run the same code on that subset; else rerun everything, when the
+  change reaches most records or the affected set cannot be bounded.
+- **Change a fact where it is owned:** the corrections register, rules file or config. Never
+  patch it in an output cell or a copy. After the fix, rerun that record. A fix made in one copy is how
+  errors kept spreading after they had been found.
+- **A rule change still re-decides every record.** Rerun the cheap deciding step (classifier,
+  netting) over everything, diff its results against the previous run, and send only the records
+  whose result changed through the slow steps (builders, workbook writes). Every decision is
+  then freshly computed, which is what Op #12 requires.
+- **Reusing an untouched record needs proof that it is current.** Today that proof is: the
+  deciding step's rerun shows its result unchanged, and its row is identical to the last
+  verified output. Where a pipeline records which rules version and inputs produced each row
+  (`context/indexed/execution-standard.md`, "Incremental Pipelines"), a matching record is the proof, and a
+  mismatch or a missing record means stale.
+- **A full fresh rebuild certifies before a publish,** and whenever the operator asks for one. A publish
+  is a deliverable leaving the working loop: sent outside the company, or handed over as final.
+  A routine write to a live working file (a shared spreadsheet) is not one. The full result must match the
+  targeted result exactly. Any difference is a finding about how the affected records were
+  chosen, not noise.
+- **Batch rulings** while the affected records are being worked out. Never start a run per
+  ruling.
 
 ## File Organization
 

@@ -2,10 +2,10 @@
 name: update-ai-workspace-children
 description: Walk the whole my-lib → team-lib → public promotion chain in one pass — tidy and document the personal layer, decide what graduates, validate the shared layer, regenerate and validate the public layer, then push in the order the gates require. Use before a release, when onboarding someone onto team-lib, when the nightly cycle cues drift, or when asked whether the three layers are in sync.
 template: skill-definition
-version: 1.0.4
+version: 1.1.0
 summary: "The judgment half of the promotion chain. executions/workspace_chain_audit.py runs every deterministic gate; this skill decides what the gates cannot — which layer an item belongs in, what should graduate, what to document — and drives the chain end to end to a pushed, proven state."
 created: 2026-08-01
-last_updated: 2026-10-16
+last_updated: 2026-10-20
 maintainer: pvragon
 listing: name-only
 category: workspace
@@ -98,6 +98,18 @@ Deterministic first:
 Then the judgment: anything in `.tmp` that has started receiving human review has stopped
 being disposable and is a draft deliverable — move it to `runtime/deliverables/`.
 
+**If `my-lib/AGENTS.md` changed, it has three places to reach, and the chain arrows show only one:**
+
+1. **The team template** (`context/indexed/templates/template-agent-automation-user.md`, what new
+   installs get): port it with the `push-agents-to-template` skill, as a generalization. The audit
+   reports a gap as `DERIVED BEHIND`.
+2. **Every project's operating core** (`OPERATING-CORE.md` plus the AGENTS/CLAUDE/GEMINI.md built
+   from it): regenerate and verify with the `check-guidelines-currency` skill, in each project
+   that has one. A new numbered principle also needs a line in the operating-core map. Check the
+   result by rebuild-and-diff, never by the version pin: on 2026-10-20 every core had the right pin
+   and a generator bug's duplicated sections.
+3. **The public repo**, through the template, in Phase 4.
+
 ### Phase 2 — decide what graduates
 
 The audit prints the ungraduated count. **That number is not debt.** `my-lib` is a laboratory;
@@ -145,6 +157,9 @@ python3 ~/ai-workspace/team-lib/executions/publish_public_reference.py --apply
 
 Then re-run the audit. It scans every released file against the blocklist — the only true leak
 test, because the source containing a client name is not the same fact as having exposed one.
+The audit uses the publisher's own matcher (`_blocked`, with `scrub_allow`), so the two cannot
+disagree. Before 2026-10-20 it kept a private copy without the allow list and reported the public
+repo's own URL as 9 leaks.
 
 Publication is a **total function**: any tracked root file in neither `include_files` nor
 `exclude_files` is itself a finding, and an exclusion with no written reason is too. If you

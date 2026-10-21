@@ -1,8 +1,8 @@
 ---
-version: 1.1.0
+version: 1.2.0
 summary: "Defines the dual-purpose execution script pattern: CLI + importable run() function, comment-block frontmatter requirement, return contract, and chaining rules. Load when creating or reviewing execution scripts."
 created: 2026-02-18
-last_updated: 2026-02-25
+last_updated: 2026-10-20
 maintainer: pvragon
 tags: [execution, scripts, dual-purpose, context-efficiency]
 ---
@@ -172,6 +172,27 @@ print(f"Created {result['files_created']} files at {result['docs_dir']}")
 The agent gets a 1-line summary instead of the full file listing, template contents, and directory tree that would have flowed through context with sequential tool calls.
 
 ---
+
+## Incremental Pipelines
+
+Applies to any multi-stage pipeline over about 5,000 records, or whose full run takes more than
+about 10 minutes. Without these, an agent that wants to make a targeted change has no safe way
+to, and falls back to a full rebuild (AGENTS.md Op #16).
+
+1. **Stable record key.** Every stage keys rows by a stable id (for Acme Health, the V1 objectId or
+   journey id), never by a display code that can repeat.
+2. **Stage outputs on disk.** Each stage writes its output to its own file, keyed by record, so
+   a later stage can read a subset.
+3. **Provenance per record.** Each output row carries `prov`: a hash of the rules version and
+   the content hashes of the inputs it read. A row whose `prov` does not match the current rules
+   and inputs is stale.
+4. **`--only <ids|file>` on every stage,** running the same code path as a full run. No
+   separate "quick" implementation.
+5. **A baseline diff.** A checker reports changed and unchanged keys against the last verified
+   output, and fails if any key outside the records the change could reach differs.
+6. **Full mode stays the default** and is the certification run before a deliverable ships.
+
+Add these when a pipeline is built or next touched. Do not retrofit every script at once.
 
 ## Checklist for New Scripts
 

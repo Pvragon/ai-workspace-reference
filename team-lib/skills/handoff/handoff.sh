@@ -21,12 +21,17 @@
 #   everpresent series uses it so only that pane shows in the Claude mobile app)
 #   --plugin-dir DIR  load a plugin or mod directory in the new session (repeatable; the everpresent
 #   series loads my-lib/apps/everpresent-dash/mod this way, so no other session gets it)
+#   --settings FILE  load an extra settings JSON file in the new session (claude --settings; /long-run
+#   shifts use it to register their per-run PreToolUse guard hook)
+#   --detached SESSION  start the new session in a DETACHED tmux session named SESSION instead of
+#   opening a window (no display needed: works from cron; /long-run shifts and its watchdog use it).
+#   Attach later with tmux attach -t SESSION. Pick a name outside the reaper pattern (^mylib-[0-9]+$).
 #   --dry-run       generate + print the launch script, do NOT open a window'
 # ---
 set -euo pipefail
 
 DRY=0
-SEED_OVERRIDE=""; MODEL=""; PMODE=""; RC=0; DIR="$PWD"; PLUGINS=""; pos=()
+SEED_OVERRIDE=""; MODEL=""; PMODE=""; RC=0; DIR="$PWD"; PLUGINS=""; SETTINGS=""; DETACHED=""; pos=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
@@ -35,7 +40,9 @@ while [ $# -gt 0 ]; do
     --model) MODEL="${2:?}"; shift ;;
     --permission-mode) PMODE="${2:?}"; shift ;;
     --remote-control) RC=1 ;;
+    --detached) DETACHED="${2:?}"; shift ;;
     --plugin-dir) PLUGINS+="--plugin-dir '${2:?}' "; shift ;;
+    --settings) SETTINGS="--settings '${2:?}' "; shift ;;
     *) pos+=("$1") ;;
   esac; shift
 done
@@ -51,7 +58,10 @@ fi
 [ -n "$HANDOFF" ] && [ ! -f "$HANDOFF" ] && { echo "ERROR: handoff file not found: $HANDOFF"; exit 2; }
 [ -d "$DIR" ] || { echo "ERROR: --dir not a directory: $DIR"; exit 2; }
 # Platform: Windows Terminal on WSL, foot on Hyprland (Omarchy). Same inner script either way.
-if command -v wt.exe >/dev/null 2>&1; then
+[ -n "$DETACHED" ] && { [[ "$DETACHED" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "ERROR: --detached name must match [A-Za-z0-9._-]+"; exit 2; }; }
+if [ -n "$DETACHED" ]; then
+  PLATFORM=detached
+elif command -v wt.exe >/dev/null 2>&1; then
   PLATFORM=wsl
 elif [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v foot >/dev/null 2>&1; then
   PLATFORM=hyprland
@@ -84,7 +94,7 @@ export NVM_DIR="\$HOME/.nvm"
 for b in "\$HOME"/.nvm/versions/node/*/bin; do [ -d "\$b" ] && PATH="\$b:\$PATH"; done
 export PATH
 cd "${DIR}" || cd "\$HOME"
-CMD="claude ${MODEL:+--model '${MODEL}' }${PMODE:+--permission-mode '${PMODE}' }${PLUGINS}$( [ "$RC" -eq 1 ] && printf "%s" "--remote-control '${NAME}' " )-n '${NAME}' '${SEED}'"
+CMD="claude ${MODEL:+--model '${MODEL}' }${PMODE:+--permission-mode '${PMODE}' }${PLUGINS}${SETTINGS}$( [ "$RC" -eq 1 ] && printf "%s" "--remote-control '${NAME}' " )-n '${NAME}' '${SEED}'"
 # Already inside a tmux session handoff.sh created (take-over-in-place): run claude directly.
 if [ -n "\${HANDOFF_DETACHED:-}" ]; then unset HANDOFF_DETACHED; eval "exec \$CMD"; fi
 exec tmux new-session -s "mylib-\$\$" "\$CMD"
@@ -94,12 +104,25 @@ chmod +x "$INNER"
 if [ "$DRY" -eq 1 ]; then
   echo "[dry-run] claude name: ${NAME}"
   echo "[dry-run] worktree:    ${DIR}"
-  if [ "$PLATFORM" = wsl ]; then
+  if [ "$PLATFORM" = detached ]; then
+    echo "[dry-run] would run:   tmux new-session -d -s ${DETACHED} -c ${DIR} -e HANDOFF_DETACHED=1 bash ${INNER}"
+  elif [ "$PLATFORM" = wsl ]; then
     echo "[dry-run] would run:   wt.exe -w new wsl.exe -- bash ${INNER}"
   else
     echo "[dry-run] would run:   setsid -f uwsm-app -- foot -D ${DIR} bash ${INNER}"
   fi
   echo "----- generated ${INNER} -----"; cat "$INNER"
+  exit 0
+fi
+
+if [ "$PLATFORM" = detached ]; then
+  # No window: a detached tmux session, launched with this session's Claude/tmux env scrubbed.
+  # HANDOFF_DETACHED makes the inner script exec claude directly inside it.
+  tmux has-session -t "$DETACHED" 2>/dev/null && { echo "ERROR: tmux session already exists: $DETACHED"; exit 4; }
+  UNSETS=(); for v in $(compgen -e | grep -E '^(CLAUDE|TMUX)'); do UNSETS+=(-u "$v"); done
+  env "${UNSETS[@]}" -u AI_AGENT -u GIT_EDITOR -u COREPACK_ENABLE_AUTO_PIN \
+    tmux new-session -d -s "$DETACHED" -c "$DIR" -e HANDOFF_DETACHED=1 "bash $INNER"
+  echo "launched: Claude session '${NAME}' in detached tmux session ${DETACHED} (attach: tmux attach -t ${DETACHED})"
   exit 0
 fi
 
