@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.7.0
+# version: 1.7.1
 # summary: >-
 #   Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free
 #   passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.1
+# version: 1.0.2
 # summary: Writes each external skill pack's currently-checked-out commit into .gitmodules as submodule.<name>.commit,
 #   so an install that has no gitlinks (anyone installing from the public reference repo) can pin to
 #   the same commit the team tested instead of tracking upstream HEAD. Run after bumping a submodule.
 # created: 2026-08-01
-# last_updated: 2026-08-08
+# last_updated: 2026-10-21
 # maintainer: pvragon
 # ---
 #

@@ -166,7 +166,7 @@ executions:
     - cron
     - sleep-cycle
     - maintenance
-    version: 1.7.0
+    version: 1.7.1
   dream_journal:
     path: executions/dream_journal.py
     description: 'Dream-journal residue store for the sleep cycle''s reflective wakes. write() appends
@@ -581,7 +581,7 @@ executions:
     version: 1.0.0
   shortcut_ledger:
     path: executions/shortcut_ledger.py
-    version: 1.0.0
+    version: 1.1.0
     description: 'Collects every `shortcut: <limit>, <when to upgrade>` code comment across the workspace''s
       git repos into one generated ledger (my-lib/context/indexed/shortcut-ledger.md), tagging markers
       that name no upgrade trigger. Run nightly by dream_cycle.py. Has --self-check.'
