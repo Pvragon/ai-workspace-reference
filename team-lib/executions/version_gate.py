@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution-script
-# version: 1.3.0
+# version: 1.3.1
 # summary: >-
 #   PreToolUse hook on `git push`. For every versioned file whose BODY changed in the outgoing
 #   commits without its `version:` changing, it bumps the patch level, stamps `last_updated`,
@@ -79,6 +79,27 @@ def pick(path):
     if path.endswith((".py", ".sh")):
         return SH_VERSION, SH_UPDATED
     return None, None
+
+
+def header_end(path, text):
+    """End offset of the file's own metadata header; 0 when it has none.
+
+    Version and date are read and stamped ONLY inside it. Searching the whole file stamped a
+    template EXAMPLE in a body (`last_updated: [YYYY-MM-DD]` in a generated OPERATING-CORE,
+    2026-10-21), which also made every regenerated core read as stale.
+    """
+    if path.endswith(".md"):
+        if not text.startswith("---\n"):
+            return 0
+        end = text.find("\n---", 4)
+        return end if end > 0 else 0
+    lines = text.splitlines(keepends=True)[:40]  # a script's `# ---` header block lives at the top
+    return sum(len(l) for l in lines)
+
+
+def is_generated(header):
+    """A file whose header says `generated_by:` is a build artifact: its source is versioned, it is not."""
+    return re.search(r"^#?\s*generated_by:", header, re.M) is not None
 
 
 def bump(v, level):
@@ -374,8 +395,25 @@ def beat(event, detail=""):
         pass  # never let logging cost a push
 
 
+def _scope_asserts():
+    """The header-scoping rules, on the two shapes that broke on 2026-10-21."""
+    core = ("---\ntemplate: operating-core\nversion: 2.20.0\ngenerated_by: x.py\n---\n"
+            "body\n```yaml\nversion: 1.0.0\nlast_updated: [YYYY-MM-DD]\n```\n")
+    assert is_generated(core[:header_end("a.md", core)])
+    assert MD_UPDATED.search(core, 0, header_end("a.md", core)) is None  # the body example is out of reach
+    doc = ("---\nversion: 1.2.0\nlast_updated: 2026-10-01\n---\n"
+           "example:\nlast_updated: [YYYY-MM-DD]\n")
+    h = header_end("a.md", doc)
+    assert not is_generated(doc[:h])
+    assert MD_UPDATED.search(doc, 0, h).group(2) == "2026-10-01"
+    assert MD_VERSION.search("no frontmatter\nversion: 1.0.0\n", 0, header_end("b.md", "no frontmatter\n")) is None
+    sh = "#!/usr/bin/env python3\n# ---\n# version: 1.0.0\n# generated_by: y\n# ---\n"
+    assert is_generated(sh[:header_end("c.py", sh)])
+
+
 def self_check():
     """Report whether the gate is actually reaching pushes. Exit 1 if it looks dead."""
+    _scope_asserts()
     if not os.path.exists(HEARTBEAT):
         print("version-gate: NEVER FIRED — no heartbeat log at " + HEARTBEAT)
         print("  The hook is not being invoked. Check ~/.claude/settings.json, and note that")
@@ -423,7 +461,10 @@ def reconcile(repo, apply=True):
             text = open(full).read()
         except OSError:
             continue
-        vm = ver_re.search(text)
+        hend = header_end(rel, text)
+        if is_generated(text[:hend]):
+            continue  # a generated artifact; its source carries the version
+        vm = ver_re.search(text, 0, hend)
         if not vm:
             continue  # unversioned file — not in scope
 
@@ -447,7 +488,7 @@ def reconcile(repo, apply=True):
         new_s = "%d.%d.%d" % bump(old, "patch")
         text = text[: vm.start()] + f"{vm.group(1)}{new_s}{vm.group(5)}" + text[vm.end():]
         today = git(repo, "log", "-1", "--format=%cd", "--date=format:%Y-%m-%d") or ""
-        um = upd_re.search(text)
+        um = upd_re.search(text, 0, header_end(rel, text))
         if um and today:
             text = text[: um.start()] + f"{um.group(1)}{today}{um.group(3)}" + text[um.end():]
         if apply:
@@ -677,7 +718,10 @@ def main():
             text = open(full).read()
         except OSError:
             continue
-        vm = ver_re.search(text)
+        hend = header_end(rel, text)
+        if is_generated(text[:hend]):
+            continue  # a generated artifact; its source carries the version
+        vm = ver_re.search(text, 0, hend)
         if not vm:
             continue  # unversioned file — not in scope
 
@@ -691,7 +735,7 @@ def main():
         new = bump(old, level)
         new_s = "%d.%d.%d" % new
         text = text[: vm.start()] + f"{vm.group(1)}{new_s}{vm.group(5)}" + text[vm.end():]
-        um = upd_re.search(text)
+        um = upd_re.search(text, 0, header_end(rel, text))
         if um and today:
             text = text[: um.start()] + f"{um.group(1)}{today}{um.group(3)}" + text[um.end():]
         open(full, "w").write(text)
