@@ -1,9 +1,9 @@
 ---
 template: portable-agent-reference
-version: 0.1.0
+version: 0.2.0
 summary: "Three-layer DOE pattern: Directive (what) → Orchestration (the LLM, decides) → Execution (deterministic scripts). The dual-purpose run() pattern, return contracts, chaining for context efficiency, and when to extract a directive vs. a skill vs. a script."
 created: 2026-04-27
-last_updated: 2026-04-27
+last_updated: 2026-10-21
 maintainer: pvragon
 runtime_neutral: true
 ---
@@ -222,6 +222,8 @@ if __name__ == "__main__":
 3. **No `print()` in `run()`.** Return data; let the caller decide.
 4. **No `sys.exit()` in `run()`.** Return error dicts.
 5. **`main()` is the CLI wrapper.** Parses args, calls `run()`, formats output, handles exit codes.
+6. **Logic ships with its check.** New non-trivial logic (a branch, a loop, a parser, money, a data write, or a whole new script) leaves one small test or an assert-based `--self-check` that fails when it breaks. Money logic needs a positive control: a record with a known answer.
+7. **Deliberate shortcuts are marked.** `# shortcut: <the limit>, <when to upgrade>`, collected by a generated ledger so a deferral cannot quietly become permanent.
 
 This is not stylistic. It enables **chaining** for context efficiency.
 
@@ -337,6 +339,7 @@ Before declaring DOE established for a new agent:
 
 - [ ] `directives/` directory exists with at least one real directive (not a stub).
 - [ ] `executions/` directory exists with at least one script following the dual-purpose `run()` pattern.
+- [ ] Every script with non-trivial logic has a test or a `--self-check`.
 - [ ] A `registry/directives.yaml` and `registry/executions.yaml` index the above.
 - [ ] AGENTS.md (or equivalent operating instructions) requires the agent to consult the registry **before** improvising.
 - [ ] At least one example of an end-to-end DOE flow has been exercised: directive read → script(s) called → result returned → directive updated on learning.

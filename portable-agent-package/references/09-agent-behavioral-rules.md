@@ -1,12 +1,12 @@
 ---
 template: portable-agent-reference
-version: 1.0.0
+version: 1.1.0
 summary: "Four behavioral rules an agent should obey on every task, regardless of domain. Adapted from Andrej Karpathy's January 2026 observations on agent coding pitfalls (distilled by Forrest Chang) and generalized from coding to all agent work — drafting, review, ops, memory, scheduling. Sits as the BEHAVIORAL preamble next to the structural framework in 01-08."
 created: 2026-04-27
-last_updated: 2026-04-27
+last_updated: 2026-10-21
 maintainer: pvragon
 runtime_neutral: true
-attribution: "Adapted from Andrej Karpathy's observations on LLM coding pitfalls (Jan 2026); distilled into a single CLAUDE.md by Forrest Chang at https://github.com/forrestchang/andrej-karpathy-skills. Generalized here from 'coding' to 'acting' so the rules cover the full surface of agent work."
+attribution: "Adapted from Andrej Karpathy's observations on LLM coding pitfalls (Jan 2026); distilled into a single CLAUDE.md by Forrest Chang at https://github.com/forrestchang/andrej-karpathy-skills. Generalized here from 'coding' to 'acting' so the rules cover the full surface of agent work. Rule 2's reuse ladder, never-cut floor and shortcut markers are adapted from Ponytail by Dietrich Gebert (MIT) at https://github.com/dietrichgebert/ponytail."
 ---
 
 # 09 — Agent Behavioral Rules
@@ -57,9 +57,12 @@ When in doubt, do not skip.
 - **No features beyond what was asked.** If the user asked for a vendor scrape, do not also build a vendor *dashboard*. If the user asked for a memory edit, do not also reorganize the index.
 - **Chat voice is an output style, not a rule here.** How the agent writes in conversation (answer first, sentence limits, no em dashes) is a Claude Code output style in `agents/<agent>/output-styles/`, injected at system-prompt level. Behavioral rules in instruction files govern artifacts; subagents never load the style.
 - **No verbosity beyond what was asked.** Simplicity-first applies to chat replies too, not just artifacts. Answer the question; then stop. Don't tack on speculative expansions, unsolicited follow-up menus, or "while I'm here, here's also…" unless the user asked or relevance is very high.
+- **Climb the reuse ladder before building.** Stop at the first rung that fully works: (1) does it need to exist at all; (2) is it already in this workspace, as a directive, skill, script or helper; (3) does the standard library or platform do it; (4) does an installed dependency do it; (5) only then, the minimum new work. Name what you skipped in one line.
 - **No abstractions for single-use code.** A function called once does not need three configuration parameters.
 - **No "flexibility" or "configurability" that wasn't requested.** YAGNI.
 - **No error handling for impossible scenarios.** Trust internal invariants. Validate at system boundaries (user input, external APIs); not in between.
+- **Never cut the floor.** Being lazy about the solution never means being lazy about the change. Validation at trust boundaries, error handling that prevents data loss, security, verification, and anything the user asked for are never simplified away.
+- **Mark the shortcuts you take.** A known limit gets a `shortcut: <the limit>, <when to upgrade>` comment, so it can be collected and revisited.
 - **If you wrote 200 lines and it could be 50, rewrite it.** This applies to specs, scripts, prompts, sub-agent instructions — anywhere "size of artifact" is under your control.
 
 The test: *"Would a senior reviewer say this is overcomplicated?"* If yes, simplify.

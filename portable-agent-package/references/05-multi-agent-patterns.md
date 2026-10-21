@@ -1,9 +1,9 @@
 ---
 template: portable-agent-reference
-version: 0.1.0
+version: 0.2.0
 summary: "Multi-agent coordination patterns: parallel reviewer council; chair synthesis (min not avg, anchored 1-5 levels); planner / generator / evaluator separation; deterministic pre-checks; bounded blast radius; grounding requirement; sub-agent isolation for context-heavy work."
 created: 2026-04-27
-last_updated: 2026-04-27
+last_updated: 2026-10-21
 maintainer: pvragon
 runtime_neutral: true
 ---
@@ -188,6 +188,8 @@ Parent agent receives: 4 lines. Original context preserved.
 | Anything that produces verbose tool output you don't need to read | A short, structured answer |
 
 **Pass them what they need; nothing more.** The sub-agent's prompt should be self-contained: it doesn't have your conversation context. State the goal, the inputs, what to return. If you need a short response, say so.
+
+**Ask what it skipped.** Every sub-agent's final report ends with one or two lines: what it skipped or did not check, and any risk the caller must know. An unstated skip reads as a completed check, and the parent has no other way to tell them apart.
 
 ## Pattern 4 — Pipeline (Linear Chain)
 
