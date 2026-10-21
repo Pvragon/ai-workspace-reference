@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.1.0
 # summary: >-
 #   Collects every `shortcut: <limit>, <when to upgrade>` code comment across the workspace's git
 #   repos into one generated ledger (my-lib/context/indexed/shortcut-ledger.md), tagging markers
@@ -92,12 +92,15 @@ def run(apply: bool = False, out: Path = OUT) -> dict:
     """
     rows = []
     for repo in _repos():
-        r = subprocess.run(["git", "-C", str(repo), "grep", "--untracked", "-nE", GREP, "--", *CODE_GLOBS],
+        r = subprocess.run(["git", "-C", str(repo), "grep", "--untracked", "-I", "-nE", GREP, "--", *CODE_GLOBS],
                            capture_output=True, text=True)
         if r.returncode not in (0, 1):
             return {"status": "error", "error": f"git grep failed in {repo}: {r.stderr.strip()[:200]}"}
         for hit in r.stdout.splitlines():
-            path, lineno, text = hit.split(":", 2)
+            parts = hit.split(":", 2)
+            if len(parts) != 3:  # -I drops binary files; anything else unparseable is skipped, not fatal
+                continue
+            path, lineno, text = parts
             if SKIP_PARTS & set(Path(path).parts):
                 continue
             p = parse(text)
@@ -109,9 +112,16 @@ def run(apply: bool = False, out: Path = OUT) -> dict:
     no_trig = sum(r["no_trigger"] for r in rows)
     result = {"status": "ok", "rows": rows, "markers": len(rows), "no_trigger": no_trig, "written": None}
     if apply:
-        out.write_text(render(rows))
-        result["written"] = str(out)
+        text = render(rows)
+        if not out.exists() or _body(out.read_text()) != _body(text):  # rewrite only on change
+            out.write_text(text)
+            result["written"] = str(out)
     return result
+
+
+def _body(text: str) -> str:
+    """The ledger minus its frontmatter, so a new last_updated alone is not a change."""
+    return text.split("\n---\n", 1)[-1]
 
 
 def render(rows: list[dict]) -> str:
@@ -169,6 +179,7 @@ def self_check() -> None:
     text = render(rows)
     assert "**no-trigger**" in text and "1 markers, 1 with no trigger." in text
     assert "Clean ledger." in render([])
+    assert _body("---\na: 1\n---\nX") == _body("---\na: 2\n---\nX")
     print("self-check ok")
 
 
@@ -183,12 +194,12 @@ def main() -> None:
         return
     res = run(apply=a.apply)
     if res["status"] != "ok":
-        print(res["error"], file=sys.stderr)
+        print(f"error: {res['error']}")  # stdout: dream_cycle's _run logs stdout only
         sys.exit(1)
     if a.json:
         print(json.dumps(res, indent=1))
     elif a.apply:
-        print(f"{res['markers']} marker(s), {res['no_trigger']} with no trigger -> {res['written']}")
+        print(f"{res['markers']} marker(s), {res['no_trigger']} with no trigger -> {res['written'] or 'unchanged'}")
     else:
         print(render(res["rows"]))
 
