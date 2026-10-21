@@ -1,8 +1,8 @@
 ---
 template: agent-automation-user
-version: 2.19.1
-summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, the absolute runtime-file-location rule (write under my-lib/runtime/ from the first byte; the harness scratchpad is a /tmp path that systemd empties at every boot), self-annealing, file organization, metadata standards (skills carry listing + category; personas carry skill_categories; find-skill is the first move for skill discovery), sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), chat voice delegated to the output style in agents/<agent>/output-styles/ (this file governs artifacts only), session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), one-implementation-per-capability (graduation is a MOVE, not a copy), and targeted changes on large analyses (rerun only what a change can reach; full rebuild certifies before a publish). Loaded automatically at session start."
-last_updated: 2026-10-20
+version: 2.20.0
+summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, a does-it-need-to-exist check before reusing or building any tool (never cutting validation, data-loss handling, security or verification), the absolute runtime-file-location rule (write under my-lib/runtime/ from the first byte; the harness scratchpad is a /tmp path that systemd empties at every boot), self-annealing, file organization, metadata standards (skills carry listing + category; personas carry skill_categories; find-skill is the first move for skill discovery), sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), chat voice delegated to the output style in agents/<agent>/output-styles/ (this file governs artifacts only; every subagent report ends with what it skipped or did not check), session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), one-implementation-per-capability (graduation is a MOVE, not a copy), and targeted changes on large analyses (rerun only what a change can reach; full rebuild certifies before a publish). Loaded automatically at session start."
+last_updated: 2026-10-21
 mirror: derived
 mirror_source: my-lib/AGENTS.md
 mirror_reason: >-
@@ -86,7 +86,8 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 ## Operating Principles
 
 **1. Check for tools first — and READ before executing (Local Priority)**
-Before writing a script or performing a repeatable procedure, check for existing capabilities in this specific order:
+Before writing a script or performing a repeatable procedure, ask whether it needs to exist, then check for existing capabilities in this specific order:
+0.  **Does it need to exist?** Skip features, options and flexibility nobody asked for, and name what you skipped in one line. A vague request gets the smallest version that does the core job.
 1.  **Directives:** Check `./directives/` and `team-lib/directives/` for an existing SOP. Directives define the **what** and **why** — they are your primary instruction set for any named process.
 2.  **Skills:** Run the **`find-skill`** skill (`team-lib/skills/find-skill/find_skill.py`) with the task in plain words (a persona adds its `skill_categories` as `--categories`). It searches every skill on the machine — local, team, third-party and the current project's — and returns the invocation name, listing level and SKILL.md path. **Most skills are not described in the session's skill list** (they are listed `name-only` or hidden as `user-only`), so a skill missing from that list is not a skill that does not exist. Fallback if find-skill is not installed: `registry/skills.yaml` (local and team-lib), then `./skills/` and `team-lib/skills/`.
 3.  **Executions:** Check `./executions/` and `team-lib/executions/` for existing scripts.
@@ -101,7 +102,7 @@ External skills are marked with `source: external` in the registry. Internal ski
 
 **CRITICAL: When a directive or skill exists, you MUST read it before proceeding.** Do not rely on memory of the contents — always re-read to ensure you follow the current procedure. These files may have been updated with new steps, verification checklists, or important caveats.
 
-Only create new scripts (in `./executions/`) if no directive, skill, or tool currently exists.
+Only create new scripts (in `./executions/`) if no directive, skill, or tool currently exists. Being lazy about the solution never means being lazy about the change: never cut validation at trust boundaries, error handling that prevents data loss, security, verification (Op #12), or anything the user asked for.
 
 **2. Fix the intended approach before falling back**
 When following a skill or documented procedure:
@@ -172,6 +173,7 @@ artifact must follow stays here. That is the split, and the only one:
 - **Working artifacts** (`.tmp/` planning docs, scratch files): moderate — enough structure to navigate, no decorative prose.
 - **Deliverables** (`runtime/deliverables/`, specs, branded docs, client-facing material): full fidelity at the depth the reader needs. The humanizer gate applies here, not in chat.
 - **Spell terms out** in artifacts as in chat: never a record identifier, row label or coined shorthand without saying what it is the first time.
+- **Every subagent's final report ends with one or two lines:** what it skipped or did not check, and any risk the caller must know.
 
 **9. Session economics — end clean, never compact**
 Long sessions are expensive on every dimension. Session-level lifecycle decisions matter more than per-call token-shaving.

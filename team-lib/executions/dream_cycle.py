@@ -442,6 +442,10 @@ def main() -> int:
     # divergence, a task-triggered session decides what to do about it. Detection
     # here, resolution never here; that is what keeps the daily sleep the only
     # clock-scheduled *reasoning*.
+    # Shortcut ledger (execution-standard Key Rule 8): regenerate the generated view of every
+    # `shortcut:` code comment, so a deferral cannot quietly become permanent.
+    log.append("shortcut-ledger: " + _run("shortcut_ledger.py", "--apply"))
+
     drift_actionable = 0
     drift_items: list = []
     try:

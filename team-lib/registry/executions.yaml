@@ -579,6 +579,12 @@ executions:
     - hooks
     - notifications
     version: 1.0.0
+  shortcut_ledger:
+    path: executions/shortcut_ledger.py
+    version: 1.0.0
+    description: 'Collects every `shortcut: <limit>, <when to upgrade>` code comment across the workspace''s
+      git repos into one generated ledger (my-lib/context/indexed/shortcut-ledger.md), tagging markers
+      that name no upgrade trigger. Run nightly by dream_cycle.py. Has --self-check.'
   staged_diff_advisory:
     path: executions/staged_diff_advisory.py
     description: PreToolUse git guard for shared trees. On `git commit` prints what is staged, the branch,

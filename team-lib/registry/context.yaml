@@ -34,8 +34,9 @@ context:
   execution-standard:
     path: context/indexed/execution-standard.md
     description: 'Defines the dual-purpose execution script pattern: CLI + importable run() function,
-      comment-block frontmatter requirement, return contract, and chaining rules. Load when creating or
-      reviewing execution scripts.'
+      comment-block frontmatter requirement, return contract, chaining rules, a test or --self-check for
+      every non-trivial logic change, and `shortcut:` markers for deliberate shortcuts. Load when creating
+      or reviewing execution scripts.'
     tags:
     - executions
     - standard

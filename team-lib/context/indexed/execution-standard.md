@@ -1,8 +1,8 @@
 ---
-version: 1.2.0
-summary: "Defines the dual-purpose execution script pattern: CLI + importable run() function, comment-block frontmatter requirement, return contract, and chaining rules. Load when creating or reviewing execution scripts."
+version: 1.3.0
+summary: "Defines the dual-purpose execution script pattern: CLI + importable run() function, comment-block frontmatter requirement, return contract, chaining rules, a test or --self-check for every non-trivial logic change, and `shortcut:` markers for deliberate shortcuts. Load when creating or reviewing execution scripts."
 created: 2026-02-18
-last_updated: 2026-10-20
+last_updated: 2026-10-21
 maintainer: pvragon
 tags: [execution, scripts, dual-purpose, context-efficiency]
 ---
@@ -128,6 +128,8 @@ if __name__ == "__main__":
 4. **No `print()` in `run()`** — Return data; let the caller decide how to display
 5. **`main()` is the CLI wrapper** — Parses args, calls `run()`, formats output, handles `sys.exit()`
 6. **Error handling via exceptions or error dicts** — Use `RuntimeError` for failures instead of `sys.exit(1)`
+7. **Logic ships with its check.** New or changed non-trivial logic (a branch, a loop, a parser, money, a data write, or a whole new script) leaves one small test or an assert-based `--self-check` flag that fails when the logic breaks. Money logic needs a positive control: a record with a known answer. Trivial changes need none. A script without its check is unfinished.
+8. **Mark deliberate shortcuts.** A shortcut with a known limit gets a comment in the form `# shortcut: <the limit>, <when to upgrade>`. `team-lib/executions/shortcut_ledger.py` collects every marker into `my-lib/context/indexed/shortcut-ledger.md` nightly, and tags any marker that names no upgrade trigger.
 
 ---
 
@@ -204,3 +206,5 @@ Add these when a pipeline is built or next touched. Do not retrofit every script
 - [ ] `main()` is a thin CLI wrapper that calls `run()`
 - [ ] Return dict always includes `"status"` key
 - [ ] Error cases return `{"status": "error", "error": "..."}` instead of raising
+- [ ] Non-trivial logic has a test or a `--self-check` that fails when it breaks (money logic: a positive control)
+- [ ] Every deliberate shortcut carries a `# shortcut: <limit>, <when to upgrade>` comment
