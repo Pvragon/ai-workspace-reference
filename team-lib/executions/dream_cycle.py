@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.6.2
+# version: 1.7.0
 # summary: >-
 #   Headless nightly driver for the sleep cycle (03:47 cron). Runs the deterministic, token-free
 #   passes — incremental groom, hygiene detect, consolidation scan, journal decay, index rerank
@@ -22,6 +22,9 @@ What it does autonomously (safe, no LLM):
                  the floor under the push hook, which only fires inside this harness)
   - ccusage-prices: one online ccusage call to refresh the price file the statusline
                  reads offline; findings for an off-pin version or unpriced models
+  - findings-resolver: findings_resolver.py (mode from config/findings-lanes.yaml, shadow until
+                 reviewed): re-check auto-lane findings, dismiss the stale ones, live-mode fixes
+                 from a whitelist only; writes the morning readout line
   - skill-listing: build_skill_overrides.py write (regenerate my-lib's skill listing map,
                  commit only those two files, never push); a finding when the INSTALLED map in
                  ~/.claude/settings.json differs or a skill is not linked into the harness
@@ -116,6 +119,20 @@ def _finding(source, key, text, severity="normal"):
              "--text", text, "--severity", severity)
     except Exception:
         pass
+
+
+def _findings_resolver() -> str:
+    """Run findings_resolver.py with the config's mode; return its readout line. Never raises.
+
+    Its own subprocess (not _run) for the longer timeout: its re-checks include a registry
+    validation per repo, which can outlast _run's 120 s.
+    """
+    try:
+        r = subprocess.run([sys.executable, str(EXEC / "findings_resolver.py")],
+                           capture_output=True, text=True, timeout=900)
+        return ((r.stdout.strip().splitlines() or ["(no output)"])[0])[:200]
+    except Exception as e:
+        return f"(skipped: {e.__class__.__name__})"
 
 
 CCUSAGE_PIN = "20.0.30"      # the version team-lib/_admin/statusline.sh is validated against (re-tested 2026-10-19)
@@ -641,6 +658,17 @@ def main() -> int:
 
         # being detected tonight closes tonight rather than lingering as queue debt.
         log.append("findings: " + _run("findings.py", "sweep"))
+
+    # Findings resolver: work the auto lane of the inbox, AFTER every record and the sweep above.
+    #
+    # Re-checks each open auto-lane finding against its source and dismisses the ones proven
+    # stale; in live mode also applies the whitelisted fix kinds. It keeps its hands off anything
+    # an open workstream or live session owns, and writes the one-line morning readout
+    # (runtime/state/findings-resolver-last.txt). No flag on purpose: the mode comes from
+    # config/findings-lanes.yaml (`mode: shadow` until the shadow week is reviewed), so that file
+    # is the single switch. Runs even when a session is live: shadow writes only stale dismissals
+    # to the inbox, and live mode's memory fix has its own busy guard. Never fails the tick.
+    log.append("findings-resolver: " + _findings_resolver())
 
     # --- cue the reflective (LLM) wakes ---
     last_med = state.get("last_meditation")

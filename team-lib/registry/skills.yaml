@@ -504,9 +504,10 @@ skills:
   listing: 'on'
   category: ai-tooling
 - name: findings
-  description: 'The pull side of the findings inbox. Loads open findings via findings.py, groups them,
-    and works them one at a time — propose, act, dismiss. Exists because findings must never be raised
-    inside another thread: this skill IS the thread.'
+  description: The pull side of the findings inbox. Loads open findings via findings.py, groups them,
+    and works them one at a time — propose, act, dismiss. Documents the three lanes (auto, ask, hands-off),
+    the nightly findings_resolver.py that works the auto lane, and the one-line morning readout the brief
+    quotes.
   path: skills/findings/SKILL.md
   capabilities:
   - findings
@@ -515,7 +516,7 @@ skills:
   - worklist
   dependencies:
   - team-lib/executions/findings.py
-  version: 1.0.3
+  version: 1.1.0
   source: team
   provider: internal
   listing: name-only

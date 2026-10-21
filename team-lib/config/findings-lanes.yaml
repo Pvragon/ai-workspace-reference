@@ -1,0 +1,120 @@
+# summary: Lanes for the findings inbox and the switches of the nightly findings resolver. Each open
+#   finding is in one lane: auto (Your Agent resolves it), ask (a decision that is the owner's) or
+#   hands-off (an open workstream or live session owns it). Read by findings.py (lane on record,
+#   statusline counts only `ask`) and findings_resolver.py (what it may re-check and fix).
+# version: 1.0.0
+# created: 2026-10-20
+# last_updated: 2026-10-20
+# maintainer: pvragon
+# ---------------------------------------------------------------------------------------------
+# ⚑ DATA, NOT CODE. The lane of a finding is decided by the first rule below that matches it. Change
+#   a lane by editing a rule here; never by special-casing a source in findings.py.
+#
+# ⚑ GENERIC NAMES ONLY. This file publishes with team-lib. Client names, internal domains and team
+#   repo names go in the personal overlay, my-lib/config/findings-lanes.yaml, whose list keys
+#   (ask_patterns, hard_line_patterns, owner_stopwords) are APPENDED to these and whose scalar keys
+#   (mode, allow_push, ...) OVERRIDE them. A fresh install with no overlay still works.
+#
+# ⚑ THE RESOLVER IS A WHITELIST, NOT A BLACKLIST. It has no code path that writes to an outside
+#   API, sends a message, deletes a file, or pushes a repo outside `push_repos`. The pattern lists
+#   below are a second fence, for findings whose WORDING says they touch something off-limits.
+# ---------------------------------------------------------------------------------------------
+
+# ── Resolver mode ────────────────────────────────────────────────────────────────────────────
+# shadow: re-verify every auto-lane finding, dismiss the ones proven stale (the ONLY write shadow
+#         makes), and log what live mode WOULD have done. Live: also apply whitelisted fix kinds.
+# Shadow week started 2026-10-20. Nothing switches automatically: after reviewing a week of
+# agents/your-agent/runtime/logs/findings_resolver.log, the operator or Your Agent sets `mode: live` here.
+mode: shadow
+live_after: 2026-10-27          # a note, not a trigger
+
+# Pushing the resolver's OWN commits (live mode only). Off until the shadow week is reviewed.
+allow_push: false
+push_repos: [my-lib, team-lib, personal, agents]
+# A commit counts as the resolver's own (or the nightly cycle's) only if its subject matches one of
+# these. A push is refused when ANY commit ahead of upstream fails to match: those belong to a
+# session, and pushing a session's commits is that session's (or the owner's) call.
+own_commit_subjects:
+  - '^chore\(version\): '
+  - '^chore\(registry\): '
+  - '^chore\(config\): regenerate the skill listing map \(dream cycle\)$'
+  - '^chore\(findings-resolver\): '
+
+# A finding whose check still fails after this many nightly attempts moves to `ask`.
+max_attempts: 2
+
+# ── Lane rules ───────────────────────────────────────────────────────────────────────────────
+# First match wins. Match fields (all optional, all must hold):
+#   source / key / text : regex (source is a full match; key and text are searched, ignoring case)
+#   hold / once         : true|false against the finding's flag
+#   severity            : normal|critical
+# `kind` names the resolver check for auto-lane findings. A kind the resolver does not know is
+# left open and listed in the morning readout as needing a session.
+default: {lane: auto, kind: freeform}
+
+rules:
+  # Questions the owner was asked. --hold exists precisely for these.
+  - {match: {hold: true}, lane: ask, kind: question}
+  - {match: {severity: critical}, lane: ask, kind: critical}
+  - {match: {source: 'publication', key: '^leak-blocked$'}, lane: ask, kind: publication-leak}
+  # Reflective wakes file questions, not tasks.
+  - {match: {source: '(dream|meditation|your-agent)(-.*)?'}, lane: ask, kind: question}
+  # Nightly-cycle findings with a deterministic re-check (dream_cycle.py records these). They come
+  # BEFORE the wording rule, so a kind is decided by its source and key, not by a word in its text.
+  # Two are ask although they re-check cleanly: closing a census gap is writing a summary
+  # (authorship), and a project repo's registry is a team repo with live worktrees. The resolver
+  # still re-checks ask-lane findings of a known kind and dismisses the ones proven stale.
+  - {match: {source: 'frontmatter-census', key: '^gap-'}, lane: ask, kind: census-gap}
+  - {match: {source: 'registry-reconcile', key: '^drift-'}, lane: ask, kind: project-registry-drift}
+  - {match: {source: 'version-reconcile', key: '^stale-'}, lane: auto, kind: unpushed-layer}
+  - {match: {source: 'registry-reconcile', key: '^stale-'}, lane: auto, kind: unpushed-layer}
+  - {match: {source: 'hygiene', key: '^memory-self-check$'}, lane: auto, kind: memory-hygiene}
+  - {match: {source: 'consolidation'}, lane: auto, kind: consolidation}
+  - {match: {source: 'layer-drift'}, lane: auto, kind: layer-drift}
+  - {match: {source: 'publication', key: '^external-pack-pins$'}, lane: auto, kind: pack-pins}
+  - {match: {source: 'publication', key: '^regenerated$'}, lane: auto, kind: public-unpushed}
+  - {match: {source: 'skill-listing'}, lane: auto, kind: skill-listing}
+  - {match: {source: 'close-signal'}, lane: auto, kind: close-signal}
+  - {match: {source: 'sweep', key: '^attention:'}, lane: auto, kind: sweep-attention}
+  - {match: {source: 'sweep', key: '^status:'}, lane: auto, kind: sweep-status}
+  - {match: {source: 'sweep', key: '^undateable:'}, lane: auto, kind: sweep-undateable}
+  - {match: {source: 'ccusage', key: '^version$'}, lane: auto, kind: ccusage-version}
+
+  # Wording that names the owner's territory: money, people, outward messages, authorship,
+  # a choice between options. Extended by the overlay's ask_patterns.
+  - {match: {text: '@ask_patterns'}, lane: ask, kind: decision}
+
+# Referenced above as '@ask_patterns'. Searched in key + text, ignoring case.
+ask_patterns:
+  - '\$\s?\d'                                   # a money amount
+  - '\b(invoice|payment|refund|payroll|price quote|billing dispute)\b'
+  - '\b(e-?mail|reply to|message to|post to|send (it|this|the)|outreach|announce)\b'
+  - '\bauthorship\b|\bwho (wrote|authors?)\b'
+  - '\b(hire|fire|contract with|pay (him|her|them))\b'
+  - "\\bthe operator('s)? (call|decision|approval|ruling|yes)\\b"
+  - '\b(needs?|ask|awaiting|waits? on) the operator\b'
+  - '\bwhich (one|option)\b|\boption [ab12]\b'
+
+# Never fixed by the resolver, whatever the lane (re-verification, which is read-only, still runs).
+# Searched in key + text, ignoring case. The overlay adds client names and team repos.
+hard_line_patterns:
+  - '\bproduction (db|database|data)\b'
+  - '\b(client|billing|claims?|investigation) (file|folder|data|workbook)s?\b'
+  - '\bpublic (reference )?repo\b.*\bpush'
+  - '\b(delete|purge)\b|\brm -'
+
+# ── Ownership (hands-off) ────────────────────────────────────────────────────────────────────
+# Before acting, the resolver collects owner terms from current-state.md (In Flight + Just Handed
+# Off wikilinks and titles) and from live peer sessions (session_activity.py roster + status). A
+# STRONG match (a whole workstream slug, its first two words, or a live session's name stem) makes
+# any non-hold finding hands-off. A WEAK match (one distinctive word of length >= 5) is enough to
+# make the resolver keep its hands off an auto-lane finding; it never demotes an ask.
+owner_sections: ['In Flight', 'Just Handed Off']
+owner_min_token: 5
+owner_stopwords: [project, reference, feedback, session, review, check, checks, setup, first,
+  ongoing, finish, build, built, notes, table, inbox, triage, backlog, desktop, desktops, layout,
+  tracker, issue, issues, gaps, migration, configuration, config, payer, tenant, brief, mailbox,
+  hardware, operations, analysis, primitive, design, hard, freeze, freezes, reinstall, restore,
+  backup, pended, invoice, billing, classification, refresh, competitor, eligibility, permissions,
+  claims, status, pipeline, comms, walls, your-agent, drift, investigation, contract, rates, grain,
+  approvals, emerging, reconciliation, underpaid, mileage]

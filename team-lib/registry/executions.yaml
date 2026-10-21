@@ -166,7 +166,7 @@ executions:
     - cron
     - sleep-cycle
     - maintenance
-    version: 1.6.2
+    version: 1.7.0
   dream_journal:
     path: executions/dream_journal.py
     description: 'Dream-journal residue store for the sleep cycle''s reflective wakes. write() appends
@@ -245,10 +245,10 @@ executions:
     version: 1.0.1
   findings:
     path: executions/findings.py
-    description: 'The findings inbox: a pull-only queue of audit observations, with an ambient statusline
-      segment that escalates on AGE. Decouples the cheap frequent write (nightly audits) from the gated
-      read (when the operator has space), so findings stop being announced at the two worst moments —
-      session close and session start.'
+    description: 'The findings inbox: a pull-only queue of audit observations, each in a lane (auto, ask,
+      hands-off) from config/findings-lanes.yaml, with an ambient statusline segment that counts only
+      the `ask` lane and escalates on AGE. The nightly findings_resolver.py works the auto lane; the operator
+      sees only what needs him.'
     tags:
     - findings
     - inbox
@@ -256,7 +256,14 @@ executions:
     - statusline
     - audit
     - timing
-    version: 1.1.0
+    version: 1.2.0
+  findings_resolver:
+    path: executions/findings_resolver.py
+    version: 1.0.0
+    description: Nightly findings resolver. Re-checks each open auto-lane finding against its source,
+      dismisses the ones proven stale, and in live mode applies only whitelisted fix kinds; checks ownership
+      first (current-state In Flight / Just Handed Off, live peer sessions) and keeps its hands off anything
+      owned. Writes a one-line morning readout. Shadow mode by default.
   graduate_capability:
     path: executions/graduate_capability.py
     description: Graduates a capability from the personal layer to the shared one as a MOVE, not a copy.
