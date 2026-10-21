@@ -18,3 +18,7 @@
 	path = skills/_external/paramchoudhary-resume-skills
 	url = https://github.com/Paramchoudhary/ResumeSkills.git
 	commit = 74ae19e7c62b0516d1c298328e5544976c12da5d
+[submodule "skills/_external/dietrichgebert-ponytail"]
+	path = skills/_external/dietrichgebert-ponytail
+	url = https://github.com/dietrichgebert/ponytail.git
+	commit = 09c434ab73ca43761c5d8b0c5d341926c2fba710

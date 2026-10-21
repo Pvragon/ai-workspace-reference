@@ -79,7 +79,8 @@ registries:
     # letting the last file win, so this exclusion is the real fix rather than a way to silence it.
     # node_modules: a skill's vendored npm deps can ship their own SKILL.md (playwright-core ships
     # `trace` and `skill`); they are gitignored, not ours, and not linked into the harness.
-    exclude: ["**/.agents/**", "**/node_modules/**"]
+    # Ponytail (2026-10-21) does the same under `.litware/skills/`; same fix.
+    exclude: ["**/.agents/**", "**/.litware/**", "**/node_modules/**"]
     # 85 external skills live at skills/_external/<pack>/<skill>/ and are exposed to the harness as
     # ext-<skill>. Derived from the PATH, not the name: the location is what is true.
     id_rules:

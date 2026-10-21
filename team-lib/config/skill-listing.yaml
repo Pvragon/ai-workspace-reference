@@ -36,7 +36,7 @@ template: config
 version: 1.1.0
 summary: Listing level and category for third-party external skills, keyed by harness name; read by build_registry and build_skill_overrides.
 created: 2026-10-16
-last_updated: 2026-10-16
+last_updated: 2026-10-21
 maintainer: your-agent
 
 skills:
@@ -84,6 +84,12 @@ skills:
   ext-ms365-tenant-manager: {category: system}
   ext-offer-comparison-analyzer: {category: career}
   ext-pdf: {category: documents}
+  ext-ponytail: {category: engineering}
+  ext-ponytail-audit: {category: engineering}
+  ext-ponytail-debt: {category: engineering}
+  ext-ponytail-gain: {category: engineering}
+  ext-ponytail-help: {category: engineering}
+  ext-ponytail-review: {category: engineering}
   ext-portfolio-case-study-writer: {category: career}
   ext-pptx: {category: documents}
   ext-product-manager-toolkit: {category: business}

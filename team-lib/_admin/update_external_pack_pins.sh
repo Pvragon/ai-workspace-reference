@@ -41,9 +41,11 @@ fi
 updated=0; current=0; missing=0
 while read -r key path; do
     name="${key#submodule.}"; name="${name%.path}"
-    sha=$(git -C "$TEAM_LIB" rev-parse "HEAD:${path}" 2>/dev/null || true)
+    # --verify -q: a failed lookup prints nothing (plain rev-parse echoes "HEAD:<path>", which was
+    # written as the pin for a pack added but not yet committed, 2026-10-21).
+    sha=$(git -C "$TEAM_LIB" rev-parse --verify -q "HEAD:${path}" 2>/dev/null || true)
     if [[ -z "$sha" ]]; then
-        echo "    ⚠️  ${path}: no gitlink — cannot pin (is it a submodule here?)"
+        echo "    ⚠️  ${path}: no gitlink — cannot pin (is it a submodule here, and committed?)"
         missing=$((missing+1))
         continue
     fi
