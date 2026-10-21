@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.3.1
+# version: 1.3.2
 # summary: 'Deterministic pre-flight for session-debrief: collects git changes, checks registry consistency,
 #   detects sync needs, flags stale state, pre-stages today''s T1 facts/residue files, head-starts background
 #   transcript+state-dump jobs. Outputs structured JSON.'
 # created: 2026-03-31
-# last_updated: 2026-10-06
+# last_updated: 2026-10-20
 # maintainer: pvragon
 # ---
 #
@@ -336,6 +336,9 @@ fi
 # Machine-readable companions, so downstream never has to re-derive this.
 if [[ "$session_start" == *" "* ]]; then session_spans_midnight=true; else session_spans_midnight=false; fi
 session_end=$(date +%H:%M)
+# A session that started on an earlier day gets the date on its end too, or "10-18 04:17" to
+# "04:17" reads as a zero-length window (2026-10-19).
+[[ "$session_spans_midnight" == true ]] && session_end="$(date +%m-%d) $session_end"
 today=$(date +%Y-%m-%d)
 
 # Check MEMORY.md line count

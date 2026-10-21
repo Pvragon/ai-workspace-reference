@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 2.0.1
+version: 2.0.2
 summary: "Instructions for session-debrief Subagent C (session log and pulse): append the one-line session-log entry and compose the pulse-channel debrief message. Read by the subagent itself."
 created: 2026-10-06
-last_updated: 2026-10-06
+last_updated: 2026-10-20
 maintainer: pvragon
 ---
 
@@ -31,7 +31,7 @@ Compose, in exactly this form, one line:
 XX Claude Debrief [<start time> - <end time>]: <summary>
 ```
 
-Take the times from `session_info.approx_start` and `session_info.end`, as given (`HH:MM`). The summary is 1 to 3 sentences on outcomes, decisions and next steps.
+Take the times from `session_info.approx_start` and `session_info.end`, as given (`HH:MM`, or `MM-DD HH:MM` on both when `spans_midnight` is true). The summary is 1 to 3 sentences on outcomes, decisions and next steps.
 
 ## Findings file (your last disk action)
 
