@@ -12,10 +12,11 @@ projects: []
 created: "<YYYY-MM-DD>"
 last_updated: "<YYYY-MM-DD>"
 maintainer: "<team/person>"
-sync_source: "<Baserow People Ops Hub > People (table 656), team members only; omit otherwise>"
 ---
 
 # <Full Name>
+
+<For team members only, keep this line:> Roster facts (title, status, contact IDs, dates, tools) live in the People Ops Hub sheet; see `context/indexed/companies/your-brand/pvragon-team-hub.md`. This file holds working notes only.
 
 ## How to address them
 
@@ -24,7 +25,7 @@ hurt or embarrass if gotten wrong. Lead with the thing most likely to be gotten 
 
 ## Role and what they decide
 
-Title, what they own, and which decisions route to them.
+What they own, and which decisions route to them.
 
 ## Projects
 
@@ -34,6 +35,3 @@ One line per project: their role there, linking the project's own docs rather th
 
 Shared norms any teammate's agent should follow. Candid or private notes do NOT go here; they go
 in the personal overlay at `my-lib/context/indexed/people/<slug>.md`.
-
-<!-- BEGIN GENERATED: people-sync (Baserow People table 656). Do not hand-edit; rerun the sync. -->
-<!-- END GENERATED -->
