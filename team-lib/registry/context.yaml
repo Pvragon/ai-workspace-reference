@@ -95,6 +95,12 @@ context:
     - specs
     - conventions
     - structure
+  terminal-pane-house-style:
+    path: context/indexed/terminal-pane-house-style.md
+    description: 'The house style for small terminal panes on the Omarchy desktop (to-do pane, music pane,
+      and the everpresent Your Agent dashboard): live theme colors, one orange signal, the header and section
+      grammar, glyphs, motion, input handling, and how a pane lays out from a 68-column tile up to fullscreen.
+      Read before building or restyling any pane.'
   workspace-reference:
     path: context/indexed/workspace-reference.md
     description: 'Canonical architectural reference for the AI Workspace: 4-layer hierarchy, directory

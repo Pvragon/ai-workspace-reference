@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # name: handoff.sh
-# version: 1.4.0
+# version: 1.4.1
 # summary: Launch worker for the /handoff (session-rotate) skill. Opens a NEW terminal window (Windows
 #   Terminal on WSL, foot on Hyprland/Omarchy) running a fresh tmux session + a fresh, nvm-loaded `claude -n <name>` that reads a
 #   handoff brief on startup and follows its instructions (re-load persona, confirm worktree, continue).
@@ -10,19 +10,23 @@
 #   NOT reap (reaping happens via the /session-debrief that /handoff runs + the new session's SessionStart
 #   hook). nvm-load fix is load-bearing (else `claude` resolves to the Windows npm shim → exit 127).
 # created: 2026-05-31
-# last_updated: 2026-10-16
+# last_updated: 2026-10-20
 # maintainer: pvragon
 # usage: 'handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run] <claude_name>   Claude session
 #   display name (e.g. <current>-2). [A-Za-z0-9._-]+ <handoff_path>  absolute path to the handoff brief
 #   the new session reads first. --dir DIR       worktree/working dir for the new session (default:
 #   $PWD) --model M       pin the new session's model (e.g. claude-opus-5-5[1m]); default: unset
 #   --permission-mode M  start the new session in this mode (e.g. auto); default: unset
+#   --remote-control  start the new session with Remote Control on, named <claude_name> (opt-in; the
+#   everpresent series uses it so only that pane shows in the Claude mobile app)
+#   --plugin-dir DIR  load a plugin or mod directory in the new session (repeatable; the everpresent
+#   series loads my-lib/apps/everpresent-dash/mod this way, so no other session gets it)
 #   --dry-run       generate + print the launch script, do NOT open a window'
 # ---
 set -euo pipefail
 
 DRY=0
-SEED_OVERRIDE=""; MODEL=""; PMODE=""; DIR="$PWD"; pos=()
+SEED_OVERRIDE=""; MODEL=""; PMODE=""; RC=0; DIR="$PWD"; PLUGINS=""; pos=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
@@ -30,6 +34,8 @@ while [ $# -gt 0 ]; do
     --seed) SEED_OVERRIDE="$2"; shift ;;
     --model) MODEL="${2:?}"; shift ;;
     --permission-mode) PMODE="${2:?}"; shift ;;
+    --remote-control) RC=1 ;;
+    --plugin-dir) PLUGINS+="--plugin-dir '${2:?}' "; shift ;;
     *) pos+=("$1") ;;
   esac; shift
 done
@@ -78,7 +84,7 @@ export NVM_DIR="\$HOME/.nvm"
 for b in "\$HOME"/.nvm/versions/node/*/bin; do [ -d "\$b" ] && PATH="\$b:\$PATH"; done
 export PATH
 cd "${DIR}" || cd "\$HOME"
-CMD="claude ${MODEL:+--model '${MODEL}' }${PMODE:+--permission-mode '${PMODE}' }-n '${NAME}' '${SEED}'"
+CMD="claude ${MODEL:+--model '${MODEL}' }${PMODE:+--permission-mode '${PMODE}' }${PLUGINS}$( [ "$RC" -eq 1 ] && printf "%s" "--remote-control '${NAME}' " )-n '${NAME}' '${SEED}'"
 # Already inside a tmux session handoff.sh created (take-over-in-place): run claude directly.
 if [ -n "\${HANDOFF_DETACHED:-}" ]; then unset HANDOFF_DETACHED; eval "exec \$CMD"; fi
 exec tmux new-session -s "mylib-\$\$" "\$CMD"

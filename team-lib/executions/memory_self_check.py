@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.2.1
+# version: 1.2.2
 # summary: >-
 #   Deterministic memory-hygiene linter. Detects index rows pointing at missing files, orphaned
 #   topic files, dead [[wikilinks]], near-duplicate topic files, frontmatter gaps, and stale
 #   short-term. --fix-safe applies only unambiguous fixes, capped per run; anything requiring
 #   judgment is escalated.
 # ---
-"""
+r"""
 memory_self_check.py — detect memory-substrate hygiene issues (no mutations).
 
 This is the "pruning/integration detector" arm of the dream-cycle backlog

@@ -406,7 +406,7 @@ executions:
     - linter
     - hygiene
     - maintenance
-    version: 1.2.1
+    version: 1.2.2
   migrate_summary_into_file:
     path: executions/migrate_summary_into_file.py
     description: One-shot migration moving the hand-curated recall summary out of the MEMORY.md and MEMORY-archive.md
@@ -561,7 +561,7 @@ executions:
     - resume
     - reboot-recovery
     - wsl
-    version: 1.1.6
+    version: 1.2.0
   setup_pane_colors:
     path: executions/setup_pane_colors.py
     description: Installs the Claude Code tmux pane-color notification system. Deploys pane-color.sh and

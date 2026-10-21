@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.6
+# version: 1.1.1
 # summary: 'The Claude Code status line: location, context window used against the model''s ceiling,
 #   model, rate-limit clocks, and the ambient findings count. Graduated from the agent adapter layer
 #   2026-08-01 — team-lib''s findings skill documents a statusline segment, so the statusline itself
 #   belongs in the shared layer that ships it.'
 # created: 2026-08-01
-# last_updated: 2026-10-19
+# last_updated: 2026-10-20
 # maintainer: pvragon
 # ---
 #
@@ -17,8 +17,12 @@
 #
 # Needs jq only (setup_system.sh installs it).
 # Claude Code statusLine — two rows, color-coded.
-# Row 1: 📍 repo:branch [· session-name]  │  💵 cost  │  🧠 model
-# Row 2: 📊 context  │  ⏳ 5h limit  │  📅 7d limit
+# Row 1: 📍 repo:branch [· session-name]  │  📊 context  │  🧠 model
+# Row 2: ⏳ 5h limit  │  📅 7d limit  [│  📦 drift]  [│  📥 findings]
+# Width-aware (1.1.0, 2026-10-20): when a row is wider than $COLUMNS allows, the segments
+# wrap onto at most 3 rows and degrade in a fixed order (see "Width-aware layout"); at any
+# width where both rows fit, the output is byte-identical to 1.0.x. The everpresent Your Agent pane
+# (session name your-agent-the-everpresent*) adds its queue segment from summary.json.
 
 input=$(cat)
 
@@ -66,31 +70,32 @@ mid_truncate() {
 }
 
 # ── Pull fields ───────────────────────────────────────────────────────────
-model=$(echo "$input" | jq -r '.model.display_name // "?"')
-model_id=$(echo "$input" | jq -r '.model.id // ""')
-cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "."')
-cost=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
-session_id=$(echo "$input" | jq -r '.session_id // ""')
-
+# One jq start for every payload field: each `echo | jq` costs a few ms, and this runs on
+# every refresh of every session. Fields are joined with the unit separator (0x1f), so an
+# empty value stays an empty field. Defaults match what the per-field reads used to give.
+mapfile -t -d $'\x1f' _f < <(printf '%s' "$input" | jq -j '[
+  (.model.display_name // "?"), (.model.id // ""), (.workspace.current_dir // .cwd // "."),
+  (.cost.total_cost_usd // 0), (.session_id // ""), (.session_name // ""),
+  (.context_window.used_percentage // ""), (.context_window.current_usage.input_tokens // 0),
+  (.context_window.current_usage.cache_read_input_tokens // 0),
+  (.context_window.current_usage.cache_creation_input_tokens // 0),
+  (.rate_limits.five_hour.used_percentage // ""), (.rate_limits.five_hour.resets_at // ""),
+  (.rate_limits.seven_day.used_percentage // ""), (.rate_limits.seven_day.resets_at // ""),
+  (.context_window.context_window_size // "")] | map(tostring) | join("\u001f")' 2>/dev/null)
+# No output at all (empty or unparseable payload) leaves every field empty, as the per-field
+# reads did; only a parsed payload gets the defaults.
+model=${_f[0]}; model_id=${_f[1]}; cwd=${_f[2]}; cost=${_f[3]}; session_id=${_f[4]}
+ctx_pct=${_f[6]}; ctx_in=${_f[7]}; ctx_cr=${_f[8]}; ctx_cc=${_f[9]}
+rl5_pct=${_f[10]}; rl5_at=${_f[11]}; rl7_pct=${_f[12]}; rl7_at=${_f[13]}; ctx_window_size=${_f[14]}
 # Session name: newer builds may pass .session_name in the payload; otherwise
 # look it up in the live-session registry (~/.claude/sessions/<pid>.json,
 # written by 2.1.x builds and by /rename) via our session_id.
-session_name=$(echo "$input" | jq -r '.session_name // ""')
+session_name=${_f[5]}
 if [[ -z "$session_name" && -n "$session_id" ]]; then
   session_name=$(jq -r --arg sid "$session_id" \
     'select(.sessionId == $sid) | .name // empty' \
     "$HOME"/.claude/sessions/*.json 2>/dev/null | head -1)
 fi
-
-ctx_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
-ctx_in=$(echo "$input"  | jq -r '.context_window.current_usage.input_tokens // 0')
-ctx_cr=$(echo "$input"  | jq -r '.context_window.current_usage.cache_read_input_tokens // 0')
-ctx_cc=$(echo "$input"  | jq -r '.context_window.current_usage.cache_creation_input_tokens // 0')
-
-rl5_pct=$(echo "$input"  | jq -r '.rate_limits.five_hour.used_percentage // empty')
-rl5_at=$(echo "$input"   | jq -r '.rate_limits.five_hour.resets_at // empty')
-rl7_pct=$(echo "$input"  | jq -r '.rate_limits.seven_day.used_percentage // empty')
-rl7_at=$(echo "$input"   | jq -r '.rate_limits.seven_day.resets_at // empty')
 
 # ── 5h active block $ + 7d total $ (ccusage, cached, single-flight) ───────
 # 5h: ccusage's "active block" maps to Anthropic's 5h billing window.
@@ -272,7 +277,7 @@ fi
 # Max window: Claude Code reports it as context_window.context_window_size. The name rule
 # ("1M" / "[1m]") is only a fallback: Opus 5.5 is named plainly, so the rule showed 200k for a
 # 1M session (2026-10-15).
-max=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
+max=$ctx_window_size
 if ! [[ "$max" =~ ^[0-9]+$ ]] || (( max == 0 )); then
   max=200000
   [[ "$model" == *"1M"* || "$model_id" == *"[1m]"* ]] && max=1000000
@@ -340,6 +345,8 @@ fmt_rl() {
 # Shrink in priority order — branch first (it
 # usually restates the worktree), then worktree, then repo — so the session
 # name, the piece that tells you WHICH window this is, degrades last.
+# fit_loc BUDGET sets loc_str. The full-width layout calls it with 50; a narrow
+# terminal calls it again with whatever room is left (see "Width-aware layout").
 LOC_BUDGET=50
 _b_floor=6; _w_floor=6; _r_floor=6; _n_floor=12
 
@@ -349,13 +356,6 @@ _loc_wt=""
 (( ! wt_is_main )) && [[ -n "$worktree" ]] && _loc_wt="$worktree"
 _loc_name="$session_name"
 
-# Start from the historical per-piece caps, then shrink the block to fit.
-_r_cap=${#_loc_repo}; _b_cap=24; _w_cap=18; _n_cap=26
-(( _b_cap > ${#_loc_branch} )) && _b_cap=${#_loc_branch}
-(( _w_cap > ${#_loc_wt} ))     && _w_cap=${#_loc_wt}
-(( _n_cap > ${#_loc_name} ))   && _n_cap=${#_loc_name}
-
-_drop_branch=0
 _loc_width() {   # 1 for ':' + 1 for ':wt' + 4 for '  · ' when each is present
   local w=$_r_cap
   (( ! _drop_branch )) && w=$(( w + 1 + _b_cap ))
@@ -364,43 +364,72 @@ _loc_width() {   # 1 for ':' + 1 for ':wt' + 4 for '  · ' when each is present
   printf '%s' "$w"
 }
 
-# A branch that merely restates its worktree (feat/billing-coverage-q3-260520
-# inside billing-coverage-q3) carries no information the worktree segment isn't
-# already showing. Drop it WHOLE rather than let the shrink loop mince both into
-# `fea…20:bil…q3` — one readable name beats two unreadable ones at equal cost.
-if [[ -n "$_loc_wt" && "$_loc_branch" == *"$_loc_wt"* ]] && (( $(_loc_width) > LOC_BUDGET )); then
-  _drop_branch=1
-fi
+fit_loc() {
+  local budget=$1
+  # Start from the historical per-piece caps, then shrink the block to fit.
+  _r_cap=${#_loc_repo}; _b_cap=24; _w_cap=18; _n_cap=26
+  (( _b_cap > ${#_loc_branch} )) && _b_cap=${#_loc_branch}
+  (( _w_cap > ${#_loc_wt} ))     && _w_cap=${#_loc_wt}
+  (( _n_cap > ${#_loc_name} ))   && _n_cap=${#_loc_name}
 
-while (( $(_loc_width) > LOC_BUDGET )); do
-  if   (( _b_cap > _b_floor )); then _b_cap=$(( _b_cap - 1 ))
-  elif [[ -n "$_loc_wt" ]] && (( _w_cap > _w_floor )); then _w_cap=$(( _w_cap - 1 ))
-  elif (( _r_cap > _r_floor )); then _r_cap=$(( _r_cap - 1 ))
-  elif [[ -n "$_loc_name" ]] && (( _n_cap > _n_floor )); then _n_cap=$(( _n_cap - 1 ))
-  else break   # already at every floor — accept the overflow rather than spin
+  _drop_branch=0
+  # A branch that merely restates its worktree (feat/billing-coverage-q3-260520
+  # inside billing-coverage-q3) carries no information the worktree segment isn't
+  # already showing. Drop it WHOLE rather than let the shrink loop mince both into
+  # `fea…20:bil…q3` — one readable name beats two unreadable ones at equal cost.
+  if [[ -n "$_loc_wt" && "$_loc_branch" == *"$_loc_wt"* ]] && (( $(_loc_width) > budget )); then
+    _drop_branch=1
   fi
-done
 
-repo_disp=$(mid_truncate "$_loc_repo" "$_r_cap")
-branch_seg=""
-(( ! _drop_branch )) && branch_seg=":$(mid_truncate "$_loc_branch" "$_b_cap")"
+  while (( $(_loc_width) > budget )); do
+    if   (( _b_cap > _b_floor )); then _b_cap=$(( _b_cap - 1 ))
+    elif [[ -n "$_loc_wt" ]] && (( _w_cap > _w_floor )); then _w_cap=$(( _w_cap - 1 ))
+    elif (( _r_cap > _r_floor )); then _r_cap=$(( _r_cap - 1 ))
+    elif [[ -n "$_loc_name" ]] && (( _n_cap > _n_floor )); then _n_cap=$(( _n_cap - 1 ))
+    else break   # already at every floor — accept the overflow rather than spin
+    fi
+  done
 
-wt_seg=""
-if [[ -n "$_loc_wt" ]]; then
-  wt_disp=$(mid_truncate "$_loc_wt" "$_w_cap")
-  if [[ "$branch" == *"$_loc_wt"* ]]; then
-    wt_seg="${DIM}:${wt_disp}${RESET}"
-  else
-    wt_seg=":${YELLOW}${wt_disp}${RESET}"
+  local repo_disp branch_seg="" wt_seg="" wt_disp name_seg=""
+  repo_disp=$(mid_truncate "$_loc_repo" "$_r_cap")
+  (( ! _drop_branch )) && branch_seg=":$(mid_truncate "$_loc_branch" "$_b_cap")"
+  if [[ -n "$_loc_wt" ]]; then
+    wt_disp=$(mid_truncate "$_loc_wt" "$_w_cap")
+    if [[ "$branch" == *"$_loc_wt"* ]]; then
+      wt_seg="${DIM}:${wt_disp}${RESET}"
+    else
+      wt_seg=":${YELLOW}${wt_disp}${RESET}"
+    fi
   fi
-fi
+  [[ -n "$_loc_name" ]] && name_seg="  ${DIM}· $(mid_truncate "$_loc_name" "$_n_cap")${RESET}"
+  loc_str="${repo_disp}${branch_seg}${wt_seg}${name_seg}"
+}
 
 # ── Render ────────────────────────────────────────────────────────────────
-name_seg=""
-[[ -n "$_loc_name" ]] && name_seg="  ${DIM}· $(mid_truncate "$_loc_name" "$_n_cap")${RESET}"
+# The everpresent pane (session name your-agent-the-everpresent*) gets a queue segment and a
+# narrow layout; every other session renders as it always has when it fits.
+_everpresent=0
+[[ "$session_name" == your-agent-the-everpresent* ]] && _everpresent=1
 
-printf "📍 %s%s%s%s${SEP}📊 %s%dk/%dk (%d%%)%s%s${SEP}🧠 %s\n" \
-  "$repo_disp" "$branch_seg" "$wt_seg" "$name_seg" \
+# Theme orange for the one signal on the line (asks waiting on the operator). Same source as SEP.
+# In the everpresent pane the bars take the theme's accent instead, because there orange is
+# reserved for an ask (terminal-pane house style: teal is structure, orange is signal).
+ORANGE=$YELLOW
+if [[ "$SEP" == *$'\033[38;2;'* ]]; then
+  _o=${SEP#*$'\033['}; ORANGE=$'\033['"${_o%%m*}m"
+  if (( _everpresent )); then
+    while IFS= read -r _line; do
+      if [[ $_line =~ ^accent[[:space:]]*=[[:space:]]*\"#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})\" ]]; then
+        _acc="\033[38;2;$((16#${BASH_REMATCH[1]}));$((16#${BASH_REMATCH[2]}));$((16#${BASH_REMATCH[3]}))m"
+        SEP="  "$(printf '%b' "$_acc")"│${RESET}  "
+        break
+      fi
+    done < "$_omarchy_state/theme/colors.toml" 2>/dev/null
+  fi
+
+fit_loc "$LOC_BUDGET"
+printf -v row1 "📍 %s${SEP}📊 %s%dk/%dk (%d%%)%s%s${SEP}🧠 %s" \
+  "$loc_str" \
   "$ctx_color" "$tok_k" "$max_k" "$ctx_pct_int" "$RESET" "$fire" \
   "$model"
 
@@ -424,8 +453,163 @@ _fcache="${_ahome:+$_ahome/runtime/state/findings-statusline.txt}"
 # findings.py pre-renders its own plain separator; swap it for SEP so every bar matches.
 [[ "$findings_seg" == "  │  "* ]] && findings_seg="${SEP}${findings_seg#  │  }"
 
-printf "%s${SEP}%s%s%s\n" \
-  "$(fmt_rl "$rl5_pct" "$rl5_at" "5h" "⏳" "$total_5h")" \
-  "$(fmt_rl "$rl7_pct" "$rl7_at" "7d" "📅" "$total_7d")" \
-  "$drift_seg" \
-  "$findings_seg"
+rl5_seg=$(fmt_rl "$rl5_pct" "$rl5_at" "5h" "⏳" "$total_5h")
+rl7_seg=$(fmt_rl "$rl7_pct" "$rl7_at" "7d" "📅" "$total_7d")
+printf -v row2 "%s${SEP}%s%s%s" "$rl5_seg" "$rl7_seg" "$drift_seg" "$findings_seg"
+
+# ── Width-aware layout ────────────────────────────────────────────────────
+# Claude Code sets COLUMNS to the terminal width and draws the status line two cells in,
+# cutting whatever runs past the edge. Measured in the 68-column everpresent pane
+# (2026-10-20): a row of 65 cells was cut to 63 plus an ellipsis, so the room for a row is
+# COLUMNS minus 4 (the indent and two cells Claude Code keeps clear). When both rows fit (every full-width session), they print
+# exactly as they always have. Otherwise the segments are packed into at most MAX_ROWS rows
+# of that width, degrading in a fixed order (DEGRADE below) until they fit: the order is a
+# decision about what matters, not an accident of where the line got cut.
+# The everpresent pane (session name your-agent-the-everpresent*) also gets its queue segment; its ^F hint
+# lives in the pane's own title row, not here.
+
+# disp_width STR: display cells of STR, ANSI stripped; East Asian Wide and emoji count 2.
+disp_width() {
+  local s=$1 plain i c cp w=0
+  shopt -s extglob
+  plain=${s//$'\033['*([0-9;])m/}
+  shopt -u extglob
+  w=${#plain}
+  plain=${plain//[[:ascii:]]/}          # only non-ASCII characters can be wide
+  for (( i = 0; i < ${#plain}; i++ )); do
+    c=${plain:i:1}
+    printf -v cp '%d' "'$c"
+    if (( cp >= 0x1F000 || (cp >= 0x1100 && cp <= 0x115F) || (cp >= 0x231A && cp <= 0x231B) \
+          || (cp >= 0x23E9 && cp <= 0x23EC) || cp == 0x23F0 || cp == 0x23F3 \
+          || (cp >= 0x2E80 && cp <= 0xA4CF) || (cp >= 0xAC00 && cp <= 0xD7A3) \
+          || (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFF00 && cp <= 0xFF60) || (cp >= 0xFFE0 && cp <= 0xFFE6) )); then
+      w=$(( w + 1 ))
+    fi
+  done
+  _W=$w
+}
+
+_room=1000000
+[[ "${COLUMNS:-}" =~ ^[0-9]+$ ]] && (( COLUMNS > 0 )) && _room=$(( COLUMNS - 4 ))
+
+disp_width "$row1"; _w1=$_W
+disp_width "$row2"; _w2=$_W
+if (( ! _everpresent && _w1 <= _room && _w2 <= _room )); then
+  printf "%s\n%s\n" "$row1" "$row2"
+  exit 0
+fi
+
+fi
+
+# Queue segment for the everpresent pane, from the task store's summary.json (written by
+# agent_tasks.py). Nothing is queried live. Missing file = no segment.
+queue_seg=""; queue_short=""
+_summary="${_ahome:+$_ahome/runtime/state/summary.json}"
+if (( _everpresent )) && [[ -n "$_summary" && -s "$_summary" ]]; then
+  # Unit separator, not tab: read collapses empty tab-separated fields (an empty agent age shifted
+  # every field after it). The event time arrives as ISO; the line shows HH:MM.
+  IFS=$'\x1f' read -r q_asks q_doing q_waiting q_agents q_age q_at q_title q_updated < <(
+    jq -r '[(.asks // 0), (.doing // 0), (.waiting // 0), (.agents // 0), (.oldest_agent_min // ""),
+            ((.next_event.at // "") | if length > 5 then .[11:16] else . end), (.next_event.title // ""),
+            (.updated_at // 0)] | map(tostring) | join("\u001f")' \
+      "$_summary" 2>/dev/null)
+  q=""
+  (( ${q_asks:-0} > 0 )) && { (( q_asks == 1 )) && q="${ORANGE}● 1 ask${RESET}" || q="${ORANGE}● ${q_asks} asks${RESET}"; }
+  q_counts=""
+  (( ${q_doing:-0} > 0 ))   && q_counts+="  ▸${q_doing}"
+  (( ${q_waiting:-0} > 0 )) && q_counts+="  ⧖${q_waiting}"
+  if (( ${q_agents:-0} > 0 )); then
+    q_counts+="  ⇄${q_agents}"; [[ -n "$q_age" ]] && q_counts+=" ${q_age}m"
+  fi
+  q_event=""
+  [[ -n "$q_at" ]] && q_title=${q_title:0:16}; (( ${#q_title} == 16 )) && q_title="${q_title:0:15}…"
+  q_event="  ◷ ${q_at}${q_title:+ $q_title}"
+  q_stale=""
+  if [[ "$q_updated" =~ ^[0-9]+$ ]] && (( q_updated > 0 )); then
+    _age_s=$(( $(date +%s) - q_updated ))
+    (( _age_s > 600 )) && q_stale="  ${DIM}stale $(( _age_s / 60 ))m${RESET}"
+  fi
+  queue_seg="${q}${q_counts}${q_event}${q_stale}"
+  queue_seg="${queue_seg#  }"
+  queue_short="${q}${q_counts}${q_stale}"
+  queue_short="${queue_short#  }"
+  [[ -z "$queue_seg" ]] && { queue_seg="${DIM}queue clear${RESET}"; queue_short=$queue_seg; }
+fi
+
+if (( _everpresent )); then
+  _e1=$row1; [[ -n "$queue_seg" ]] && _e1="${queue_seg}${SEP}${row1}"
+  _e2="${row2}"
+  disp_width "$_e1"; _w1=$_W
+  disp_width "$_e2"; _w2=$_W
+  if (( _w1 <= _room && _w2 <= _room )); then
+    printf "%s\n%s\n" "$_e1" "$_e2"
+    exit 0
+  fi
+fi
+
+# Short forms, used only when the full ones do not fit.
+fmt_rl_short() {
+  local pct=$1 epoch=$2 icon=$3
+  [[ -z "$pct" || "$pct" == "null" ]] && { printf "%s%s —%s" "$DIM" "$icon" "$RESET"; return; }
+  local pct_int; pct_int=$(printf '%.0f' "$pct")
+  printf "%s %s%d%%%s %s→%s%s" "$icon" "$(color_for_pct "$pct_int")" "$pct_int" "$RESET" "$DIM" "$(fmt_reset "$epoch")" "$RESET"
+}
+ctx_full="📊 ${ctx_color}${tok_k}k/${max_k}k (${ctx_pct_int}%)${RESET}${fire}"
+ctx_short="📊 ${ctx_color}${ctx_pct_int}%${RESET}${fire}"
+rl5_short=$(fmt_rl_short "$rl5_pct" "$rl5_at" "⏳")
+rl7_short=$(fmt_rl_short "$rl7_pct" "$rl7_at" "📅")
+find_full="${findings_seg#"$SEP"}"
+find_short="${find_full%% · *}"; [[ "$find_short" != "$find_full" ]] && find_short+="$RESET"
+drift_full="${drift_seg#"$SEP"}"
+
+# Segments in display order. S_TXT is the current text; empty = dropped.
+declare -A S_FULL S_SHORT S_TXT
+_order=(loc ctx model rl5 rl7 drift find)
+(( _everpresent )) && _order=(queue ctx rl5 loc model rl7 find drift)
+fit_loc "$LOC_BUDGET"
+S_FULL[loc]="📍 ${loc_str}"
+S_FULL[ctx]=$ctx_full;   S_SHORT[ctx]=$ctx_short
+S_FULL[model]="🧠 ${model}"
+S_FULL[rl5]=$rl5_seg;    S_SHORT[rl5]=$rl5_short
+S_FULL[rl7]=$rl7_seg;    S_SHORT[rl7]=$rl7_short
+S_FULL[drift]=$drift_full
+S_FULL[find]=$find_full; S_SHORT[find]=$find_short
+S_FULL[queue]=$queue_seg; S_SHORT[queue]=$queue_short
+for k in "${_order[@]}"; do S_TXT[$k]=${S_FULL[$k]}; done
+
+MAX_ROWS=3
+_sep_w=5   # "  │  "
+
+# pack: greedily fill rows in display order. Sets _rows (array). Returns 1 if more than
+# MAX_ROWS rows are needed or one segment alone is wider than a row.
+pack() {
+  _rows=(); local cur="" cur_w=0 k t
+  for k in "${_order[@]}"; do
+    t=${S_TXT[$k]}; [[ -z "$t" ]] && continue
+    disp_width "$t"
+    (( _W > _room )) && return 1
+    if [[ -z "$cur" ]]; then cur=$t; cur_w=$_W
+    elif (( cur_w + _sep_w + _W <= _room )); then cur+="${SEP}${t}"; cur_w=$(( cur_w + _sep_w + _W ))
+    else _rows+=("$cur"); cur=$t; cur_w=$_W
+    fi
+  done
+  [[ -n "$cur" ]] && _rows+=("$cur")
+  (( ${#_rows[@]} <= MAX_ROWS ))
+}
+
+# The degrade order: each step makes one segment shorter or drops it. Least important first.
+# The queue, context, the 5-hour limit and the session name are the last to go.
+DEGRADE=(short:find short:rl7 short:rl5 drop:drift short:ctx loc:34 drop:find
+         short:queue loc:26 drop:rl7 drop:model loc:16)
+_step=0
+until pack; do
+  (( _step >= ${#DEGRADE[@]} )) && break
+  IFS=: read -r _act _key <<< "${DEGRADE[_step]}"
+  case $_act in
+    short) [[ -n "${S_TXT[$_key]}" && -n "${S_SHORT[$_key]}" ]] && S_TXT[$_key]=${S_SHORT[$_key]} ;;
+    drop)  S_TXT[$_key]="" ;;
+    loc)   fit_loc "$(( _key < _room - 2 ? _key : _room - 2 ))"; S_TXT[loc]="📍 ${loc_str}" ;;
+  esac
+  _step=$(( _step + 1 ))
+done
+printf "%s\n" "${_rows[@]}"
