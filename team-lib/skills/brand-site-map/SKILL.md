@@ -6,10 +6,10 @@ summary: >-
   Next does not scaffold, and build a real shop surface behind a SHOP_LIVE seam that shows an
   honest 'opening soon' rather than linking merch to nothing — the worst funnel defect on the
   original site.
-version: 1.0.2
+version: 1.0.3
 template: skill-definition
 created: 2026-07-22
-last_updated: 2026-10-16
+last_updated: 2026-10-21
 maintainer: your-agent
 dependencies: [node]
 tags: [sitemap, routes, seo, robots, commerce, funnel, information-architecture]
@@ -22,7 +22,8 @@ category: web
 Turn "a page" into "a site." Every route earns its place with one job.
 
 ## Compose first (don't re-derive)
-- **SEO / traffic intent + information architecture**: `ext-content-creator`,
+- **SEO / traffic intent + information architecture**: `ext-content-strategy` (it replaced the
+  deprecated `ext-content-creator`),
   `ext-marketing-strategy-pmm` (positioning → which landing pages exist and why).
 
 ## Steps

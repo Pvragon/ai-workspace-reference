@@ -25,7 +25,7 @@
 # invoke are `name-only`, because the Skill tool refuses a user-only skill ("disabled for model
 # invocation"). Callers: build-brand-site and its brand-site-* stages (frontend-design,
 # ui-design-system, theme-factory, senior-architect/-frontend/-security/-qa/-devops,
-# webapp-testing, ponytail-review, content-creator, marketing-strategy-pmm), one-mahjong taste-judge
+# webapp-testing, ponytail-review, content-production, content-strategy, marketing-strategy-pmm), one-mahjong taste-judge
 # (frontend-design) and my-lib paper-game-printable (web-artifacts-builder). Re-check with
 #   grep -rlE '\bext-[a-z0-9-]+' --include=SKILL.md <skills trees> (excluding _external/)
 # when a new caller names an external. The office packs (ext-docx/pdf/xlsx/pptx) stay at
@@ -33,74 +33,336 @@
 # ---------------------------------------------------------------------------------------------
 
 template: config
-version: 1.1.0
+version: 1.2.0
 summary: Listing level and category for third-party external skills, keyed by harness name; read by build_registry and build_skill_overrides.
 created: 2026-10-16
 last_updated: 2026-10-21
 maintainer: your-agent
 
 skills:
+  ext-a11y-audit: {category: engineering}
+  ext-ab-test-setup: {category: business}
   ext-academic-cv-builder: {category: career}
+  ext-ad-creative: {category: business}
+  ext-adversarial-reviewer: {category: engineering}
+  ext-aeo: {category: business}
+  ext-agent-decision-receipts: {category: compliance}
+  ext-agent-designer: {category: engineering}
+  ext-agent-harness: {category: engineering}
+  ext-agent-launcher-orchestrator: {category: ai-tooling}
+  ext-agent-memory: {category: engineering}
+  ext-agent-protocol: {category: business}
+  ext-agent-workflow-designer: {category: engineering}
+  ext-agenthub: {category: engineering}
   ext-agile-product-owner: {category: business}
+  ext-ai-act-readiness: {category: compliance}
+  ext-ai-security: {category: engineering}
+  ext-aims-audit: {category: compliance}
   ext-alexwortega-paper-review: {category: research}
   ext-algorithmic-art: {category: design}
+  ext-analytics-tracking: {category: business}
+  ext-andreessen: {category: business}
+  ext-api-design-reviewer: {category: engineering}
+  ext-api-test-suite-builder: {category: engineering}
   ext-app-store-optimization: {category: business}
+  ext-apple-hig-expert: {category: business}
   ext-application-form-filler: {category: career}
+  ext-ar-resume: {category: engineering}
+  ext-ar-status: {category: engineering}
+  ext-arquiteto-de-empresa: {category: business}
   ext-arxiv-paper-writer: {category: research}
+  ext-atlassian-admin: {category: business}
+  ext-atlassian-templates: {category: business}
+  ext-autoresearch-agent: {category: engineering}
   ext-aws-solution-architect: {category: engineering}
+  ext-azure-cloud-architect: {category: engineering}
+  ext-behuman: {category: engineering}
   ext-blader-humanizer: {category: writing, listing: name-only}
+  ext-board: {category: engineering}
+  ext-board-deck-builder: {category: business}
+  ext-board-meeting: {category: business}
+  ext-board-prep: {category: business}
+  ext-boardroom: {category: business}
+  ext-book-to-skill: {category: engineering}
+  ext-boost-asio-pro: {category: engineering}
   ext-brand-guidelines: {category: brand}
+  ext-brief: {category: business}
+  ext-browser-automation: {category: engineering}
+  ext-browserstack: {category: engineering}
+  ext-business-growth-skills: {category: business}
+  ext-business-investment-advisor: {category: business}
+  ext-business-name-fit: {category: business}
+  ext-business-operations-skills: {category: business}
+  ext-c-level-agents: {category: business}
+  ext-c-level-skills: {category: business}
+  ext-caio-review: {category: business}
+  ext-campaign-analytics: {category: business}
   ext-canvas-design: {category: design}
   ext-capa-officer: {category: compliance}
+  ext-capacity-planner: {category: business}
+  ext-capture: {category: business}
   ext-career-changer-translator: {category: career}
+  ext-caveman: {category: engineering}
+  ext-cco-review: {category: business}
+  ext-cdo-review: {category: business}
   ext-ceo-advisor: {category: business}
+  ext-cfo-advisor: {category: business}
+  ext-cfo-review: {category: business}
+  ext-challenge: {category: business}
+  ext-change-management: {category: business}
+  ext-changelog-generator: {category: engineering}
+  ext-channel-economics: {category: business}
+  ext-chaos-engineering: {category: engineering}
+  ext-chief-ai-officer-advisor: {category: business}
+  ext-chief-customer-officer-advisor: {category: business}
+  ext-chief-data-officer-advisor: {category: business}
+  ext-chief-of-staff: {category: business}
+  ext-chro-advisor: {category: business}
+  ext-churn-prevention: {category: business}
+  ext-ci-cd-pipeline-builder: {category: engineering}
+  ext-ciso-advisor: {category: business}
+  ext-ciso-review: {category: business}
+  ext-claude-coach: {category: engineering}
+  ext-clinical-research: {category: research}
+  ext-cloud-security: {category: engineering}
+  ext-cmo-advisor: {category: business}
+  ext-cmo-review: {category: business}
   # off: an unfilled template at our pin (its scripts always print 'Findings: 0'); ext-ponytail-review replaced it 2026-10-21.
   ext-code-reviewer: {category: engineering, listing: off}
+  ext-code-to-prd: {category: business}
+  ext-code-tour: {category: engineering}
+  ext-codebase-onboarding: {category: engineering}
+  ext-cold-email: {category: business}
   ext-cold-email-writer: {category: career}
-  ext-content-creator: {category: business, listing: name-only}
+  ext-collab-proof: {category: engineering}
+  ext-commercial-forecaster: {category: business}
+  ext-commercial-policy: {category: business}
+  ext-commercial-skills: {category: business}
+  ext-company-os: {category: business}
+  ext-competitive-intel: {category: business}
+  ext-competitive-teardown: {category: business}
+  ext-competitor-alternatives: {category: business}
+  ext-compliance-os: {category: compliance}
+  ext-compliance-readiness: {category: compliance}
+  ext-confluence-expert: {category: business}
+  ext-content-creator: {category: business}
+  ext-content-humanizer: {category: business}
+  ext-content-production: {category: business, listing: name-only}
+  ext-content-strategy: {category: business, listing: name-only}
+  ext-context-engine: {category: business}
+  ext-contract-and-proposal-writer: {category: business}
+  ext-coo-advisor: {category: business}
+  ext-copy-editing: {category: business}
+  ext-copywriting: {category: business}
   ext-cover-letter-generator: {category: career}
+  ext-coverage: {category: engineering}
+  ext-cpo-advisor: {category: business}
+  ext-cpo-review: {category: business}
   ext-creative-portfolio-resume: {category: career}
   ext-critique: {category: career}
+  ext-cro-advisor: {category: business}
+  ext-cro-review: {category: business}
+  ext-cross-eval: {category: business}
+  ext-cs-onboard: {category: business}
   ext-cto-advisor: {category: business}
+  ext-cto-review: {category: business}
+  ext-culture-architect: {category: business}
+  ext-customer-success-manager: {category: business}
+  ext-data-quality-auditor: {category: engineering}
+  ext-database-designer: {category: engineering}
+  ext-database-schema-designer: {category: engineering}
+  ext-deal-desk: {category: business}
+  ext-decide: {category: business}
+  ext-decision-logger: {category: business}
+  ext-deep-learning-book: {category: engineering}
+  ext-deep-research: {category: research}
+  ext-deep-work: {category: business}
+  ext-deepread: {category: research}
+  ext-demo-video: {category: engineering}
+  ext-dependency-auditor: {category: engineering}
+  ext-design-system: {category: documents}
   ext-doc-coauthoring: {category: writing}
+  ext-docker-development: {category: engineering}
   ext-docx: {category: documents}
+  ext-dossier: {category: research}
   ext-edit-resume: {category: career}
+  ext-email-sequence: {category: business}
+  ext-email-template-builder: {category: engineering}
+  ext-embedded-iot-mentor: {category: engineering}
+  ext-engineering-advanced-skills: {category: engineering}
+  ext-engineering-skills: {category: engineering}
+  ext-env-secrets-manager: {category: engineering}
+  ext-epic-design: {category: engineering}
+  ext-eu-ai-act-specialist: {category: compliance}
+  ext-eval: {category: engineering}
+  ext-execute: {category: business}
+  ext-executive-mentor: {category: business}
   ext-executive-resume-writer: {category: career}
+  ext-experiment-designer: {category: business}
+  ext-extract: {category: engineering}
+  ext-fable-goal: {category: business}
   ext-fda-consultant-specialist: {category: compliance}
+  ext-fda-qsr-audit-prep: {category: compliance}
+  ext-feature-flags-architect: {category: engineering}
+  ext-finance-skills: {category: business}
+  ext-financial-analyst: {category: business}
+  ext-fix: {category: engineering}
+  ext-focused-fix: {category: engineering}
+  ext-form-cro: {category: business}
+  ext-founder-coach: {category: business}
+  ext-founder-mode: {category: business}
+  ext-free-tool-strategy: {category: business}
+  ext-freeze: {category: business}
   ext-frontend-design: {category: web, listing: name-only}
+  ext-full-page-screenshot: {category: engineering}
+  ext-gc-review: {category: business}
+  ext-gcp-cloud-architect: {category: engineering}
+  ext-gdpr-audit-prep: {category: compliance}
   ext-gdpr-dsgvo-expert: {category: compliance}
+  ext-general-counsel-advisor: {category: business}
+  ext-generate: {category: engineering}
+  ext-git-worktree-manager: {category: engineering}
+  ext-google-workspace-cli: {category: engineering}
+  ext-grade-iterate: {category: ai-tooling}
+  ext-grants: {category: research}
+  ext-grill-me: {category: engineering}
+  ext-grill-with-docs: {category: engineering}
+  ext-handoff: {category: sessions, listing: off}
+  ext-hard-call: {category: business}
+  ext-helm-chart-builder: {category: engineering}
+  ext-hivemind: {category: engineering}
+  ext-hub-init: {category: engineering}
+  ext-hub-status: {category: engineering}
+  ext-human-gate: {category: engineering}
+  ext-inbox-setup: {category: business}
+  ext-inbox-triage: {category: business}
+  ext-incident-commander: {category: engineering}
+  ext-incident-response: {category: engineering}
   ext-information-security-manager-iso27001: {category: security}
   ext-internal-comms: {category: writing}
+  ext-internal-narrative: {category: business}
+  ext-interview: {category: ai-tooling}
   ext-interview-prep-generator: {category: career}
+  ext-interview-system-designer: {category: engineering}
+  ext-intl-expansion: {category: business}
   ext-isms-audit-expert: {category: security}
+  ext-iso13485-audit-prep: {category: compliance}
+  ext-iso27001-audit-prep: {category: compliance}
+  ext-iso42001-specialist: {category: compliance}
+  ext-jira-expert: {category: business}
   ext-job-description-analyzer: {category: career}
+  ext-karpathy-coder: {category: engineering}
+  ext-knowledge-ops: {category: business}
+  ext-kubernetes-operator: {category: engineering}
+  ext-landing: {category: business}
+  ext-landing-page-generator: {category: business}
   ext-latex-rhythm-refiner: {category: writing}
+  ext-launch-strategy: {category: business}
+  ext-linkedin-analytics: {category: business}
+  ext-linkedin-content: {category: business}
+  ext-linkedin-engagement: {category: business}
+  ext-linkedin-profile: {category: business}
   ext-linkedin-profile-optimizer: {category: career}
+  ext-linkedin-skills: {category: business}
+  ext-linkedin-strategy: {category: business}
+  ext-litreview: {category: research}
+  ext-llm-cost-optimizer: {category: engineering}
+  ext-llm-wiki: {category: engineering}
+  ext-local-seo-manager: {category: business}
+  ext-loop: {category: engineering}
+  ext-loop-library: {category: ai-tooling}
+  ext-ma-playbook: {category: business}
   ext-make-cl: {category: career}
   ext-make-resume: {category: career}
+  ext-markdown-html-orchestrator: {category: documents}
+  ext-market-research: {category: research}
+  ext-marketing-context: {category: business}
   ext-marketing-demand-acquisition: {category: business}
+  ext-marketing-ideas: {category: business}
+  ext-marketing-ops: {category: business}
+  ext-marketing-psychology: {category: business}
+  ext-marketing-skills: {category: business}
   ext-marketing-strategy-pmm: {category: business, listing: name-only}
   ext-mcp-builder: {category: ai-tooling}
+  ext-mcp-server-builder: {category: engineering}
+  ext-md-document: {category: documents}
+  ext-md-review: {category: documents}
+  ext-md-slides: {category: documents}
   ext-mdr-745-specialist: {category: compliance}
+  ext-meeting-analyzer: {category: business}
+  ext-meetings: {category: business}
+  ext-memory-engineering: {category: engineering}
+  ext-memory-review: {category: engineering}
+  ext-memory-status: {category: engineering}
+  ext-merge: {category: engineering}
+  ext-migrate: {category: engineering}
+  ext-migration-architect: {category: engineering}
+  ext-minimalist: {category: engineering}
+  ext-monorepo-navigator: {category: engineering}
   ext-ms365-tenant-manager: {category: system}
+  ext-named-persona-adversarial-review: {category: engineering}
+  ext-notebooklm: {category: research}
+  ext-observability-designer: {category: engineering}
   ext-offer-comparison-analyzer: {category: career}
+  ext-office-hours: {category: business}
+  ext-onboard: {category: business}
+  ext-onboarding-cro: {category: business}
+  ext-org-health-diagnostic: {category: business}
+  ext-page-cro: {category: business}
+  ext-paid-ads: {category: business}
+  ext-partnerships-architect: {category: business}
+  ext-patent: {category: research}
+  ext-paywall-upgrade-cro: {category: business}
   ext-pdf: {category: documents}
+  ext-performance-profiler: {category: engineering}
+  ext-pm-skills: {category: business}
   ext-ponytail: {category: engineering}
   ext-ponytail-audit: {category: engineering}
   ext-ponytail-debt: {category: engineering}
   ext-ponytail-gain: {category: engineering}
   ext-ponytail-help: {category: engineering}
   ext-ponytail-review: {category: engineering, listing: name-only}
+  ext-popup-cro: {category: business}
   ext-portfolio-case-study-writer: {category: career}
+  ext-post-mortem: {category: business}
+  ext-postmortem: {category: business}
   ext-pptx: {category: documents}
+  ext-pr-review-expert: {category: engineering}
+  ext-pricing-strategist: {category: business}
+  ext-pricing-strategy: {category: business}
+  ext-process-mapper: {category: business}
+  ext-procurement-optimizer: {category: business}
+  ext-product-analytics: {category: business}
+  ext-product-discovery: {category: business}
   ext-product-manager-toolkit: {category: business}
+  ext-product-research: {category: research}
+  ext-product-skills: {category: business}
   ext-product-strategist: {category: business}
+  ext-programmatic-seo: {category: business}
+  ext-promote: {category: engineering}
+  ext-prompt-engineer-toolkit: {category: business}
+  ext-prompt-governance: {category: engineering}
+  ext-pulse: {category: research}
+  ext-pw: {category: engineering}
+  ext-pw-init: {category: engineering}
+  ext-pw-review: {category: engineering}
   ext-qms-audit-expert: {category: compliance}
   ext-quality-documentation-manager: {category: compliance}
   ext-quality-manager-qmr: {category: compliance}
   ext-quality-manager-qms-iso13485: {category: compliance}
+  ext-ra-qm-skills: {category: compliance}
+  ext-rag-architect: {category: engineering}
+  ext-red-team: {category: engineering}
   ext-reference-list-builder: {category: career}
+  ext-referral-program: {category: business}
+  ext-reflect: {category: business}
   ext-regulatory-affairs-head: {category: compliance}
+  ext-remember: {category: engineering}
+  ext-report: {category: engineering}
+  ext-research: {category: research}
+  ext-research-finance: {category: research}
+  ext-research-ops-skills: {category: research}
+  ext-research-summarizer: {category: business}
   ext-resume-ats-optimizer: {category: career}
   ext-resume-bullet-writer: {category: career}
   ext-resume-formatter: {category: career}
@@ -108,8 +370,27 @@ skills:
   ext-resume-section-builder: {category: career}
   ext-resume-tailor: {category: career}
   ext-resume-version-manager: {category: career}
+  ext-revenue-operations: {category: business}
+  ext-rfp-responder: {category: business}
   ext-risk-management-specialist: {category: compliance}
+  ext-roadmap-communicator: {category: business}
+  ext-roast: {category: business}
+  ext-run: {category: ai-tooling, listing: off}
+  ext-run-without-you: {category: ai-tooling}
+  ext-runbook-generator: {category: engineering}
+  ext-saas-metrics-coach: {category: business}
+  ext-saas-scaffolder: {category: business}
   ext-salary-negotiation-prep: {category: career}
+  ext-sales-engineer: {category: business}
+  ext-sample-skill: {category: engineering}
+  ext-scenario-war-room: {category: business}
+  ext-schema-markup: {category: business}
+  ext-scrum-master: {category: business}
+  ext-secrets-vault-manager: {category: engineering}
+  ext-security-guidance: {category: engineering}
+  ext-security-pen-testing: {category: engineering}
+  ext-self-eval: {category: engineering}
+  ext-self-improving-agent: {category: engineering}
   ext-senior-architect: {category: engineering, listing: name-only}
   ext-senior-backend: {category: engineering}
   ext-senior-computer-vision: {category: data-ml}
@@ -119,22 +400,71 @@ skills:
   ext-senior-frontend: {category: web, listing: name-only}
   ext-senior-fullstack: {category: engineering}
   ext-senior-ml-engineer: {category: data-ml}
+  ext-senior-pm: {category: business}
   ext-senior-prompt-engineer: {category: ai-tooling}
   ext-senior-qa: {category: testing}
   ext-senior-secops: {category: security}
   ext-senior-security: {category: security, listing: name-only}
+  ext-seo-audit: {category: business}
+  ext-setup: {category: engineering}
   ext-setup-build-kb: {category: career}
   ext-setup-extract: {category: career}
+  ext-ship-gate: {category: engineering}
+  ext-signup-flow-cro: {category: business}
+  ext-site-architecture: {category: business}
   ext-skill-creator: {category: ai-tooling}
+  ext-skill-doctor: {category: engineering}
+  ext-skill-security-auditor: {category: engineering}
+  ext-skill-tester: {category: engineering}
+  ext-skillopt-sleep: {category: engineering}
   ext-slack-gif-creator: {category: design}
+  ext-slo-architect: {category: engineering}
+  ext-snowflake-development: {category: engineering}
+  ext-soc2-audit-prep: {category: compliance}
+  ext-soc2-compliance: {category: compliance}
+  ext-social-content: {category: business}
   ext-social-media-analyzer: {category: business}
+  ext-social-media-manager: {category: business}
+  ext-spawn: {category: engineering}
+  ext-spec-driven-workflow: {category: engineering}
+  ext-spec-to-repo: {category: business}
+  ext-spinning-up-deep-rl: {category: engineering}
+  ext-sql-database-assistant: {category: engineering}
+  ext-stage-launch: {category: ai-tooling}
+  ext-statistical-analyst: {category: engineering}
+  ext-stock-analysis: {category: business}
+  ext-strategic-alignment: {category: business}
+  ext-stress-test: {category: business}
+  ext-strict-api: {category: engineering}
+  ext-stripe-integration-expert: {category: engineering}
+  ext-swedish-mentor: {category: business}
+  ext-syllabus: {category: research}
+  ext-tc-tracker: {category: engineering}
   ext-tdd-guide: {category: testing}
+  ext-team-communications: {category: business}
+  ext-tech-debt-tracker: {category: engineering}
   ext-tech-resume-optimizer: {category: career}
   ext-tech-stack-evaluator: {category: engineering}
   ext-template: {category: ai-tooling}
+  ext-terraform-patterns: {category: engineering}
+  ext-testrail: {category: engineering}
   ext-theme-factory: {category: design, listing: name-only}
+  ext-threat-detection: {category: engineering}
   ext-ui-design-system: {category: design, listing: name-only}
+  ext-universal-scraping-architect: {category: engineering}
   ext-ux-researcher-designer: {category: design}
+  ext-vendor-management: {category: business}
+  ext-video-content-strategist: {category: business}
+  ext-vpe-advisor: {category: business}
+  ext-vpe-review: {category: business}
   ext-web-artifacts-builder: {category: web, listing: name-only}
   ext-webapp-testing: {category: testing, listing: name-only}
+  ext-webinar-marketing: {category: business}
+  ext-weekly-review: {category: business}
+  ext-workflow-builder: {category: engineering}
+  ext-wrap-up: {category: ai-tooling}
+  ext-write-a-skill: {category: engineering}
+  ext-x-twitter-growth: {category: business}
   ext-xlsx: {category: documents}
+  ext-youtube-full: {category: business}
+  ext-zero-hallucination-coder: {category: engineering}

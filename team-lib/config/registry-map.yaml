@@ -80,7 +80,8 @@ registries:
     # node_modules: a skill's vendored npm deps can ship their own SKILL.md (playwright-core ships
     # `trace` and `skill`); they are gitignored, not ours, and not linked into the harness.
     # Ponytail (2026-10-21) does the same under `.litware/skills/`; same fix.
-    exclude: ["**/.agents/**", "**/.litware/**", "**/node_modules/**"]
+    # rezvani (2026-10-21 re-pin) ships .gemini/skills/ copies plus 87 Gemini-only conversions.
+    exclude: ["**/.agents/**", "**/.litware/**", "**/.gemini/**", "**/node_modules/**"]
     # 85 external skills live at skills/_external/<pack>/<skill>/ and are exposed to the harness as
     # ext-<skill>. Derived from the PATH, not the name: the location is what is true.
     id_rules:

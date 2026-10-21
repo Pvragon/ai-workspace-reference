@@ -6,10 +6,10 @@ summary: >-
   wire the conversion funnels, and drop in the fail-safe email form as a Next route handler.
   Carries the a11y contract — route field errors through the component's hint/isInvalid so
   aria-describedby is wired, and darken error red to pass AA on a warm ground.
-version: 1.0.2
+version: 1.0.3
 template: skill-definition
 created: 2026-07-22
-last_updated: 2026-10-16
+last_updated: 2026-10-21
 maintainer: your-agent
 dependencies: [node, python]
 tags: [pages, copy, humanizer, email-capture, forms, accessibility, funnel]
@@ -26,7 +26,8 @@ Compose the real pages; make them scannable; wire the money paths; ship the form
   "not just X but Y", inflated transitions, title-case headings, puffery. Cut hard.
   **Preserve the brand's rulings** (legal disclaimers, don't-assign-the-reader-specifics,
   don't-state-a-competitor's-price). Tighten, don't flatten the voice.
-- **Content strategy / SEO copy**: `ext-content-creator`.
+- **Content strategy / SEO copy**: `ext-content-production` (writing, brand voice, SEO optimisation) and
+  `ext-content-strategy` (what to write). They replaced `ext-content-creator`, now a deprecated redirect.
 - **The fail-safe form pattern + scripts**: `build-branded-web-page` (step 3 + `contrast.py`).
 
 ## Steps

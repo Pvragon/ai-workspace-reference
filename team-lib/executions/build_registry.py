@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 0.11.0
+# version: 0.11.1
 # summary: Generate a registry manifest FROM the frontmatter of the files it indexes, per
 #          config/registry-map.yaml. Derives path/version/description/source and a skill's
 #          listing/category (frontmatter -> sidecars -> defaults) and a persona's skill_categories;
 #          preserves every hand-authored field. --check is a rebuild-and-diff drift gate; --apply writes.
 # created: 2026-08-07
-# last_updated: 2026-10-16
+# last_updated: 2026-10-21
 # maintainer: pvragon
 # known_limitations: >-
 #   PyYAML does not round-trip comments, so a manifest carrying comments BELOW its header block
@@ -280,8 +280,15 @@ def resolve_listing(name: str, fm, source: str, policy: dict, path: str | None =
             probs.append(("listing_missing", f"{name} ({source}): no `listing:` in frontmatter or "
                                              f"a sidecar — effective {out['listing']}"))
 
-    if fm.get("category") is not None:      # frontmatter beats any sidecar category
-        out["category"], out["category_source"] = str(fm["category"]), "frontmatter"
+    fc = fm.get("category")
+    if fc is not None:                      # frontmatter beats any sidecar category, except:
+        # a THIRD-PARTY file's own category outside our vocabulary yields to a sidecar category,
+        # because the file is not ours to fix and the sidecar exists for exactly that
+        # (rezvani's adversarial-reviewer declares 'Engineering / Code Quality', 2026-10-21).
+        foreign_invalid = (source == "external" and policy["vocabulary"] is not None
+                           and str(fc) not in policy["vocabulary"] and out["category"] is not None)
+        if not foreign_invalid:
+            out["category"], out["category_source"] = str(fc), "frontmatter"
     if out["category"] is None:
         probs.append(("category_missing", f"{name} ({source})"))
     elif policy["vocabulary"] is not None and out["category"] not in policy["vocabulary"]:

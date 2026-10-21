@@ -5,7 +5,7 @@
 [submodule "skills/_external/rezvani-claude-skills"]
 	path = skills/_external/rezvani-claude-skills
 	url = https://github.com/alirezarezvani/claude-skills.git
-	commit = 22d419e1cd1a7d032a269382a61a7832745e4a60
+	commit = 19392f7a08264ed00486a251f5b2098321771f94
 [submodule "skills/_external/blader-humanizer"]
 	path = skills/_external/blader-humanizer
 	url = https://github.com/blader/humanizer.git

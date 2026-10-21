@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.1.2
+# version: 1.1.3
 # summary: "Exposes shared skills to the harness: links ~/.claude/skills to the personal layer
 #   (a symlink, or per-entry links in a real directory) and points my-lib/skills at every
 #   unshadowed team-lib skill and external skill (ext-<name>). Reports a stale skill listing map.
 #   Idempotent; never deletes anything it did not create."
 # created: 2026-08-01
-# last_updated: 2026-10-16
+# last_updated: 2026-10-21
 # maintainer: pvragon
 # ---
 #
@@ -83,17 +83,20 @@ def discover_shared():
         candidates = {}
         for skill_md in sorted(ext_root.rglob("SKILL.md")):
             skill_dir = skill_md.parent
-            # Skip a pack's own nested node_modules / vendored copies.
-            if any(p in {"node_modules", ".git"} for p in skill_dir.parts):
+            # Skip a pack's own nested node_modules / vendored copies, and adapter trees written
+            # for ANOTHER agent (rezvani's .gemini/ holds 87 Gemini-only command conversions).
+            if any(p in {"node_modules", ".git", ".gemini"} for p in skill_dir.parts):
                 continue
             candidates.setdefault(f"ext-{skill_dir.name}", []).append(skill_dir)
 
         for name, dirs in sorted(candidates.items()):
             rel = lambda d: d.relative_to(ext_root).parts  # noqa: E731
-            # Shallowest path wins; a hidden component (.agents/, .claude/) loses a tie.
-            # Never a hard exclusion: arpeeketi's only copy lives under .claude/skills/.
-            ranked = sorted(dirs, key=lambda d: (len(rel(d)),
-                                                 sum(p.startswith(".") for p in rel(d)),
+            # A copy outside hidden folders (.agents/, .gemini/, .claude/) always wins; then the
+            # shallowest. Depth used to rank first, so rezvani's `.gemini/skills/<name>` beat its
+            # deeper canonical `<team>/<name>/skills/<name>` (2026-10-21 re-pin). Never a hard
+            # exclusion: arpeeketi's only copy lives under .claude/skills/.
+            ranked = sorted(dirs, key=lambda d: (sum(p.startswith(".") for p in rel(d)),
+                                                 len(rel(d)),
                                                  str(d)))
             best = ranked[0]
             if name in found:
