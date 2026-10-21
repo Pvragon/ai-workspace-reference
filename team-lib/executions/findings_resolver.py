@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.0
+# version: 1.1.0
 # summary: "Nightly findings resolver. Re-checks each open auto-lane finding against its source,
 #   dismisses the ones proven stale, and in live mode applies only whitelisted fix kinds; checks
 #   ownership first (current-state In Flight / Just Handed Off, live peer sessions) and keeps its
@@ -196,9 +196,16 @@ def owner_terms(cfg: dict) -> list:
     return uniq
 
 
-def ownership(f: dict, terms: list):
-    """(strength, term, owner) of the first match, or None. Strong beats weak."""
-    hay = f"{f.get('key', '')} {f.get('text', '')}".lower()
+def ownership(f: dict, terms: list, subject_words: int = 4):
+    """(strength, term, owner) of the first match, or None. Strong beats weak.
+
+    Only the finding's SUBJECT is searched: its key plus the first `subject_words` words of its
+    text. Shadow night 2026-10-21 matched four findings to owners and all four were wrong, each
+    on a word later in the sentence: provenance ("during the 261020 deckwright debrief") or a
+    generic noun ("the harness gate", "skill listing").
+    """
+    words = re.split(r"\s+", (f.get("text") or "").strip())
+    hay = f"{f.get('key', '')} {' '.join(words[:subject_words])}".lower()
     hay_dash = re.sub(r"[\s_/]+", "-", hay)
     for term, strength, owner in terms:
         if strength == "strong":
@@ -470,6 +477,8 @@ def run(mode: str | None = None, today: str | None = None, only: str | None = No
     hard = cfg.get("hard_line_patterns") or []
     ctx = Ctx(cfg)
     terms = owner_terms(cfg)
+    subject_words = int(cfg.get("owner_subject_words") or 4)
+    agent_kinds = set(cfg.get("agent_session_kinds") or [])
     rstate = _load_json(RSTATE, {})
     shadow_attempts = rstate.setdefault("shadow_attempts", {})
 
@@ -497,7 +506,7 @@ def run(mode: str | None = None, today: str | None = None, only: str | None = No
             note("hands_off", f, "skip", f.get("lane_note") or "hands-off lane")
             continue
 
-        own = ownership(f, terms)
+        own = ownership(f, terms, subject_words)
         if lane == "ask":
             if own and own[0] == "strong" and not f.get("hold"):
                 detail = f"owned by {own[2]} (matched '{own[1]}')"
@@ -520,8 +529,11 @@ def run(mode: str | None = None, today: str | None = None, only: str | None = No
             note("needs_you", f, "ask", kind)
             continue
 
-        # auto lane
-        if own:
+        # auto lane. Only a STRONG match hands a finding off; a weak one-word match is a hint in
+        # the log, and the re-check still runs (2026-10-21 review of the shadow night).
+        if own and own[0] == "weak":
+            log.append(f"{stamp} {mode} {f['id']} weak owner hint '{own[1]}' ({own[2]}); not acted on")
+        if own and own[0] == "strong":
             detail = f"owned by {own[2]} (matched {own[0]} '{own[1]}')"
             if live:
                 lane_moves[f["id"]] = ("hands-off", f"resolver {tday}: {detail}")
@@ -581,7 +593,10 @@ def run(mode: str | None = None, today: str | None = None, only: str | None = No
             shadow_attempts[f["id"]] = dates
         if len(dates) >= max_attempts:
             why = f"{len(dates)} nights still true ({detail}); {fix_detail}"
-            if live:
+            if kind in agent_kinds:
+                # Not the owner's decision: work for a Your Agent session, listed as waiting.
+                note("waiting", f, "needs a Your Agent session", why)
+            elif live:
                 lane_moves[f["id"]] = ("ask", f"resolver {tday}: {why}")
                 note("needs_you", f, "moved to ask", why)
             else:
@@ -651,6 +666,33 @@ def _readout(mode, rep, needs) -> str:
     return f"{head}; {tail}{extra}"
 
 
+def self_check() -> None:
+    """Ownership matching on the four real findings it got wrong on shadow night 2026-10-21."""
+    terms = [("deckwright", "strong", "current-state In Flight: project_deckwright"),
+             ("long-run-harness-skill", "strong", "current-state Just Handed Off: project_long-run-harness-skill"),
+             ("long-run", "strong", "current-state Just Handed Off: project_long-run-harness-skill"),
+             ("harness", "weak", "current-state Just Handed Off: project_long-run-harness-skill"),
+             ("skill", "weak", "current-state Just Handed Off: project_long-run-harness-skill")]
+    # Provenance late in the sentence is not ownership.
+    f1 = {"key": "evicted-note-acme-health-unpushed",
+          "text": "current-state notes cap evicted 'Unpushed: acme-health-main 1bd62718 (behind claims "
+                  "sessions)' during the 261020 deckwright debrief; re-add with [pin] if still true"}
+    assert ownership(f1, terms) is None, ownership(f1, terms)
+    # Generic nouns are not ownership (and a weak match would not act anyway).
+    f2 = {"key": "stale-team-lib", "text": "1 file(s) in team-lib shipped with a body newer than "
+          "their version (pushed outside the harness gate); bumped and committed, not pushed."}
+    assert ownership(f2, terms) is None, ownership(f2, terms)
+    f3 = {"key": "installed-stale", "text": "1 skill(s) are not linked into ~/.claude/skills (long-run)."}
+    own3 = ownership(f3, terms)
+    assert own3 is None or own3[0] == "weak", own3
+    # Positive controls: a workstream named in the subject is a real owner.
+    f4 = {"key": "deckwright-build-stalled", "text": "Shift 3 has not reported for 2 hours."}
+    assert ownership(f4, terms)[:2] == ("strong", "deckwright")
+    f5 = {"key": "x", "text": "Long-run harness skill: certifier never signed off"}
+    assert ownership(f5, terms)[0] == "strong"
+    print("self-check ok")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="nightly findings resolver (auto lane)")
     g = ap.add_mutually_exclusive_group()
@@ -659,7 +701,11 @@ def main() -> int:
     ap.add_argument("--today", default=None)
     ap.add_argument("--only", default=None, help="one finding id")
     ap.add_argument("--json", action="store_true", help="print the full result")
+    ap.add_argument("--self-check", action="store_true", help="assert ownership matching on known cases")
     a = ap.parse_args()
+    if a.self_check:
+        self_check()
+        return 0
     mode = "shadow" if a.shadow else "live" if a.live else None
     try:
         res = run(mode, a.today, a.only)

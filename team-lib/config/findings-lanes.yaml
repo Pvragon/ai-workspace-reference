@@ -107,9 +107,12 @@ hard_line_patterns:
 # Before acting, the resolver collects owner terms from current-state.md (In Flight + Just Handed
 # Off wikilinks and titles) and from live peer sessions (session_activity.py roster + status). A
 # STRONG match (a whole workstream slug, its first two words, or a live session's name stem) makes
-# any non-hold finding hands-off. A WEAK match (one distinctive word of length >= 5) is enough to
-# make the resolver keep its hands off an auto-lane finding; it never demotes an ask.
+# any non-hold finding hands-off. A WEAK match (one distinctive word of length >= 5) is only logged
+# as a hint; it never hands a finding off and never demotes an ask. Only the finding's SUBJECT is
+# searched: its key plus its first `owner_subject_words` words. (Shadow night 2026-10-21: four
+# owner matches, all wrong, all on provenance or generic words later in the sentence.)
 owner_sections: ['In Flight', 'Just Handed Off']
+owner_subject_words: 4
 owner_min_token: 5
 owner_stopwords: [project, reference, feedback, session, review, check, checks, setup, first,
   ongoing, finish, build, built, notes, table, inbox, triage, backlog, desktop, desktops, layout,
@@ -117,4 +120,8 @@ owner_stopwords: [project, reference, feedback, session, review, check, checks, 
   hardware, operations, analysis, primitive, design, hard, freeze, freezes, reinstall, restore,
   backup, pended, invoice, billing, classification, refresh, competitor, eligibility, permissions,
   claims, status, pipeline, comms, walls, your-agent, drift, investigation, contract, rates, grain,
-  approvals, emerging, reconciliation, underpaid, mileage]
+  approvals, emerging, reconciliation, underpaid, mileage, harness, skill, skills, gate, listing]
+
+# Kinds that, still true after max_attempts nights, are work for a Your Agent session rather than a
+# decision for the owner: listed as waiting ("needs a Your Agent session"), never moved to ask.
+agent_session_kinds: [layer-drift]
