@@ -1,6 +1,6 @@
 ---
 template: integration
-version: 1.0.0
+version: 1.1.0
 type: cli
 summary: "Figma CLI via Restish and Figma's official OpenAPI spec (54 operations): read files, export images, read and post comments. Auth via personal access token (90-day expiry) injected by the figma-cli wrapper, since Restish v2 cannot reference env vars in credentials. REST cannot edit canvas content."
 created: 2026-10-21
@@ -35,14 +35,16 @@ Restish v2 sends a credential value literally: `${VAR}`, `$VAR`, `env:VAR` and t
 1. Figma: Settings > Security > Personal access tokens > Generate new token.
 2. Scopes: File content (read), File metadata (read), Comments (read and write), Current user (read).
 3. Tokens expire after at most 90 days. Rotate before expiry: generate a new token with the same scopes, replace `FIGMA_TOKEN` in `.env`, run `figma-cli get-me -f status` (expect 200), revoke the old token in Figma.
-4. Current token created 2026-10-21, expires 2027-01-19.
+4. Current token created 2026-10-21, expires 2027-01-19. The expiry date lives in `.env` as `FIGMA_TOKEN_EXPIRES=YYYY-MM-DD`; rotating means updating BOTH `FIGMA_TOKEN` and `FIGMA_TOKEN_EXPIRES`.
+5. `figma-cli` warns on stderr (once a day) within 14 days of that date, and on a missing, 401 or 403 token prints the rotation steps and exits 3. On that message, tell the operator and open `micro ~/ai-workspace/personal/secrets/.env` for him.
+6. Use `figma-cli`, never the Figma MCP. Nothing in the workspace currently tracks credential expiry centrally (checked 2026-10-21), so this wrapper is the only reminder.
 
 ## Common commands
 
 ```bash
 figma-cli get-me                                   # who am I (smoke test)
-figma-cli get-file FILE_KEY -f 'body.document.children[].name'
-figma-cli get-images FILE_KEY ids==1:2,1:3 format==png scale==2   # returns temporary image URLs
+figma-cli get-file FILE_KEY --depth 1 -f 'body.document.children[].name'
+figma-cli get-images FILE_KEY 1:2,1:3 --format png --scale 2   # ids are positional; URLs expire after 30 days
 figma-cli get-comments FILE_KEY -f 'body.comments[].{id,message,user:user.handle}'
 echo '{"message":"Looks good"}' | figma-cli post-comment FILE_KEY
 ```
@@ -52,7 +54,7 @@ FILE_KEY is the segment after `/design/` (or `/file/`) in a Figma URL. Run `rest
 ## Limits
 
 - The REST API cannot create or edit canvas content (frames, layers, text). Editing needs a Figma plugin or the Figma MCP (Dev Mode).
-- Image export returns short-lived URLs; download them promptly.
+- Image export URLs expire after 30 days; download what you need.
 - Variables endpoints need Enterprise plan scopes; expect 403 otherwise.
 - Other Restish v2 profiles (samsara, n8n) have the same unbound-credential problem and need their own bindings or a `-H` wrapper.
 

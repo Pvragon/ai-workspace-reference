@@ -90,7 +90,7 @@ skills:
   - webapp-testing
   - wsl
   - screenshot
-  version: 1.0.2
+  version: 1.0.3
   source: team
   provider: internal
   listing: name-only

@@ -259,7 +259,7 @@ executions:
     version: 1.2.0
   findings_resolver:
     path: executions/findings_resolver.py
-    version: 1.0.0
+    version: 1.1.0
     description: Nightly findings resolver. Re-checks each open auto-lane finding against its source,
       dismisses the ones proven stale, and in live mode applies only whitelisted fix kinds; checks ownership
       first (current-state In Flight / Just Handed Off, live peer sessions) and keeps its hands off anything

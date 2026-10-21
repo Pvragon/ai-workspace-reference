@@ -6,7 +6,7 @@ summary: >-
   brand rubrics, plus Lighthouse and an interactive pass. Measure rather than eyeball — overflow
   by DOM metrics, contrast by math. Ships the SwiftShader screenshot tool that actually renders
   under WSL2. An independent reviewer signs off; self-approval is not review.
-version: 1.0.2
+version: 1.0.3
 template: skill-definition
 created: 2026-07-22
 last_updated: 2026-10-21

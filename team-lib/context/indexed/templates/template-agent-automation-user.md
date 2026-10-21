@@ -1,6 +1,6 @@
 ---
 template: agent-automation-user
-version: 2.20.0
+version: 2.20.1
 summary: "Layer 2 (my-lib) agent operating instructions: DOE architecture, a does-it-need-to-exist check before reusing or building any tool (never cutting validation, data-loss handling, security or verification), the absolute runtime-file-location rule (write under my-lib/runtime/ from the first byte; the harness scratchpad is a /tmp path that systemd empties at every boot), self-annealing, file organization, metadata standards (skills carry listing + category; personas carry skill_categories; find-skill is the first move for skill discovery), sub-agent model routing (explicit Sonnet default, err toward Opus when in doubt), chat voice delegated to the output style in agents/<agent>/output-styles/ (this file governs artifacts only; every subagent report ends with what it skipped or did not check), session economics (don't compact, don't toggle models, end clean, context-window thresholds), git & PR discipline (commit freely, push only on explicit go-ahead), production-data & secrets guardrails, verification & evidence discipline, execution discipline, concurrent-session coordination, the canonical-path memory-write rule (never write into the tool's protected config tree), one-implementation-per-capability (graduation is a MOVE, not a copy), and targeted changes on large analyses (rerun only what a change can reach; full rebuild certifies before a publish). Loaded automatically at session start."
 last_updated: 2026-10-21
 mirror: derived

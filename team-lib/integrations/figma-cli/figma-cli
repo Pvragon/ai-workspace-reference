@@ -1,17 +1,51 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.0.0
-# summary: Runs `restish figma ...` with the Figma token injected from personal/secrets/.env via -H, because Restish v2 cannot reference env vars in credential bindings.
+# version: 1.1.0
+# summary: Runs `restish figma ...` with the Figma token injected from personal/secrets/.env via -H (restish v2 cannot env-reference credentials). Prints a clear rotation notice on missing/expired/invalid token and warns within 14 days of FIGMA_TOKEN_EXPIRES.
 # created: 2026-10-21
 # last_updated: 2026-10-21
 # maintainer: your-agent
 # ---
 # Usage: figma-cli get-me | figma-cli get-file FILE_KEY | ...  (any `restish figma` args)
-set -euo pipefail
+set -uo pipefail
 ENV_FILE="${FIGMA_ENV_FILE:-$HOME/ai-workspace/personal/secrets/.env}"
-if [ -z "${FIGMA_TOKEN:-}" ]; then
+if [ -z "${FIGMA_TOKEN+x}" ] && [ -r "$ENV_FILE" ]; then
   set -a; . "$ENV_FILE"; set +a
 fi
-: "${FIGMA_TOKEN:?FIGMA_TOKEN not set in $ENV_FILE}"
-exec restish figma "$@" -H "X-Figma-Token: ${FIGMA_TOKEN}" </dev/null
+
+rotate_msg() {
+  cat >&2 <<M
+figma-cli: the Figma personal access token is $1.
+Rotate it (tell the operator; he can do this in two minutes):
+  1. Figma > Settings > Security > Personal access tokens > Generate new token (max 90 days).
+     Scopes: file content (read), file metadata (read), comments (read and write), current user (read).
+  2. Open the env file:  micro $ENV_FILE
+     Replace the FIGMA_TOKEN value AND set FIGMA_TOKEN_EXPIRES=<today + 90 days, YYYY-MM-DD>.
+  3. Check:  figma-cli get-me -f status   (expect 200). Then revoke the old token in Figma.
+M
+}
+
+if [ -z "${FIGMA_TOKEN:-}" ]; then rotate_msg "missing (FIGMA_TOKEN not set)"; exit 3; fi
+
+# Expiry warning: within 14 days, at most once per day.
+if [ -n "${FIGMA_TOKEN_EXPIRES:-}" ]; then
+  now=$(date +%s); exp=$(date -d "$FIGMA_TOKEN_EXPIRES" +%s 2>/dev/null || echo "")
+  if [ -n "$exp" ]; then
+    days=$(( (exp - now) / 86400 ))
+    stamp="$HOME/.cache/figma-cli-expiry-warned"
+    if [ "$days" -le 14 ] && [ "$(cat "$stamp" 2>/dev/null)" != "$(date +%F)" ]; then
+      mkdir -p "$HOME/.cache"; date +%F > "$stamp"
+      if [ "$days" -lt 0 ]; then echo "figma-cli: token passed its recorded expiry ($FIGMA_TOKEN_EXPIRES)." >&2
+      else echo "figma-cli: token expires $FIGMA_TOKEN_EXPIRES ($days days). Rotate soon: micro $ENV_FILE" >&2; fi
+    fi
+  fi
+fi
+
+out=$(restish figma "$@" -H "X-Figma-Token: ${FIGMA_TOKEN}" </dev/null 2>&1); rc=$?
+printf '%s\n' "$out"
+if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q -E '"status": ?(401|403)|Invalid token|Token expired|HTTP (401|403)'; then
+  rotate_msg "expired or invalid (Figma answered 401/403; a 403 can also mean a missing scope)"
+  exit 3
+fi
+exit "$rc"
