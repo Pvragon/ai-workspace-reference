@@ -131,6 +131,7 @@ When running execution scripts or processing data:
 - Filter, aggregate, or summarize results in code before returning them to your context
 - Only print/return what you need to reason about — keep raw data in scripts or on disk
 - All execution scripts expose a `run()` function for programmatic chaining — see `execution-standard.md`
+- Any script with non-trivial logic (a branch, a loop, a parser, money, a data write) ships with a small test or a `--self-check` that fails when the logic breaks, including throwaway scripts in `.tmp`. Money logic needs a positive control: a record with a known answer.
 
 **6. Keep the index true — by editing the FILE, never the index**
 Registry manifests (`registry/*.yaml`) and each registered directory's `index.md` **`## Contents`** table are **generated** from the frontmatter of the files they index, by `team-lib/executions/build_registry.py` and `build_index.py`. Both run automatically at the push boundary (`version_gate.py`) and again nightly, so the index is true when someone else reads it rather than when someone remembers to update it.
