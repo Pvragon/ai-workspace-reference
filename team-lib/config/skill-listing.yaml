@@ -25,7 +25,7 @@
 # invoke are `name-only`, because the Skill tool refuses a user-only skill ("disabled for model
 # invocation"). Callers: build-brand-site and its brand-site-* stages (frontend-design,
 # ui-design-system, theme-factory, senior-architect/-frontend/-security/-qa/-devops,
-# webapp-testing, code-reviewer, content-creator, marketing-strategy-pmm), one-mahjong taste-judge
+# webapp-testing, ponytail-review, content-creator, marketing-strategy-pmm), one-mahjong taste-judge
 # (frontend-design) and my-lib paper-game-printable (web-artifacts-builder). Re-check with
 #   grep -rlE '\bext-[a-z0-9-]+' --include=SKILL.md <skills trees> (excluding _external/)
 # when a new caller names an external. The office packs (ext-docx/pdf/xlsx/pptx) stay at
@@ -54,7 +54,8 @@ skills:
   ext-capa-officer: {category: compliance}
   ext-career-changer-translator: {category: career}
   ext-ceo-advisor: {category: business}
-  ext-code-reviewer: {category: engineering, listing: name-only}
+  # off: an unfilled template at our pin (its scripts always print 'Findings: 0'); ext-ponytail-review replaced it 2026-10-21.
+  ext-code-reviewer: {category: engineering, listing: off}
   ext-cold-email-writer: {category: career}
   ext-content-creator: {category: business, listing: name-only}
   ext-cover-letter-generator: {category: career}
@@ -89,7 +90,7 @@ skills:
   ext-ponytail-debt: {category: engineering}
   ext-ponytail-gain: {category: engineering}
   ext-ponytail-help: {category: engineering}
-  ext-ponytail-review: {category: engineering}
+  ext-ponytail-review: {category: engineering, listing: name-only}
   ext-portfolio-case-study-writer: {category: career}
   ext-pptx: {category: documents}
   ext-product-manager-toolkit: {category: business}
@@ -119,7 +120,7 @@ skills:
   ext-senior-fullstack: {category: engineering}
   ext-senior-ml-engineer: {category: data-ml}
   ext-senior-prompt-engineer: {category: ai-tooling}
-  ext-senior-qa: {category: testing, listing: name-only}
+  ext-senior-qa: {category: testing}
   ext-senior-secops: {category: security}
   ext-senior-security: {category: security, listing: name-only}
   ext-setup-build-kb: {category: career}

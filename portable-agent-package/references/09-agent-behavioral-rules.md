@@ -1,6 +1,6 @@
 ---
 template: portable-agent-reference
-version: 1.1.0
+version: 1.2.0
 summary: "Four behavioral rules an agent should obey on every task, regardless of domain. Adapted from Andrej Karpathy's January 2026 observations on agent coding pitfalls (distilled by Forrest Chang) and generalized from coding to all agent work — drafting, review, ops, memory, scheduling. Sits as the BEHAVIORAL preamble next to the structural framework in 01-08."
 created: 2026-04-27
 last_updated: 2026-10-21
@@ -93,6 +93,7 @@ When editing or modifying existing artifacts (code, specs, memory, configs, anyt
 - **Don't refactor things that aren't broken.** If a function is ugly but works, leave it. Refactor is a separate task with its own justification.
 - **Match existing style**, even if you would do it differently. The codebase / spec corpus / memory file has a voice; preserve it.
 - **If you notice unrelated dead code or stale content, mention it — don't delete it.** A note in the chat is right; a silent deletion is wrong.
+- **Name the readers of anything you write.** When a change writes a file others read (a generated file, a cache, a config, a shared helper's output), list every reader and check each at a stated level. Level 1, reasoned: read the reader and say whether the change reaches it, including output that now varies run to run. Level 2, checked: run the reader, or diff its output before and after. Report Level 1 as an estimate; anything feeding a deliverable or money gets Level 2.
 
 ### Orphan rule
 

@@ -1,0 +1,18 @@
+{
+  "figma": {
+    "base_url": "https://api.figma.com",
+    "spec_files": ["~/.config/restish/figma-openapi.yaml"],
+    "profiles": {
+      "default": {
+        "credentials": {
+          "PersonalAccessToken": {
+            "auth": {
+              "type": "api-key",
+              "params": { "in": "header", "name": "X-Figma-Token", "value": "placeholder-real-token-injected-by-figma-cli" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

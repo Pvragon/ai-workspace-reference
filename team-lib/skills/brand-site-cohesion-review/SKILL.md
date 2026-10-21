@@ -9,7 +9,7 @@ summary: >-
 version: 1.0.2
 template: skill-definition
 created: 2026-07-22
-last_updated: 2026-10-16
+last_updated: 2026-10-21
 maintainer: your-agent
 dependencies: [node, chromium, python]
 tags: [review, cohesion, wcag, responsive, overflow, lighthouse, webapp-testing, wsl, screenshot]
@@ -23,7 +23,10 @@ Each stage passed in isolation; now judge the COMBINATION. This is the anti-slop
 
 ## Compose first (don't re-derive)
 - **Interactive / E2E pass**: `ext-webapp-testing` (drive the real routes, forms, nav).
-- **Code + quality review**: `ext-code-reviewer`, `ext-senior-qa`.
+- **Code + quality review**: `ext-ponytail-review` (bugs, security, real load, risky code without a test,
+  speed, what to cut; reads callers, not just the diff; every finding needs a concrete failing case).
+  It replaced `ext-code-reviewer` and `ext-senior-qa` on 2026-10-21: at our pin of that pack both are
+  unfilled templates whose scripts always report zero findings.
 - **The overflow + contrast scripts**: `build-branded-web-page/scripts/`
   (`measure_overflow_web.mjs`, `contrast.py`).
 

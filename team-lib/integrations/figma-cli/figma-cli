@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# ---
+# template: execution
+# version: 1.0.0
+# summary: Runs `restish figma ...` with the Figma token injected from personal/secrets/.env via -H, because Restish v2 cannot reference env vars in credential bindings.
+# created: 2026-10-21
+# last_updated: 2026-10-21
+# maintainer: your-agent
+# ---
+# Usage: figma-cli get-me | figma-cli get-file FILE_KEY | ...  (any `restish figma` args)
+set -euo pipefail
+ENV_FILE="${FIGMA_ENV_FILE:-$HOME/ai-workspace/personal/secrets/.env}"
+if [ -z "${FIGMA_TOKEN:-}" ]; then
+  set -a; . "$ENV_FILE"; set +a
+fi
+: "${FIGMA_TOKEN:?FIGMA_TOKEN not set in $ENV_FILE}"
+exec restish figma "$@" -H "X-Figma-Token: ${FIGMA_TOKEN}" </dev/null
