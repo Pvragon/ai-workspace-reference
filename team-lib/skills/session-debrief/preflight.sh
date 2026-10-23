@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ---
 # template: execution
-# version: 1.3.2
+# version: 1.3.3
 # summary: 'Deterministic pre-flight for session-debrief: collects git changes, checks registry consistency,
 #   detects sync needs, flags stale state, pre-stages today''s T1 facts/residue files, head-starts background
 #   transcript+state-dump jobs. Outputs structured JSON.'
 # created: 2026-03-31
-# last_updated: 2026-10-20
+# last_updated: 2026-10-22
 # maintainer: pvragon
 # ---
 #

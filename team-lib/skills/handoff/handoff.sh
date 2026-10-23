@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # name: handoff.sh
-# version: 1.5.0
+# version: 1.5.1
 # summary: Launch worker for the /handoff (session-rotate) skill. Opens a NEW terminal window (Windows
 #   Terminal on WSL, foot on Hyprland/Omarchy) running a fresh tmux session + a fresh, nvm-loaded `claude -n <name>` that reads a
 #   handoff brief on startup and follows its instructions (re-load persona, confirm worktree, continue).
@@ -187,7 +187,15 @@ if [ "$PLATFORM" = hyprland ]; then
     done
     if [ "$ok" -eq 1 ]; then
       tmux switch-client -c "$OLD_TTY" -t "$NEW_SESS"
-      now=$(tmux display -p -c "$OLD_TTY" '#{session_name}' 2>/dev/null || true)
+      # Read the client's session from list-clients. `display -p -c` resolves #{session_name}
+      # against the pane running this script (the OLD session), so it always read back the old
+      # name and the 2026-10-22 23:01 rotation warned falsely and skipped the parked marker.
+      now=""
+      for _ in 1 2 3 4 5; do
+        now=$(tmux list-clients -F '#{client_tty} #{client_session}' 2>/dev/null | awk -v t="$OLD_TTY" '$1==t{print $2; exit}')
+        [ "$now" = "$NEW_SESS" ] && break
+        sleep 0.2
+      done
       echo "$(date '+%F %T') switched ${OLD_TTY} to ${NEW_SESS}; it now shows ${now:-unknown}" >>"$HLOG" 2>/dev/null || true
       if [ "$now" = "$NEW_SESS" ]; then
         # Mark the old session parked, with the park time. The debrief's last step

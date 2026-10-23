@@ -380,7 +380,7 @@ executions:
     - inventory
     - wsl
     - observability
-    version: 1.0.1
+    version: 1.0.2
   list_shared_drives:
     path: executions/list_shared_drives.py
     description: Lists all Google Workspace Shared Drives and their root-level contents using OAuth credentials

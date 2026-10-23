@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # ---
 # template: execution
-# version: 1.0.1
+# version: 1.0.2
 # summary: "List currently-open Claude Code sessions with BOTH their tmux identifier (mylib-<pid>) and their Claude identifier (the /rename or -n name + sessionId). Cross-references live tmux clients, window ancestry via WSL relay or Hyprland (filters phantom windows), tmux pane pids, and ~/.claude/sessions/<pid>.json. Flags orphaned (detached, window-closed) sessions for reaping."
 # created: 2026-06-23
-# last_updated: 2026-10-14
+# last_updated: 2026-10-22
 # maintainer: your-agent
 # usage: python3 list_claude_sessions.py [--json] [--all]
 #   (no args)  print a human table of OPEN sessions + an ORPHANS section
