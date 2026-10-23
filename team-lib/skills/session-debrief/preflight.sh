@@ -358,7 +358,9 @@ if [[ -f "$MEMORY_DIR/MEMORY.md" ]]; then
     if [[ ! -f "$MEMORY_DIR/$ref_file" ]]; then
       memory_issues="${memory_issues:+$memory_issues,}{\"type\":\"missing_file\",\"detail\":$(json_escape "$ref_file")}"
     fi
-  done < <(grep -oP '\[.*?\]\(\K[^)]+' "$MEMORY_DIR/MEMORY.md" 2>/dev/null || true)
+  # Only link targets that name a .md file count as references. A summary may quote markdown
+  # syntax itself ("[text](url)"), which once read as a missing file called 'url' (2026-10-21).
+  done < <(grep -oP '\[[^]]*\]\(\K[^)\s:]+\.md(?=\))' "$MEMORY_DIR/MEMORY.md" 2>/dev/null || true)
 
   # TOPIC .md files in the memory dir not referenced in EITHER index (MEMORY.md OR the
   # rolled-off MEMORY-archive.md).

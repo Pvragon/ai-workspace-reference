@@ -2,14 +2,14 @@
 name: handoff
 description: "Rotate to a fresh session in one step: write the handoff brief, open a new terminal whose Claude reads it and continues (same name with -N, same worktree, same persona), then debrief the old pane. Use when the user says to start a new thread or context is getting full."
 template: skill-definition
-version: 2.5.5
+version: 2.5.6
 summary: >-
   The session-rotate orchestrator: /create-handoff-docs writes the brief (it owns the format and
   the startup checklist; this skill supplies only WORKTREE and PERSONA), handoff.sh spawns a new
   seeded window, then /session-debrief runs in the old pane. Spawn before debrief so work
   continues immediately. Requires WSL + Windows Terminal, or Hyprland (Omarchy) + foot.
 created: 2026-05-31
-last_updated: 2026-10-16
+last_updated: 2026-10-22
 maintainer: pvragon
 argument-hint: "(no args — derives everything from the current session)"
 listing: "on"
@@ -132,4 +132,4 @@ Right after step 4, tell the user the new window is up as `<NEW_NAME>` in `<WORK
 - Composition only: `/create-handoff-docs` + `/session-debrief` + `skills/handoff/handoff.sh`. No bespoke reaping.
 - The launcher loads nvm so `claude` resolves to the working binary (not the Windows npm shim).
 - Requires WSL + Windows Terminal (`wt.exe`) interop, or Hyprland (Omarchy) with `foot`, launched via `uwsm-app` on the current workspace. Verified on Omarchy 2026-10-14.
-- Hyprland take-over-in-place (`~/.config/hypr/handoff-park-workspace` set): no new window lands in the tile. The new session starts detached, the old session gets a parked window on the park workspace, then this window's tmux client switches to the new session. Same tile, focus never moves, independent of which window is active (v1.4.0, 2026-10-16).
+- Hyprland take-over-in-place (`~/.config/hypr/handoff-park-workspace` set): no new window lands in the tile. The new session starts detached, the old session gets a parked window on the park workspace, then this window's tmux client switches to the new session. Same tile, focus never moves, independent of which window is active (v1.4.0, 2026-10-16). After a verified switch, `handoff.sh` marks the old session `@handoff_parked`; the debrief's last step (`close_parked_session.py`) then closes the parked window unless the operator typed in it after the park.

@@ -2,9 +2,9 @@
 name: session-debrief
 description: "Runs the end-of-session procedure: captures learnings into memory topic files, verifies index consistency, updates current-state.md, and syncs changes to team-lib. Use when the user asks for a session debrief, says they are wrapping up or ending the session, or before closing a window after a /handoff."
 summary: "Run at end of a work session to persist learnings, check index health, update workspace current state, and propagate improvements to team-lib. A short router: preflight script, three parallel subagents that read their own instructions, on-disk verification, postflight script, one-line close."
-version: 3.1.1
+version: 3.2.0
 created: 2026-02-20
-last_updated: 2026-10-16
+last_updated: 2026-10-22
 maintainer: pvragon
 listing: "on"
 category: sessions
@@ -110,6 +110,14 @@ It commits the agents repo (and pushes it), commits my-lib (no push), posts the 
 
 Report briefly: memory files written, registry or index fixes, current-state changes, any team-lib sync, commit results, the session-log entry, the pulse post, and whether a handoff brief got an addendum. Read postflight's `✗` lines and report each one; a failed agents-repo push is non-fatal but leaves the memory commit unpushed. Then follow [reference/close-out.md](reference/close-out.md) for the findings line and the stale-findings offer. Both have strict wording rules.
 
+## Phase 5: Close a parked handoff pane (last step, always run)
+
+```bash
+python3 ~/.claude/skills/session-debrief/close_parked_session.py
+```
+
+Run it after the Phase 4 report, as the very last thing. It acts only in a pane that `/handoff` parked (tmux option `@handoff_parked`); anywhere else it says so and does nothing. In a parked pane it keeps the window open if the operator typed in this session after the park, if postflight did not run, or if background work is still unreported; otherwise a small pane counts down 60 seconds (Ctrl-C keeps the window) and kills this tmux session. Relay its one line. Decisions are logged to `~/.local/state/handoff/handoff.log`.
+
 ## Maintaining this skill
 
-my-lib is where this skill is edited; team-lib holds a byte-identical published copy, including `reference/` and both scripts. Agent paths are written through `$AGENT_MEMORY`, `$AGENT_HOME` and `~/.claude/skills/session-debrief/`. The files still assume the workspace layout (`~/ai-workspace/my-lib`, `~/ai-workspace/team-lib`), and the pulse prefix `JH` names this operator. Any difference between the two copies is drift: fix it by re-copying from my-lib, never by editing team-lib. Keep this file a router. Detail goes in `reference/`, and each rule carries a one-line reason, not an incident history.
+my-lib is where this skill is edited; team-lib holds a byte-identical published copy, including `reference/` and all three scripts. Agent paths are written through `$AGENT_MEMORY`, `$AGENT_HOME` and `~/.claude/skills/session-debrief/`. The files still assume the workspace layout (`~/ai-workspace/my-lib`, `~/ai-workspace/team-lib`), and the pulse prefix `JH` names this operator. Any difference between the two copies is drift: fix it by re-copying from my-lib, never by editing team-lib. Keep this file a router. Detail goes in `reference/`, and each rule carries a one-line reason, not an incident history.

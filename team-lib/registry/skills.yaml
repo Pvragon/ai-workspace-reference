@@ -633,7 +633,7 @@ skills:
   - create-handoff-docs
   - session-debrief
   - skills/handoff/handoff.sh
-  version: 2.5.5
+  version: 2.5.6
   source: team
   provider: internal
   listing: 'on'
@@ -776,6 +776,18 @@ skills:
   provider: internal
   listing: name-only
   category: testing
+- name: now-you-see-it
+  path: skills/now-you-see-it/SKILL.md
+  source: team
+  provider: internal
+  version: 0.2.0
+  description: 'Stephen Few builder and independent reviewer for any data visualization (charts, dashboards,
+    tables, slide charts, HTML/SVG/matplotlib/Sheets, prez pages), optimized for communication. BUILD
+    mode: question first, form by relationship, strip non-data ink, one highlight, context, multi-surface
+    pass. REVIEW mode: blind fresh-agent review of the rendered artifact with severity-ranked fixes and
+    SIGN-OFF/REVISE.'
+  listing: 'on'
+  category: design
 - name: prepare-image-for-print
   description: Method and scripts for print prep. Required DPI falls out of VIEWING DISTANCE, not a fixed
     300; media differ enormously in how much reconstructed detail they expose; and soft regions have two
@@ -1059,7 +1071,7 @@ skills:
   - memory
   - maintenance
   - published-from-my-lib
-  version: 3.1.1
+  version: 3.2.0
   source: team
   provider: internal
   listing: 'on'

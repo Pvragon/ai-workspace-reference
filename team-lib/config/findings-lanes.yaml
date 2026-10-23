@@ -23,13 +23,13 @@
 # ── Resolver mode ────────────────────────────────────────────────────────────────────────────
 # shadow: re-verify every auto-lane finding, dismiss the ones proven stale (the ONLY write shadow
 #         makes), and log what live mode WOULD have done. Live: also apply whitelisted fix kinds.
-# Shadow week started 2026-10-20. Nothing switches automatically: after reviewing a week of
-# agents/your-agent/runtime/logs/findings_resolver.log, the operator or Your Agent sets `mode: live` here.
-mode: shadow
-live_after: 2026-10-27          # a note, not a trigger
+# Shadow ran 2026-10-20 to 2026-10-22 (4 runs, no wrong dismissal). the operator cut the week short and
+# Your Agent set `mode: live` on 2026-10-22. Set `mode: shadow` here to fall back.
+mode: live
 
-# Pushing the resolver's OWN commits (live mode only). Off until the shadow week is reviewed.
-allow_push: false
+# Pushing the resolver's OWN commits (live mode only). A push is still refused while any session
+# commit is ahead of upstream (own_commit_subjects below).
+allow_push: true
 push_repos: [my-lib, team-lib, personal, agents]
 # A commit counts as the resolver's own (or the nightly cycle's) only if its subject matches one of
 # these. A push is refused when ANY commit ahead of upstream fails to match: those belong to a

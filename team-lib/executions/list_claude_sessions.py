@@ -199,13 +199,16 @@ def collect():
         if len(parts) == 3 and parts[0]:
             clients[parts[0]] = (int(parts[1]), parts[2])
 
-    # session -> pane_pid (root process of the pane = claude or its wrapper)
+    # session -> every pane_pid (root process of a pane = claude or its wrapper). A session can
+    # hold more than one pane: the everpresent window has a one-line dash header ABOVE Claude, so
+    # keeping only the first pane named the session (unnamed) and comms restore could not find
+    # its own pane (2026-10-22).
     panes = {}
     for line in (_tmux("list-panes", "-a", "-F",
                        "#{session_name}\t#{pane_pid}") or "").splitlines():
         parts = line.split("\t")
-        if len(parts) == 2 and parts[0] and parts[0] not in panes:
-            panes[parts[0]] = int(parts[1])
+        if len(parts) == 2 and parts[0]:
+            panes.setdefault(parts[0], []).append(int(parts[1]))
 
     # all sessions (so detached/orphan ones still appear)
     all_sessions = [s for s in (_tmux("list-sessions", "-F",
@@ -216,8 +219,7 @@ def collect():
     rows = []
     for sess in all_sessions:
         client = clients.get(sess)
-        pane_pid = panes.get(sess)
-        rec = _claude_record_for(pane_pid) if pane_pid else None
+        rec = next((r for r in (_claude_record_for(p) for p in panes.get(sess, [])) if r), None)
 
         workspace = None
         if client is None:

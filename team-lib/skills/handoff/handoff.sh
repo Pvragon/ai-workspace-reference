@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # name: handoff.sh
-# version: 1.4.2
+# version: 1.5.0
 # summary: Launch worker for the /handoff (session-rotate) skill. Opens a NEW terminal window (Windows
 #   Terminal on WSL, foot on Hyprland/Omarchy) running a fresh tmux session + a fresh, nvm-loaded `claude -n <name>` that reads a
 #   handoff brief on startup and follows its instructions (re-load persona, confirm worktree, continue).
@@ -10,7 +10,7 @@
 #   NOT reap (reaping happens via the /session-debrief that /handoff runs + the new session's SessionStart
 #   hook). nvm-load fix is load-bearing (else `claude` resolves to the Windows npm shim → exit 127).
 # created: 2026-05-31
-# last_updated: 2026-10-20
+# last_updated: 2026-10-22
 # maintainer: pvragon
 # usage: 'handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run] <claude_name>   Claude session
 #   display name (e.g. <current>-2). [A-Za-z0-9._-]+ <handoff_path>  absolute path to the handoff brief
@@ -133,17 +133,35 @@ if [ "$PLATFORM" = hyprland ]; then
   # Without the file, behavior is unchanged: the new window opens beside the old one.
   PARK_FILE="$HOME/.config/hypr/handoff-park-workspace"
   PARK=""; [ -f "$PARK_FILE" ] && PARK=$(tr -d '[:space:]' < "$PARK_FILE")
-  OLD_ADDR=""; OLD_WS=""
+  OLD_ADDR=""; OLD_WS=""; OLD_TTY=""; OLD_SESS=""; FB_ADDR=""; FB_WS=""; FB_TTY=""
+  HLOG="$HOME/.local/state/handoff/handoff.log"; mkdir -p "${HLOG%/*}" 2>/dev/null || true
   if [ -n "${TMUX:-}" ] && command -v hyprctl >/dev/null && command -v jq >/dev/null; then
-    cpid=$(tmux display -p '#{client_pid}' 2>/dev/null || true)
+    OLD_SESS=$(tmux display -p '#{session_name}')
     wins=$(hyprctl clients -j)
-    while [ -n "$cpid" ] && [ "$cpid" -gt 1 ] 2>/dev/null; do
-      hit=$(jq -r --argjson p "$cpid" '.[] | select(.pid==$p) | "\(.address) \(.workspace.name)"' <<<"$wins" | head -1)
-      if [ -n "$hit" ]; then OLD_ADDR=${hit%% *}; OLD_WS=${hit#* }; break; fi
-      # Fields after the LAST ')': the process name can contain spaces ("tmux: client"), which
-      # shifted a plain awk $4 onto the state letter and stopped the walk at step one (2026-10-15).
-      cpid=$(sed 's/.*) //' "/proc/$cpid/stat" 2>/dev/null | awk '{print $2}'); cpid=${cpid:-0}
-    done
+    # Check EVERY client of this session and keep the one whose window is not on ${PARK}.
+    # `tmux display -p '#{client_tty}'` names only the most recently active client, which is the
+    # wrong window when the session has two: the 2026-10-22 04:18 rotation switched a stray
+    # window and left the tile on the old session while reporting success.
+    while read -r cpid0 ctty; do
+      cpid=$cpid0; hit=""
+      while [ -n "$cpid" ] && [ "$cpid" -gt 1 ] 2>/dev/null; do
+        hit=$(jq -r --argjson p "$cpid" '.[] | select(.pid==$p) | "\(.address) \(.workspace.name)"' <<<"$wins" | head -1)
+        [ -n "$hit" ] && break
+        # Fields after the LAST ')': the process name can contain spaces ("tmux: client"), which
+        # shifted a plain awk $4 onto the state letter and stopped the walk at step one (2026-10-15).
+        cpid=$(sed 's/.*) //' "/proc/$cpid/stat" 2>/dev/null | awk '{print $2}'); cpid=${cpid:-0}
+      done
+      echo "$(date '+%F %T') ${OLD_SESS} client ${ctty} pid ${cpid0} window '${hit:-none}'" >>"$HLOG" 2>/dev/null || true
+      [ -n "$hit" ] && [ "${hit#* }" != "${PARK}" ] || continue
+      # A window on the scratchpad is a last resort: the tile is the one in a real workspace.
+      if [ "${hit#* }" = "special:scratchpad" ]; then
+        [ -z "$FB_ADDR" ] && { FB_ADDR=${hit%% *}; FB_WS=${hit#* }; FB_TTY=$ctty; }
+      elif [ -z "$OLD_ADDR" ]; then
+        OLD_ADDR=${hit%% *}; OLD_WS=${hit#* }; OLD_TTY=$ctty
+      fi
+    done < <(tmux list-clients -t "$OLD_SESS" -F '#{client_pid} #{client_tty}' 2>/dev/null)
+    [ -z "$OLD_ADDR" ] && [ -n "$FB_ADDR" ] && { OLD_ADDR=$FB_ADDR; OLD_WS=$FB_WS; OLD_TTY=$FB_TTY; }
+    echo "$(date '+%F %T') ${OLD_SESS} chose ${OLD_TTY:-none} on ${OLD_WS:-none} (park ${PARK:-unset})" >>"$HLOG" 2>/dev/null || true
   fi
   if [ -n "$PARK" ] && [ -n "$OLD_ADDR" ]; then
     # Swap the window's CONTENTS, not the window (v1.4.0). The tile, its size and keyboard focus
@@ -153,8 +171,6 @@ if [ "$PLATFORM" = hyprland ]; then
     #   session;  3. switch this window's tmux client to the new session.
     # The old session gets a second client before it loses this one, so it is never detached
     # (the reaper only takes detached sessions).
-    OLD_SESS=$(tmux display -p '#{session_name}')
-    OLD_TTY=$(tmux display -p '#{client_tty}')
     NEW_SESS="mylib-$$"
     tmux new-session -d -s "$NEW_SESS" -c "$DIR" -e HANDOFF_DETACHED=1 "bash $INNER"
     # detach-on-destroy is off globally; on here, so the parked window closes when the old
@@ -171,6 +187,19 @@ if [ "$PLATFORM" = hyprland ]; then
     done
     if [ "$ok" -eq 1 ]; then
       tmux switch-client -c "$OLD_TTY" -t "$NEW_SESS"
+      now=$(tmux display -p -c "$OLD_TTY" '#{session_name}' 2>/dev/null || true)
+      echo "$(date '+%F %T') switched ${OLD_TTY} to ${NEW_SESS}; it now shows ${now:-unknown}" >>"$HLOG" 2>/dev/null || true
+      if [ "$now" = "$NEW_SESS" ]; then
+        # Mark the old session parked, with the park time. The debrief's last step
+        # (session-debrief/close_parked_session.py) closes the parked window only when this is set
+        # and nobody typed in the session after it. Only after a verified switch: if the tile still
+        # shows the old session, killing it would close the tile too.
+        tmux set-option -t "$OLD_SESS" @handoff_parked "$(date +%s)"
+        tmux set-option -t "$OLD_SESS" @handoff_new_session "$NEW_SESS"
+        echo "$(date '+%F %T') ${OLD_SESS} marked @handoff_parked (new session ${NEW_SESS})" >>"$HLOG" 2>/dev/null || true
+      else
+        echo "WARNING: client ${OLD_TTY} shows '${now:-unknown}', not ${NEW_SESS}; the tile may not have switched (log: ${HLOG})"
+      fi
       echo "launched: Claude session '${NAME}' (tmux ${NEW_SESS}) now shows in this window on ${OLD_WS}; this session (${OLD_SESS}) continues on workspace ${PARK} for its debrief"
     else
       # No parked window: leave this one alone and show the new session beside it, unfocused.
