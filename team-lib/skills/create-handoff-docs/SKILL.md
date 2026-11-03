@@ -2,14 +2,14 @@
 name: create-handoff-docs
 description: Generate a thread-handoff context doc + verbatim cold-start prompt for a new session. Use when wrapping up a long thread, when context is approaching limits, or when the user says "let's start a new thread." (Renamed from /handoff 2026-05-31; the name /handoff is being reserved for the forthcoming session-rotate flow.)
 template: skill-definition
-version: 1.3.2
+version: 1.4.0
 summary: >-
   Synthesizes the session into a handoff brief that OPENS WITH THE STARTUP CHECKLIST (worktree,
   memory cold-start, persona reload, debrief addendum), plus git state per touched repo,
   anti-patterns and don't-redo calls. Runs a resume-safety check and auto-commits on feature
   branches. Owns the brief FORMAT for every caller, /handoff included.
 created: 2026-05-04
-last_updated: 2026-10-16
+last_updated: 2026-11-03
 maintainer: pvragon
 listing: name-only
 category: sessions
@@ -132,6 +132,7 @@ created: YYYY-MM-DD
 last_updated: YYYY-MM-DD
 maintainer: pvragon
 status: active-handoff
+after_startup: wait   # or continue: set from /handoff MODE; default wait
 ---
 
 # Startup checklist — do these IN ORDER before reading anything below
@@ -145,6 +146,9 @@ status: active-handoff
 ## State of play
 
 <1-paragraph: where we landed, what was just done>
+
+<If after_startup is continue, add one line: "After the startup status, keep going: work the open
+items in order without waiting for a prompt." If wait, say nothing.>
 
 ## Repo state
 

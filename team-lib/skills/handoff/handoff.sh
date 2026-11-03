@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---
 # name: handoff.sh
-# version: 1.5.1
+# version: 1.6.0
 # summary: Launch worker for the /handoff (session-rotate) skill. Opens a NEW terminal window (Windows
 #   Terminal on WSL, foot on Hyprland/Omarchy) running a fresh tmux session + a fresh, nvm-loaded `claude -n <name>` that reads a
 #   handoff brief on startup and follows its instructions (re-load persona, confirm worktree, continue).
@@ -10,7 +10,7 @@
 #   NOT reap (reaping happens via the /session-debrief that /handoff runs + the new session's SessionStart
 #   hook). nvm-load fix is load-bearing (else `claude` resolves to the Windows npm shim → exit 127).
 # created: 2026-05-31
-# last_updated: 2026-10-22
+# last_updated: 2026-11-03
 # maintainer: pvragon
 # usage: 'handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run] <claude_name>   Claude session
 #   display name (e.g. <current>-2). [A-Za-z0-9._-]+ <handoff_path>  absolute path to the handoff brief
@@ -26,15 +26,21 @@
 #   --detached SESSION  start the new session in a DETACHED tmux session named SESSION instead of
 #   opening a window (no display needed: works from cron; /long-run shifts and its watchdog use it).
 #   Attach later with tmux attach -t SESSION. Pick a name outside the reaper pattern (^mylib-[0-9]+$).
+#   --continue      after its startup status, the new session keeps working through the brief's open
+#   items instead of waiting (default: wait). Set only when the user asked the work to keep going.
+#   --self-check    print both seed endings, assert they differ and contain no single quote, exit
 #   --dry-run       generate + print the launch script, do NOT open a window'
 # ---
 set -euo pipefail
 
 DRY=0
+AFTER=wait
 SEED_OVERRIDE=""; MODEL=""; PMODE=""; RC=0; DIR="$PWD"; PLUGINS=""; SETTINGS=""; DETACHED=""; pos=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
+    --continue) AFTER=continue ;;
+    --self-check) AFTER=self-check ;;
     --dir) DIR="${2:?}"; shift ;;
     --seed) SEED_OVERRIDE="$2"; shift ;;
     --model) MODEL="${2:?}"; shift ;;
@@ -46,6 +52,19 @@ while [ $# -gt 0 ]; do
     *) pos+=("$1") ;;
   esac; shift
 done
+# What the new session does after its startup status. Wait is the default; continue only when the
+# user asked the work to keep going (the operator, 2026-11-02: "a handoff keeps going if I ask for it").
+# Both endings sit inside a single-quoted shell word in CMD below, so neither may contain a quote.
+END_WAIT="Then give me a 3-line status summary and wait."
+END_CONTINUE="Then give me a 3-line status summary and continue with the brief open items in order, without waiting for a prompt. Stop only for a decision that is mine to make, and say why."
+if [ "$AFTER" = self-check ]; then
+  fail=0
+  [ "$END_WAIT" != "$END_CONTINUE" ] || { echo "FAIL: endings identical"; fail=1; }
+  for e in "$END_WAIT" "$END_CONTINUE"; do case "$e" in *"'"*) echo "FAIL: quote in: $e"; fail=1 ;; esac; done
+  echo "wait:     $END_WAIT"; echo "continue: $END_CONTINUE"
+  [ "$fail" -eq 0 ] && echo "self-check OK" || exit 1
+  exit 0
+fi
 NAME="${pos[0]:?usage: handoff.sh <claude_name> <handoff_path> [--dir DIR] [--dry-run]}"
 # A brief is required for a rotation but meaningless for a --seed session (there is no
 # document to hand off — the seed IS the instruction).
@@ -74,7 +93,7 @@ mkdir -p "$(dirname "$INNER")"
 # --seed lets a caller reuse this spawn path for a session that is NOT a rotation — the
 # findings worklist being the first. One spawn implementation, several intents; a second
 # copy of the wt.exe/tmux/nvm dance would drift from this one within a month.
-DEFAULT_SEED="Read your handoff brief at ${HANDOFF} and follow its startup checklist IN ORDER, completing every numbered step before you start work — the cold-start reads are not optional and the brief does not replace them. Then give me a 3-line status summary and wait."
+DEFAULT_SEED="Read your handoff brief at ${HANDOFF} and follow its startup checklist IN ORDER, completing every numbered step before you start work — the cold-start reads are not optional and the brief does not replace them. $( [ "$AFTER" = continue ] && printf "%s" "$END_CONTINUE" || printf "%s" "$END_WAIT" )"
 SEED="${SEED_OVERRIDE:-$DEFAULT_SEED}"
 
 # Inner script runs inside the new window. tmux name = mylib-<pid> (reapable, like `go`);
@@ -104,6 +123,7 @@ chmod +x "$INNER"
 if [ "$DRY" -eq 1 ]; then
   echo "[dry-run] claude name: ${NAME}"
   echo "[dry-run] worktree:    ${DIR}"
+  echo "[dry-run] after start: ${AFTER}"
   if [ "$PLATFORM" = detached ]; then
     echo "[dry-run] would run:   tmux new-session -d -s ${DETACHED} -c ${DIR} -e HANDOFF_DETACHED=1 bash ${INNER}"
   elif [ "$PLATFORM" = wsl ]; then

@@ -2,16 +2,16 @@
 name: handoff
 description: "Rotate to a fresh session in one step: write the handoff brief, open a new terminal whose Claude reads it and continues (same name with -N, same worktree, same persona), then debrief the old pane. Use when the user says to start a new thread or context is getting full."
 template: skill-definition
-version: 2.5.6
+version: 2.6.0
 summary: >-
   The session-rotate orchestrator: /create-handoff-docs writes the brief (it owns the format and
   the startup checklist; this skill supplies only WORKTREE and PERSONA), handoff.sh spawns a new
   seeded window, then /session-debrief runs in the old pane. Spawn before debrief so work
   continues immediately. Requires WSL + Windows Terminal, or Hyprland (Omarchy) + foot.
 created: 2026-05-31
-last_updated: 2026-10-22
+last_updated: 2026-11-03
 maintainer: pvragon
-argument-hint: "(no args — derives everything from the current session)"
+argument-hint: "[continue] — default: the new session gives its status and waits; continue: it keeps working"
 listing: "on"
 category: sessions
 ---
@@ -19,6 +19,18 @@ category: sessions
 # /handoff — rotate to a fresh, seeded session
 
 Wrap up this thread and continue in a brand-new window, by composing existing skills. The new session picks up exactly where this one left off: same name (incremented), same worktree, same persona, brief already read.
+
+## 0. Decide the mode: wait (default) or continue
+What the new session does after its 3-line startup status:
+
+- **wait** (default): it gives the status and waits for the user.
+- **continue**: it gives the status and keeps working through the brief's open items, stopping only for
+  a decision that is the user's to make.
+
+Use **continue** when `/handoff continue` was typed, or when the user's handoff request asked for the
+work to keep running ("keep going", "continue in a new thread", "don't wait for me"). Never infer it
+from the work being unfinished: the choice is the user's (the operator, 2026-11-02: "a handoff keeps going if
+I ask for it"). Call the choice `MODE` and carry it to steps 3, 4 and 6.
 
 ## 1. Compute the new session name — MUST match `YYMMDD-<descriptive-name>`
 `NEW_NAME` MUST follow the standard thread-naming convention: a **`YYMMDD-` date prefix** + a descriptive
@@ -52,7 +64,8 @@ HANDOFFS=$(python3 ~/ai-workspace/team-lib/executions/agent_paths.py | awk '$1==
 agent is running and refuses to guess when it cannot decide. `/session-debrief` resolves the SAME
 directory the same way; if these two ever disagree, the debrief addendum lands where nobody reads it.
 
-Then invoke **/create-handoff-docs**, saving the brief to **`$HANDOFFS/<NEW_NAME>.md`**.
+Then invoke **/create-handoff-docs**, saving the brief to **`$HANDOFFS/<NEW_NAME>.md`**, and tell it
+`MODE` so the brief records `after_startup: <MODE>`. The brief and the seed must agree.
 
 > **⚑ The brief is NOT self-contained.** It is a pointer to what changed, never a replacement for
 > the agent's own state — which is why it opens with a startup checklist whose second item is a
@@ -107,8 +120,11 @@ concurrent handoffs can't overwrite each other.
 
 ## 4. Launch the new window (before the debrief)
 ```
-~/.claude/skills/handoff/handoff.sh <NEW_NAME> "$HANDOFFS/<NEW_NAME>.md" --dir <WORKTREE>
+~/.claude/skills/handoff/handoff.sh <NEW_NAME> "$HANDOFFS/<NEW_NAME>.md" --dir <WORKTREE> [--continue]
 ```
+Pass `--continue` exactly when `MODE` is continue; it changes the seed's last sentence from "give me a
+3-line status summary and wait" to "...and continue with the brief open items". `handoff.sh --self-check`
+prints both endings.
 Opens a new Windows-Terminal window: fresh tmux session (`mylib-<pid>`, so the reaper still manages it) + `claude -n <NEW_NAME>` in `WORKTREE`, seeded to read the brief and follow its startup checklist. **It does NOT close the current window.**
 
 Do this **before** the debrief (the brief is already written in step 3, so the new session has everything it needs). The debrief can be slow; spawning first lets the user start working in the new window immediately while this pane closes out.
@@ -126,7 +142,8 @@ are the actor that just wrote it, in the same conversation. The `.pending-enrich
 from step 3b is the fallback for a debrief run out-of-band later.
 
 ## 6. Confirm
-Right after step 4, tell the user the new window is up as `<NEW_NAME>` in `<WORKTREE>` and ready (it re-loads the persona, reads the handoff, gives a 3-line status, then waits). Then run the debrief here; when it finishes, this window can be closed — its detached `mylib-*` session is reaped automatically (the new session's SessionStart hook + the next debrief).
+Right after step 4, tell the user the new window is up as `<NEW_NAME>` in `<WORKTREE>` and ready, and name the mode: it re-loads the persona, reads the handoff, gives a 3-line status, then
+**waits** or **keeps working**, per `MODE`. Then run the debrief here; when it finishes, this window can be closed — its detached `mylib-*` session is reaped automatically (the new session's SessionStart hook + the next debrief).
 
 ## Notes
 - Composition only: `/create-handoff-docs` + `/session-debrief` + `skills/handoff/handoff.sh`. No bespoke reaping.
