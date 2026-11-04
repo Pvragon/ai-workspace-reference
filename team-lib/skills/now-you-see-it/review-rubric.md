@@ -59,6 +59,10 @@ Render it: python3 <skill dir>/scripts/render_for_review.py <path or URL> --out 
 PNG with the Read tool. For hover and touch use Playwright on the live page (MCP tools, or
 Python Playwright if another session holds the MCP browser).
 
+OWNER'S PURPOSE (a pass/fail criterion, in the owner's own words, e.g. "a SIMPLE
+forward-looking view"): <purpose>. If the artifact meets every craft rule but misses this
+purpose, the verdict is REVISE.
+
 READERS AND QUESTIONS (it must answer these at a glance):
 - <reader>: <question>
 SOURCE OF TRUTH for content (re-derive counts yourself): <path or "none">

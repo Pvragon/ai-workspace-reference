@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 2.0.1
+version: 2.0.2
 summary: "Instructions for session-debrief Subagent B (current state): set cs_section/cs_headline flags on T2 files, demote stale in-flight items by last_touched, and render current-state.md through regen_current_state.py. Read by the subagent itself."
 created: 2026-10-06
-last_updated: 2026-10-06
+last_updated: 2026-11-03
 maintainer: pvragon
 ---
 
@@ -71,7 +71,7 @@ python3 ~/ai-workspace/team-lib/executions/regen_current_state.py \
   --add-note "<pointer at the next actual work>"
 ```
 
-Pass one `--add-decision` per decision worth logging; old ones are pruned automatically. Pass one to three `--add-note` items pointing at the next actual work, or none, or `--clear-notes` to reset them. Blockers are kept verbatim and the renderer has no flag to change them; if one must change, list it under "Flagged for user attention". Both flags are idempotent, so re-running with the same text does nothing. Do not grep first to check whether a decision already landed; the script checks inside its lock.
+Date every decision and `--today` in Pacific time (`TZ=America/Los_Angeles date +%F`), never UTC or a date copied from a transcript timestamp; a decision dated tomorrow was logged on 2026-10-22. Pass one `--add-decision` per decision worth logging; old ones are pruned automatically. Pass one to three `--add-note` items pointing at the next actual work, or none, or `--clear-notes` to reset them. Blockers are kept verbatim and the renderer has no flag to change them; if one must change, list it under "Flagged for user attention". Both flags are idempotent, so re-running with the same text does nothing. Do not grep first to check whether a decision already landed; the script checks inside its lock.
 
 ## Findings file (your last disk action)
 

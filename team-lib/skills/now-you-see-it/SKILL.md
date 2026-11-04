@@ -70,7 +70,7 @@ When you brief a build subagent, say "less is more" explicitly and list the cuts
 
 Independence comes from three rules:
 
-1. **Blind first.** The reviewer gets the artifact, the readers and their questions, and the source of truth for content. It does not get the builder's rationale. It writes its 10-second read before it learns what was intended.
+1. **Blind first.** The reviewer gets the artifact, the owner's stated purpose (pass/fail), the readers and their questions, and the source of truth for content. It does not get the builder's rationale. It writes its 10-second read before it learns what was intended.
 2. **Judge the rendered artifact, not the code.** Render to PNG on every surface and look with the Read tool. Use `--state` clicks for tabs and filters. Use the Playwright MCP tools, or Python Playwright when another session holds the MCP browser, for hover and touch. Measure computed styles and bounding boxes for anything that looks off. Read code only to explain a cause it has already seen. A 15%-opacity arrow on the priorities page looked fine in the code.
 3. **Re-derive, don't trust.** Content checks use the reviewer's own extraction from the raw source, never the builder's script or counts.
 

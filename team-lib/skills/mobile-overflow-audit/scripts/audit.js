@@ -37,7 +37,18 @@ function parseArgs(argv) {
 }
 
 async function audit({ url, viewport, threshold, all }) {
-  const browser = await chromium.launch();
+  // Fall back to a system Chromium when Playwright's own browser was never downloaded
+  // (this machine has /usr/bin/chromium). PLAYWRIGHT_CHROMIUM_PATH overrides.
+  const fs = require('fs');
+  const sysPath = process.env.PLAYWRIGHT_CHROMIUM_PATH ||
+    ['/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
+  let browser;
+  try {
+    browser = await chromium.launch();
+  } catch (e) {
+    if (!sysPath) throw e;
+    browser = await chromium.launch({ executablePath: sysPath });
+  }
   const context = await browser.newContext({ viewport: { width: viewport.w, height: viewport.h } });
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'load' });

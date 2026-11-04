@@ -6,6 +6,10 @@ summary: "One-command marketplace deal hunt — 'find me the best <thing> under 
 created: 2026-06-25
 last_updated: 2026-10-16
 maintainer: pvragon
+mirror: divergent
+mirror_reason: >-
+  my-lib is a deliberate fork that calls the forked deals CLI through bin/deals-dev
+  (M7 hook of hunt-deals); team-lib ships the public variant calling the stock CLI.
 listing: name-only
 category: shopping
 ---
