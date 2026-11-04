@@ -780,7 +780,7 @@ skills:
   path: skills/now-you-see-it/SKILL.md
   source: team
   provider: internal
-  version: 0.2.0
+  version: 0.2.1
   description: 'Stephen Few builder and independent reviewer for any data visualization (charts, dashboards,
     tables, slide charts, HTML/SVG/matplotlib/Sheets, prez pages), optimized for communication. BUILD
     mode: question first, form by relationship, strip non-data ink, one highlight, context, multi-surface
@@ -940,7 +940,7 @@ skills:
   - ranking
   - verify-tier
   - rate-limit-safe
-  version: 1.0.2
+  version: 1.0.3
   source: team
   provider: internal
   listing: name-only

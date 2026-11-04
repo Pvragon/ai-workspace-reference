@@ -2,10 +2,10 @@
 name: now-you-see-it
 description: "Build or independently review any chart, dashboard, report tab or data table so it communicates at a glance, per Stephen Few (Now You See It). Use when making or changing a data visualization, or asked to review, critique or sign off on one."
 template: skill-definition
-version: 0.2.0
+version: 0.2.1
 summary: "Stephen Few builder and independent reviewer for any data visualization (charts, dashboards, tables, slide charts, HTML/SVG/matplotlib/Sheets, prez pages), optimized for communication. BUILD mode: question first, form by relationship, strip non-data ink, one highlight, context, multi-surface pass. REVIEW mode: blind fresh-agent review of the rendered artifact with severity-ranked fixes and SIGN-OFF/REVISE."
 created: 2026-10-22
-last_updated: 2026-10-22
+last_updated: 2026-11-03
 maintainer: pvragon
 listing: on
 category: design

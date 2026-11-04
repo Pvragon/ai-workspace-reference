@@ -1,10 +1,10 @@
 ---
 description: "Run a one-command marketplace deal hunt with the deals CLI: scrape once, value against a domain pack, rank, and write a deal report with an in-person verify protocol for too-good outliers. Use when asked to find the best thing under a price on a local marketplace such as OfferUp. Read-only, never contacts sellers."
 template: skill-definition
-version: 1.0.2
+version: 1.0.3
 summary: "One-command marketplace deal hunt — 'find me the best <thing> under $X'. Drives the deals CLI scrape→value→rank end-to-end and writes a ranked deal report with an in-person verify protocol for too-good outliers. Read-only; scrape-once-cache-iterate-offline."
 created: 2026-06-25
-last_updated: 2026-10-16
+last_updated: 2026-11-03
 maintainer: pvragon
 mirror: divergent
 mirror_reason: >-

@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 0.2.0
+version: 0.2.1
 summary: The now-you-see-it review rubric. Severity scale, the ordered checklist a reviewer walks on the rendered artifact, the sign-off bar, the reviewer brief template for a fresh subagent, and the review report template.
 created: 2026-10-22
-last_updated: 2026-10-22
+last_updated: 2026-11-03
 maintainer: pvragon
 ---
 
