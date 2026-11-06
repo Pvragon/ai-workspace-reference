@@ -2,9 +2,9 @@
 name: session-debrief
 description: "Runs the end-of-session procedure: captures learnings into memory topic files, verifies index consistency, updates current-state.md, and syncs changes to team-lib. Use when the user asks for a session debrief, says they are wrapping up or ending the session, or before closing a window after a /handoff."
 summary: "Run at end of a work session to persist learnings, check index health, update workspace current state, and propagate improvements to team-lib. A short router: preflight script, three parallel subagents that read their own instructions, on-disk verification, postflight script, one-line close."
-version: 3.2.0
+version: 3.2.1
 created: 2026-02-20
-last_updated: 2026-10-22
+last_updated: 2026-11-05
 maintainer: pvragon
 listing: "on"
 category: sessions
@@ -73,6 +73,7 @@ Read and follow ~/.claude/skills/session-debrief/reference/<file>.
 Preflight report: <session_info.report_path>
 Session name: <the /rename name, or a 2-4 word name>
 Session summary: <the 2b summary>
+Reminder (A): memory files are written with Write/Edit only, never Bash heredocs/sed/echo.
 ```
 
 | Subagent | Instructions file | Owns |

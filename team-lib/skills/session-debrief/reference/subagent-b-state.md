@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 2.0.2
+version: 2.0.3
 summary: "Instructions for session-debrief Subagent B (current state): set cs_section/cs_headline flags on T2 files, demote stale in-flight items by last_touched, and render current-state.md through regen_current_state.py. Read by the subagent itself."
 created: 2026-10-06
-last_updated: 2026-11-03
+last_updated: 2026-11-05
 maintainer: pvragon
 ---
 
@@ -38,7 +38,7 @@ Read the 5 newest entries in `$AGENT_MEMORY/session-log.md`. They are at the top
 
 ## 2. Set index flags
 
-For each workstream this session touched, set `cs_section` and `cs_headline` on its T2 file. Use `in_flight` for actively driven work, `handed_off` when someone else has the ball, `follow_on` for parked cleanup. Keep the headline to 25 words; depth belongs in the T2 body.
+For each workstream this session touched, set `cs_section` and `cs_headline` on its T2 file. Use `in_flight` for actively driven work, `handed_off` when someone else has the ball, `follow_on` for parked cleanup. Keep the headline to 25 words; depth belongs in the T2 body. **Only for T2 files that already exist.** Never create a T2 file, never set a headline on a file Subagent A created or revived this run (A already set it), and never borrow another workstream's file for a workstream that has none: skip it and say so in your return.
 
 ## 3. Demote stale in-flight items
 

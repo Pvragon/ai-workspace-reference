@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 2.0.3
+version: 2.0.4
 summary: "Instructions for session-debrief Subagent A (memory capture): write T1 facts and residue, update T2 workstream lifecycle fields, run the close/age sweep, and return lens and reusable-method candidates. Read by the subagent itself."
 created: 2026-10-06
-last_updated: 2026-10-19
+last_updated: 2026-11-05
 maintainer: pvragon
 ---
 
@@ -25,7 +25,7 @@ Your prompt gives you the preflight report path, the session name and a session 
 
 Bind `$AGENT_MEMORY` to the report's `t1_files_staged.memory_dir_canonical`. If that field is missing, stop and say so. Every memory path below means a path under `$AGENT_MEMORY`: `memory/project_x.md` is `$AGENT_MEMORY/project_x.md`. Never write through `~/.claude/projects/<cwd>/memory/`. That alias resolves to the same files, but it sits under a protected directory, so every write prompts for permission and no hook can prevent it.
 
-**Write memory files with the Edit or Write tool, never through Bash** (no heredocs, `sed -i`, `echo >>` or inline Python). Two things depend on it: postflight finds which files to commit from Edit/Write calls, and the memory access counter only reinforces a file on those calls. The one exception is `sweep_workstreams.py` in step 4, a script that writes its own files.
+**Write memory files with the Edit or Write tool, never through Bash** (no heredocs, `sed -i`, `echo >>` or inline Python). Two things depend on it: postflight finds which files to commit from Edit/Write calls, and the memory access counter only reinforces a file on those calls. The one exception is `sweep_workstreams.py` in step 4, a script that writes its own files. This is a hard rule, not a preference: on 2026-11-04 three of four debriefs broke it with Bash heredocs. The `allow_memory_writes` hook that keeps memory writes prompt-free also keys off Write/Edit, and a Bash write bypasses all three. Even to create a brand-new file, use Write.
 
 You do no git, no network writes and no destructive commands. Postflight commits.
 
@@ -59,7 +59,7 @@ For each workstream the session actively touched, find or create `memory/project
 
 Status meanings: `in-flight` is being driven this week; `handed-off` means someone else has the ball; `follow-on` is known cleanup with no external trigger; `archived` was resolved this session. If the session changed substantive state, also append a one-liner under the file's `## Recent activity` section.
 
-**You own the lifecycle fields; Subagent B owns the index fields** (`cs_section`, `cs_headline`). You both edit the same files at the same time, split by field. One exception: if you create a T2 file this run, **or revive a dormant one** (status back to `in-flight`, by edit or `--revive`), set its `cs_section` and `cs_headline` yourself and say so in your return. B cannot see a file that did not exist, or was dormant, when it started.
+**You own the lifecycle fields; Subagent B owns the index fields** (`cs_section`, `cs_headline`). You both edit the same files at the same time, split by field. One exception, and the only one: if you create a T2 file this run, **or revive a dormant one** (status back to `in-flight`, by edit or `--revive`), set its `cs_section` and `cs_headline` yourself and say so in your return. B cannot see a file that did not exist, or was dormant, when it started. **You are the only subagent that creates a missing T2 file or sets a headline for one.** If a workstream has no T2 file, you create it; B does not.
 
 **Read the file body before writing `status`, `resolves_when` or `close_signal`.** Each is a claim about whether something has happened, and the body may already say otherwise. Never write one from the session summary alone.
 

@@ -465,6 +465,17 @@ skills:
   provider: internal
   listing: name-only
   category: sessions
+- name: decision-model
+  path: skills/decision-model/SKILL.md
+  source: team
+  provider: internal
+  version: 0.4.1
+  description: 'When and how to use a lightweight decision model (Jev, TypeSafe) instead of an LLM call
+    or hand judgment: fixed-answer questions asked many times or inside a script. Calls go through team-lib/executions/jev_client.py
+    (ask, inline ask, eval to calibrate thresholds). Covers question writing, calibration on 20+ labelled
+    cases, degraded fallback, the no-PHI data rule, cost and speed.'
+  listing: 'on'
+  category: ai-tooling
 - name: dream
   description: 'The metacognitive entry point to the sleep cycle. meditate = awareness/instrumental contemplation
     → dream-journal residue (+ proposed self-edit); consolidate = distill ungraduated short-term residue
@@ -1071,7 +1082,7 @@ skills:
   - memory
   - maintenance
   - published-from-my-lib
-  version: 3.2.0
+  version: 3.2.1
   source: team
   provider: internal
   listing: 'on'

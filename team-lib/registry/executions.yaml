@@ -341,6 +341,14 @@ executions:
       into ~/.claude/settings.json skillOverrides. Merges, never replaces; keeps and reports foreign keys,
       including any in project .claude/settings*.json files. Dry-run by default; --apply locks, backs
       up and writes atomically. The agent runs it with the owner's one-time approval.
+  jev_client:
+    path: executions/jev_client.py
+    version: 0.3.1
+    description: 'Client CLI for Jev, TypeSafe''s typed decision model: ask fixed-answer questions (noul
+      yes/no, choice, score) about a state and get probabilities back, or calibrate a question''s threshold
+      with eval over labelled cases. Python port of the do-shit harness''s jev.mjs: pinned endpoint, real-time
+      PHI pseudonymisation and credential redaction before send, one retry, degraded result instead of
+      raising. Callable from any language via the CLI.'
   layer_drift_scan:
     path: executions/layer_drift_scan.py
     description: 'Detects drift between the personal layer (my-lib) and the shared layer (team-lib) by
