@@ -1,9 +1,9 @@
 ---
 template: skill-reference
-version: 1.0.0
+version: 1.0.1
 summary: "Session-debrief Phase 2e: verify each subagent's artifacts on disk, read the findings files, promote findings into the findings inbox, and handle a subagent that failed or went silent."
 created: 2026-10-06
-last_updated: 2026-10-06
+last_updated: 2026-10-07
 maintainer: pvragon
 ---
 
