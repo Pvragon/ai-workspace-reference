@@ -2,22 +2,24 @@
 # ---
 # template: execution
 # name: close_parked_session.py
-# version: 1.0.0
+# version: 1.1.0
 # summary: >-
-#   Last step of /session-debrief in a pane that /handoff parked (tmux option @handoff_parked set by
-#   handoff.sh). Closes the parked window once the debrief is truly done: postflight ran after the
-#   park, no background task is still unreported, and the operator typed nothing after the park. Shows a
+#   Last step of /session-debrief. Closes the tmux session once the debrief is truly done: postflight
+#   ran, no background task is still unreported, and (in a pane /handoff parked, tmux option
+#   @handoff_parked) the operator typed nothing after the park. Unparked panes get the same close path
+#   minus the typed check, except everpresent panes (your-agent-the-everpresent*), which never auto-close
+#   unparked; they rotate through /handoff. Shows a
 #   60-second Ctrl-C-able countdown in a small tmux pane, then kills its own tmux session (the
 #   window closes via detach-on-destroy). Logs every decision to ~/.local/state/handoff/handoff.log.
 # created: 2026-10-22
-# last_updated: 2026-10-22
+# last_updated: 2026-11-06
 # maintainer: pvragon
 # usage: >-
 #   close_parked_session.py [--dry-run] [--session NAME] [--transcript JSONL] [--countdown 60]
 #   [--wait 1800] | --self-check. Run from inside the parked Claude session's Bash tool; it returns at
 #   once and the countdown runs in a split pane (--watch, internal).
 # ---
-"""Close a parked /handoff pane after its debrief.
+"""Close a debriefed pane: parked by /handoff, or plain (unparked, never everpresent).
 
 Signals and what they can and cannot see:
 - "the operator typed after the park": user entries in this session's Claude JSONL with origin.kind ==
@@ -38,6 +40,8 @@ from datetime import datetime, timezone
 
 LOG = os.path.expanduser("~/.local/state/handoff/handoff.log")
 IDLE_SECS = 30
+EVERPRESENT = "your-agent-the-everpresent"
+SESSIONS_DIR = os.path.expanduser("~/.claude/sessions")
 IGNORED_COMMANDS = re.compile(r"<command-name>/?(session-debrief|handoff)</command-name>")
 
 
@@ -69,6 +73,44 @@ def park_marker(session):
         return None, None
     _, new = tmux("show-options", "-v", "-t", f"={session}:", "@handoff_new_session")
     return int(out.strip()), new or None
+
+
+def _tmux_names():
+    """tmux session and window names of this pane (empty strings if unavailable)."""
+    pane = os.environ.get("TMUX_PANE")
+    if not pane:
+        return []
+    rc, out = tmux("display", "-p", "-t", pane, "#{session_name}\n#{window_name}")
+    return out.splitlines() if rc == 0 else []
+
+
+def claude_session_name(session_id, transcript=None, sessions_dir=None):
+    """/rename title: ~/.claude/sessions/<pid>.json whose sessionId matches, else the transcript's last custom-title."""
+    d = sessions_dir or SESSIONS_DIR
+    for f in glob.glob(os.path.join(d, "*.json")):
+        try:
+            with open(f) as fh:
+                j = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if isinstance(j, dict) and session_id and j.get("sessionId") == session_id and j.get("name"):
+            return str(j["name"])
+    title = ""
+    if transcript and os.path.exists(transcript):
+        with open(transcript, errors="replace") as fh:
+            for line in fh:
+                if '"custom-title"' in line:
+                    try:
+                        r = json.loads(line)
+                    except ValueError:
+                        continue
+                    if r.get("type") == "custom-title" and r.get("customTitle"):
+                        title = str(r["customTitle"])
+    return title
+
+
+def is_everpresent(names):
+    return any(str(n).startswith(EVERPRESENT) for n in names if n)
 
 
 def find_transcript(session_id):
@@ -178,15 +220,17 @@ def agents_repo_dirt():
         return ["(could not check)"]
 
 
-def decide(facts):
-    """(verdict, reason). verdict: keep | wait | close."""
-    if facts["typed"]:
+def decide(facts, parked=True):
+    """(verdict, reason). verdict: keep | wait | close. Unparked panes skip the typed-after-park check."""
+    if parked and facts["typed"]:
         ts, text = facts["typed"][-1]
         return "keep", f"used after the park ({len(facts['typed'])} message(s), last {ts}: {text!r})"
     if not facts["postflight"]:
         return "keep", "debrief not finished: no postflight.sh run after the park"
     if facts["pending"]:
         return "wait", "background work still unreported: " + ", ".join(facts["pending"])
+    if not parked:
+        return "close", "debrief done, nothing pending (unparked pane)"
     return "close", "debrief done, nothing pending, not used after the park"
 
 
@@ -199,7 +243,7 @@ def watch(a):
     """Runs in the split pane: wait for quiet, count down, re-check, kill."""
     deadline = time.time() + a.wait
     while True:
-        verdict, reason = decide(analyse(a.transcript, a.park))
+        verdict, reason = decide(analyse(a.transcript, a.park), parked=bool(a.park))
         quiet = time.time() - os.path.getmtime(a.transcript) >= IDLE_SECS
         if verdict == "keep":
             log(a.session, f"keep ({reason})")
@@ -224,9 +268,9 @@ def watch(a):
     signal.signal(signal.SIGINT, cancel)
     log(a.session, f"countdown {a.countdown}s started")
     for left in range(a.countdown, 0, -1):
-        print(f"\r\033[KParked handoff pane: closing in {left:2d}s. Ctrl-C to keep it open.   ", end="", flush=True)
+        print(f"\r\033[K{'Parked handoff pane' if a.park else 'Debriefed pane'}: closing in {left:2d}s. Ctrl-C to keep it open.   ", end="", flush=True)
         time.sleep(1)
-    verdict, reason = decide(analyse(a.transcript, a.park))
+    verdict, reason = decide(analyse(a.transcript, a.park), parked=bool(a.park))
     if verdict != "close":
         log(a.session, f"keep (re-check at kill time: {reason})")
         print(f"\nPane stays open: {reason}")
@@ -245,26 +289,31 @@ def main(a):
         print("close-parked: not inside tmux; nothing to do.")
         return 0
     park, new = park_marker(session)
-    if park is None:
-        print(f"close-parked: {session} is not a parked handoff pane; nothing to do.")
-        log(session, "not parked (no @handoff_parked); nothing to do")
-        return 0
-    transcript = a.transcript or find_transcript(os.environ.get("CLAUDE_CODE_SESSION_ID"))
+    sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    transcript = a.transcript or find_transcript(sid)
+    unparked = park is None
+    if unparked:
+        names = [session, *_tmux_names(), claude_session_name(sid, transcript)]
+        if is_everpresent(names):
+            print(f"close-parked: {session} is an everpresent pane and not parked; it rotates through /handoff, so it stays open.")
+            log(session, "unparked path: keep (everpresent pane, never auto-closed unparked)")
+            return 0
+        park = 0
     if not transcript or not os.path.exists(transcript):
-        print("close-parked: pane stays open: this session's transcript was not found, so the used-after-park guard cannot run.")
-        log(session, "keep (transcript not found)")
+        print("close-parked: pane stays open: this session's transcript was not found, so the postflight/background guards cannot run.")
+        log(session, f"{'unparked path: ' if unparked else ''}keep (transcript not found)")
         return 0
     facts = analyse(transcript, park)
-    verdict, reason = decide(facts)
+    verdict, reason = decide(facts, parked=not unparked)
     dirt = agents_repo_dirt()
-    log(session, f"park={park} new={new} transcript={transcript} verdict={verdict} ({reason}); agents-repo dirty: {len(dirt)}")
+    log(session, f"{'unparked path: ' if unparked else ''}park={park} new={new} transcript={transcript} verdict={verdict} ({reason}); agents-repo dirty: {len(dirt)}")
     if dirt:
         print(f"close-parked: note: {len(dirt)} uncommitted memory/handoff file(s) in the agents repo (peers may own them): {', '.join(dirt[:5])}")
     if verdict == "keep":
         print(f"close-parked: pane stays open: {reason}.")
         return 0
     if a.dry_run:
-        print(f"close-parked [dry-run]: {session} parked at {park} (new session {new or "unknown"}); would {'wait, then ' if verdict == 'wait' else ''}"
+        print(f"close-parked [dry-run]: {session} {'is unparked' if unparked else f'parked at {park} (new session {new or "unknown"})'}; would {'wait, then ' if verdict == 'wait' else ''}"
               f"count down {a.countdown}s and kill it. {reason}.")
         return 0
     cmd = [sys.executable, os.path.realpath(__file__), "--watch", "--session", session, "--transcript", transcript,
@@ -340,7 +389,50 @@ def self_check():
             print(f"{'PASS' if ok else 'FAIL'}  {name}: {got} ({why})")
     finally:
         shutil.rmtree(d, ignore_errors=True)
-    print(f"self-check: {len(cases) - fails}/{len(cases)} passed")
+    # Unparked: typing is irrelevant (no park); postflight and pending still gate.
+    ucases = {
+        "unparked: typed anywhere still closes": (pf + [user(120, "more", **human)], "close"),
+        "unparked: no postflight keeps": ([user(-5, "go", **human)], "keep"),
+        "unparked: pending agent waits": ([result(20, "ag", {"isAsync": True, "status": "async_launched", "agentId": "a9"})] + pf, "wait"),
+        "unparked: postflight any time (park=0)": ([tool_use(-100, "pf0", "bash ~/.claude/skills/session-debrief/postflight.sh"), result(-99, "pf0")], "close"),
+    }
+    d = tempfile.mkdtemp(prefix="close-parked-selfcheck-")
+    n = len(cases) + len(ucases) + 7
+    try:
+        for name, (rows, want) in ucases.items():
+            p = os.path.join(d, "t.jsonl")
+            with open(p, "w") as fh:
+                fh.write("\n".join(json.dumps(r) for r in rows) + "\n")
+            got, why = decide(analyse(p, 0), parked=False)
+            ok = got == want
+            fails += not ok
+            print(f"{'PASS' if ok else 'FAIL'}  {name}: {got} ({why})")
+        # Everpresent exclusion and name lookup, with a faked sessions dir and transcript.
+        sd = os.path.join(d, "sessions")
+        os.makedirs(sd)
+        with open(os.path.join(sd, "1.json"), "w") as fh:
+            json.dump({"sessionId": "S1", "name": "your-agent-the-everpresent-261106"}, fh)
+        with open(os.path.join(sd, "2.json"), "w") as fh:
+            json.dump({"sessionId": "S2", "name": "meeting-tasks-skill"}, fh)
+        tp = os.path.join(d, "title.jsonl")
+        with open(tp, "w") as fh:
+            fh.write(json.dumps({"type": "custom-title", "customTitle": "old"}) + "\n"
+                     + json.dumps({"type": "custom-title", "customTitle": "your-agent-the-everpresent-x"}) + "\n")
+        checks = {
+            "claude name via pid file": claude_session_name("S1", None, sd) == "your-agent-the-everpresent-261106",
+            "everpresent by claude name": is_everpresent(["mylib-1", "w", claude_session_name("S1", None, sd)]),
+            "plain name not everpresent": not is_everpresent(["mylib-2", "bash", claude_session_name("S2", None, sd)]),
+            "fallback to last custom-title": claude_session_name("none", tp, sd) == "your-agent-the-everpresent-x",
+            "everpresent by tmux session": is_everpresent(["your-agent-the-everpresent-261106", "w", ""]),
+            "everpresent by window name": is_everpresent(["s", "your-agent-the-everpresent", ""]),
+            "no names, not everpresent": not is_everpresent(["", None]),
+        }
+        for name, ok in checks.items():
+            fails += not ok
+            print(f"{'PASS' if ok else 'FAIL'}  {name}")
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    print(f"self-check: {len(cases) + n - len(cases) - fails}/{n} passed")
     return 1 if fails else 0
 
 

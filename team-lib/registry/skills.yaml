@@ -1082,7 +1082,7 @@ skills:
   - memory
   - maintenance
   - published-from-my-lib
-  version: 3.2.1
+  version: 3.3.0
   source: team
   provider: internal
   listing: 'on'

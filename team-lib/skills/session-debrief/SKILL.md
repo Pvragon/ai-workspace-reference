@@ -2,9 +2,9 @@
 name: session-debrief
 description: "Runs the end-of-session procedure: captures learnings into memory topic files, verifies index consistency, updates current-state.md, and syncs changes to team-lib. Use when the user asks for a session debrief, says they are wrapping up or ending the session, or before closing a window after a /handoff."
 summary: "Run at end of a work session to persist learnings, check index health, update workspace current state, and propagate improvements to team-lib. A short router: preflight script, three parallel subagents that read their own instructions, on-disk verification, postflight script, one-line close."
-version: 3.2.1
+version: 3.3.0
 created: 2026-02-20
-last_updated: 2026-11-05
+last_updated: 2026-11-06
 maintainer: pvragon
 listing: "on"
 category: sessions
@@ -111,13 +111,19 @@ It commits the agents repo (and pushes it), commits my-lib (no push), posts the 
 
 Report briefly: memory files written, registry or index fixes, current-state changes, any team-lib sync, commit results, the session-log entry, the pulse post, and whether a handoff brief got an addendum. Read postflight's `✗` lines and report each one; a failed agents-repo push is non-fatal but leaves the memory commit unpushed. Then follow [reference/close-out.md](reference/close-out.md) for the findings line and the stale-findings offer. Both have strict wording rules.
 
-## Phase 5: Close a parked handoff pane (last step, always run)
+## Phase 5: Close the debriefed pane (last step, always run)
 
 ```bash
 python3 ~/.claude/skills/session-debrief/close_parked_session.py
 ```
 
-Run it after the Phase 4 report, as the very last thing. It acts only in a pane that `/handoff` parked (tmux option `@handoff_parked`); anywhere else it says so and does nothing. In a parked pane it keeps the window open if the operator typed in this session after the park, if postflight did not run, or if background work is still unreported; otherwise a small pane counts down 60 seconds (Ctrl-C keeps the window) and kills this tmux session. Relay its one line. Decisions are logged to `~/.local/state/handoff/handoff.log`.
+Run it after the Phase 4 report, as the very last thing. It closes this tmux session once the debrief is truly done, so finished sessions do not pile up detached:
+- It keeps the window if postflight did not run, or if background work is still unreported (closing would lose that work).
+- In a pane `/handoff` parked (tmux option `@handoff_parked`) it also keeps the window if the operator typed after the park (he is still using it). An unparked pane has no park, so that check is skipped.
+- It never auto-closes an unparked everpresent pane (tmux session, window or Claude name starts `your-agent-the-everpresent`): those rotate through `/handoff`, and the parked path covers them.
+- Otherwise a small pane counts down 60 seconds (Ctrl-C keeps the window) and kills the tmux session.
+
+Relay its one line. Decisions are logged to `~/.local/state/handoff/handoff.log`; the unparked path is labelled `unparked path:`.
 
 ## Maintaining this skill
 
